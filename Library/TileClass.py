@@ -1926,6 +1926,7 @@ class FeatureClass(Entity):
                 weigthsSummed += weight
                 if r < weigthsSummed:
                     featureTemplate.models[i].copyTo(node)
+                    #featureTemplate.models[i].instanceTo(node)
                     scaleRange = featureTemplate.scaleRange[i]
                     break
 
@@ -1950,6 +1951,7 @@ class FeatureClass(Entity):
             node.setTransparency(p3d.TransparencyAttrib.MAlpha)
             node.clearModelNodes()
         self.node.flattenStrong()
+        #self.node.flattenLight()
 
         #self.node.writeBamFile('tmpBamFile' + '.bam')
         #self.node.removeNode()

@@ -69,7 +69,6 @@ def CalculateTriangleNormal(p0, p1, p2):
 
 def DiscretizeElevationMap(zMap, N_ELEVATION_LAYERS):
     zMap = np.abs(np.round((N_ELEVATION_LAYERS-1) * zMap))
-
     return zMap
 
 class ChessboardDemo(ShowBase):
