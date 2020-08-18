@@ -5,10 +5,12 @@ from matplotlib import image
 import pickle
 import numpy as np
 
-import Pathfinding
-import Animation
+import Library.Pathfinding as Pathfinding
+import Library.Animation as Animation
 
-import FeatureTemplateDictionary
+import Root_Directory
+
+import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 
 class Entity():
     def __init__(self, row, colon, elevation):
@@ -1705,56 +1707,56 @@ class TileClass(Entity):
         #                        'grasscliff':image.imread("panda3d-master/samples/chessboard/models/topography_grass_cliff_symmetrical.jpg")[:, :, 0],
         #                        'desertcliff':image.imread("panda3d-master/samples/chessboard/models/topography_grass_cliff_symmetrical.jpg")[:, :, 0],
         #                        'tundracliff':image.imread("panda3d-master/samples/chessboard/models/topography_grass_cliff_symmetrical.jpg")[:, :, 0]}
-        cls.terrainTopography ={'grass':image.imread("panda3d-master/samples/chessboard/models/topography_desert_symmetrical.jpg")[:, :, 0],
-                                'desert':image.imread("panda3d-master/samples/chessboard/models/topography_desert_symmetrical.jpg")[:, :, 0],
-                                'tundra':image.imread("panda3d-master/samples/chessboard/models/topography_desert_symmetrical.jpg")[:, :, 0],
-                                'grasscliff':image.imread("panda3d-master/samples/chessboard/models/topography_desert_symmetrical.jpg")[:, :, 0],
-                                'desertcliff':image.imread("panda3d-master/samples/chessboard/models/topography_desert_symmetrical.jpg")[:, :, 0],
-                                'tundracliff':image.imread("panda3d-master/samples/chessboard/models/topography_desert_symmetrical.jpg")[:, :, 0]}
+        cls.terrainTopography ={'grass':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
+                                'desert':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
+                                'tundra':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
+                                'grasscliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
+                                'desertcliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
+                                'tundracliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0]}
 
-        cls.topographyFilters = {'center':image.imread("panda3d-master/samples/chessboard/models/topography_filter_center.jpg")[:, :, 0],
-                                 'left':image.imread("panda3d-master/samples/chessboard/models/topography_filter_side_Left.jpg")[:, :, 0],
-                                 'bottom':image.imread("panda3d-master/samples/chessboard/models/topography_filter_side_Bottom.jpg")[:, :, 0],
-                                 'right':image.imread("panda3d-master/samples/chessboard/models/topography_filter_side_Right.jpg")[:, :, 0],
-                                 'top':image.imread("panda3d-master/samples/chessboard/models/topography_filter_side_Top.jpg")[:, :, 0],
-                                 'bottom_left':image.imread("panda3d-master/samples/chessboard/models/topography_filter_corner_Bottom_Left.jpg")[:, :, 0],
-                                 'bottom_right':image.imread("panda3d-master/samples/chessboard/models/topography_filter_corner_Bottom_Right.jpg")[:, :, 0],
-                                 'top_right':image.imread("panda3d-master/samples/chessboard/models/topography_filter_corner_Top_Right.jpg")[:, :, 0],
-                                 'top_left':image.imread("panda3d-master/samples/chessboard/models/topography_filter_corner_Top_Left.jpg")[:, :, 0],
-                                 'left_left':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_side_Left.jpg")[:, :, 0],
-                                 'bottom_bottom':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_side_Bottom.jpg")[:, :, 0],
-                                 'right_right':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_side_Right.jpg")[:, :, 0],
-                                 'top_top':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_side_Top.jpg")[:, :, 0],
-                                 'bottom_left_left':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Bottom_Left_Left.jpg")[:, :, 0],
-                                 'bottom_left_bottom':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Bottom_Left_Bottom.jpg")[:, :, 0],
-                                 'bottom_right_bottom':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Bottom_Right_Bottom.jpg")[:, :, 0],
-                                 'bottom_right_right':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Bottom_Right_Right.jpg")[:, :, 0],
-                                 'top_right_right':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Top_Right_Right.jpg")[:, :, 0],
-                                 'top_right_top':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Top_Right_Top.jpg")[:, :, 0],
-                                 'top_left_top':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Top_Left_Top.jpg")[:, :, 0],
-                                 'top_left_left':image.imread("panda3d-master/samples/chessboard/models/topography_filter_adjacent_corner_Top_Left_Left.jpg")[:, :, 0]}
+        cls.topographyFilters = {'center':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_center.jpg")[:, :, 0],
+                                 'left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_side_Left.jpg")[:, :, 0],
+                                 'bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_side_Bottom.jpg")[:, :, 0],
+                                 'right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_side_Right.jpg")[:, :, 0],
+                                 'top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_side_Top.jpg")[:, :, 0],
+                                 'bottom_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_corner_Bottom_Left.jpg")[:, :, 0],
+                                 'bottom_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_corner_Bottom_Right.jpg")[:, :, 0],
+                                 'top_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_corner_Top_Right.jpg")[:, :, 0],
+                                 'top_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_corner_Top_Left.jpg")[:, :, 0],
+                                 'left_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_side_Left.jpg")[:, :, 0],
+                                 'bottom_bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_side_Bottom.jpg")[:, :, 0],
+                                 'right_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_side_Right.jpg")[:, :, 0],
+                                 'top_top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_side_Top.jpg")[:, :, 0],
+                                 'bottom_left_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Bottom_Left_Left.jpg")[:, :, 0],
+                                 'bottom_left_bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Bottom_Left_Bottom.jpg")[:, :, 0],
+                                 'bottom_right_bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Bottom_Right_Bottom.jpg")[:, :, 0],
+                                 'bottom_right_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Bottom_Right_Right.jpg")[:, :, 0],
+                                 'top_right_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Top_Right_Right.jpg")[:, :, 0],
+                                 'top_right_top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Top_Right_Top.jpg")[:, :, 0],
+                                 'top_left_top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Top_Left_Top.jpg")[:, :, 0],
+                                 'top_left_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_adjacent_corner_Top_Left_Left.jpg")[:, :, 0]}
 
-        cls.textureFilters = {'center':image.imread("panda3d-master/samples/chessboard/models/tile_filter_center.jpg")[:, :, 0],
-                                 'left':image.imread("panda3d-master/samples/chessboard/models/tile_filter_side_Left.jpg")[:, :, 0],
-                                 'bottom':image.imread("panda3d-master/samples/chessboard/models/tile_filter_side_Bottom.jpg")[:, :, 0],
-                                 'right':image.imread("panda3d-master/samples/chessboard/models/tile_filter_side_Right.jpg")[:, :, 0],
-                                 'top':image.imread("panda3d-master/samples/chessboard/models/tile_filter_side_Top.jpg")[:, :, 0],
-                                 'bottom_left':image.imread("panda3d-master/samples/chessboard/models/tile_filter_corner_Bottom_Left.jpg")[:, :, 0],
-                                 'bottom_right':image.imread("panda3d-master/samples/chessboard/models/tile_filter_corner_Bottom_Right.jpg")[:, :, 0],
-                                 'top_right':image.imread("panda3d-master/samples/chessboard/models/tile_filter_corner_Top_Right.jpg")[:, :, 0],
-                                 'top_left':image.imread("panda3d-master/samples/chessboard/models/tile_filter_corner_Top_Left.jpg")[:, :, 0],
-                                 'left_left':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_side_Left.jpg")[:, :, 0],
-                                 'bottom_bottom':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_side_Bottom.jpg")[:, :, 0],
-                                 'right_right':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_side_Right.jpg")[:, :, 0],
-                                 'top_top':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_side_Top.jpg")[:, :, 0],
-                                 'bottom_left_left':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Bottom_Left_Left.jpg")[:, :, 0],
-                                 'bottom_left_bottom':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Bottom_Left_Bottom.jpg")[:, :, 0],
-                                 'bottom_right_bottom':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Bottom_Right_Bottom.jpg")[:, :, 0],
-                                 'bottom_right_right':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Bottom_Right_Right.jpg")[:, :, 0],
-                                 'top_right_right':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Top_Right_Right.jpg")[:, :, 0],
-                                 'top_right_top':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Top_Right_Top.jpg")[:, :, 0],
-                                 'top_left_top':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Top_Left_Top.jpg")[:, :, 0],
-                                 'top_left_left':image.imread("panda3d-master/samples/chessboard/models/tile_filter_adjacent_corner_Top_Left_Left.jpg")[:, :, 0]}
+        cls.textureFilters = {'center':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_center.jpg")[:, :, 0],
+                                 'left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_side_Left.jpg")[:, :, 0],
+                                 'bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_side_Bottom.jpg")[:, :, 0],
+                                 'right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_side_Right.jpg")[:, :, 0],
+                                 'top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_side_Top.jpg")[:, :, 0],
+                                 'bottom_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_corner_Bottom_Left.jpg")[:, :, 0],
+                                 'bottom_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_corner_Bottom_Right.jpg")[:, :, 0],
+                                 'top_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_corner_Top_Right.jpg")[:, :, 0],
+                                 'top_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_corner_Top_Left.jpg")[:, :, 0],
+                                 'left_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_side_Left.jpg")[:, :, 0],
+                                 'bottom_bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_side_Bottom.jpg")[:, :, 0],
+                                 'right_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_side_Right.jpg")[:, :, 0],
+                                 'top_top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_side_Top.jpg")[:, :, 0],
+                                 'bottom_left_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Bottom_Left_Left.jpg")[:, :, 0],
+                                 'bottom_left_bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Bottom_Left_Bottom.jpg")[:, :, 0],
+                                 'bottom_right_bottom':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Bottom_Right_Bottom.jpg")[:, :, 0],
+                                 'bottom_right_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Bottom_Right_Right.jpg")[:, :, 0],
+                                 'top_right_right':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Top_Right_Right.jpg")[:, :, 0],
+                                 'top_right_top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Top_Right_Top.jpg")[:, :, 0],
+                                 'top_left_top':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Top_Left_Top.jpg")[:, :, 0],
+                                 'top_left_left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tile_filter_adjacent_corner_Top_Left_Left.jpg")[:, :, 0]}
 
         #cls.terrainTextures = {'grass':imageGrass,
         #                       'desert':imageDesert,
@@ -1770,12 +1772,12 @@ class TileClass(Entity):
         #                       'grasscliff':image.imread("panda3d-master/samples/chessboard/models/white.jpg"),
         #                       'desertcliff':image.imread("panda3d-master/samples/chessboard/models/white.jpg"),
         #                       'tundracliff':image.imread("panda3d-master/samples/chessboard/models/white.jpg")}
-        cls.terrainTextures = {'grass':image.imread("panda3d-master/samples/chessboard/models/grass_5.jpg"),
-                               'desert':image.imread("panda3d-master/samples/chessboard/models/desert_1.jpg"),
-                               'tundra':image.imread("panda3d-master/samples/chessboard/models/tundra_1.jpg"),
-                               'grasscliff':image.imread("panda3d-master/samples/chessboard/models/grass_cliff_5.jpg"),
-                               'desertcliff':image.imread("panda3d-master/samples/chessboard/models/desert_rock_2.jpg"),
-                               'tundracliff':image.imread("panda3d-master/samples/chessboard/models/tundra_cliff_2.jpg")}
+        cls.terrainTextures = {'grass':image.imread(Root_Directory.Path() + "/Data/Tile_Data/grass_5.jpg"),
+                               'desert':image.imread(Root_Directory.Path() + "/Data/Tile_Data/desert_1.jpg"),
+                               'tundra':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra_1.jpg"),
+                               'grasscliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/grass_cliff_5.jpg"),
+                               'desertcliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/desert_rock_2.jpg"),
+                               'tundracliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra_cliff_2.jpg")}
 
 
         #cls.terrainTextures = {'grass':image.imread("panda3d-master/samples/chessboard/models/grass_4_symmetrical.jpg"),
@@ -2008,7 +2010,7 @@ class UnitClass(Entity):
 
     def CreateNode(self, type):
         if type == 'unit_test':
-            self.node = loader.loadModel("panda3d-master/samples/chessboard/models/unit_test_textured_8.dae")
+            self.node = loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/unit_test_textured_8.dae")
             self.node.set_hpr(0, 90, 0)
             self.node.setScale(0.3, 0.25, 0.3)
         self.node.setPos(p3d.LPoint3(self.colon + 0.5, self.row + 0.5, self.ELEVATION_SCALE * self.elevation))

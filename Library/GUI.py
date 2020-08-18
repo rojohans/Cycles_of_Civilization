@@ -3,8 +3,9 @@ from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import *
 from panda3d.core import TransparencyAttrib
 import sys
+import Root_Directory
 
-import TileClass
+import Library.TileClass as TileClass
 
 class GUIClass():
     def __init__(self, base, debugText = False):
@@ -61,10 +62,13 @@ class GUIClass():
         # will cover the entire height of the window if placed in the center of the screen.
         #
         self.MoveUnitFunction = None
-        self.move_button = DirectCheckButton(boxImage=("panda3d-master/samples/chessboard/models/unit_move_marker.png",
-                                            "panda3d-master/samples/chessboard/models/unit_move_marker_pressed.png",
-                                            "panda3d-master/samples/chessboard/models/unit_move_marker.png",
-                                            "panda3d-master/samples/chessboard/models/unit_move_marker.png"),
+
+        GUIDataDirectoryPath = Root_Directory.Path(style = 'unix') + '/Data/GUI/'
+
+        self.move_button = DirectCheckButton(boxImage=(GUIDataDirectoryPath + 'unit_move_marker.png',
+                                            GUIDataDirectoryPath + 'unit_move_marker_pressed.png',
+                                            GUIDataDirectoryPath + 'unit_move_marker.png',
+                                            GUIDataDirectoryPath + 'unit_move_marker.png'),
                                              scale=self.buttonScale,
                                              pos=(0 - self.buttonScale, 0, 0),
                                              relief=None,
@@ -74,10 +78,10 @@ class GUIClass():
                                              command = self.MoveUnitButtonFunction)
         self.move_button.setTransparency(TransparencyAttrib.MAlpha)
 
-        self.information_button = DirectCheckButton(boxImage=("panda3d-master/samples/chessboard/models/information_marker.jpg",
-                                        "panda3d-master/samples/chessboard/models/information_marker_pressed.jpg",
-                                        "panda3d-master/samples/chessboard/models/information_marker.jpg",
-                                        "panda3d-master/samples/chessboard/models/information_marker.jpg"),
+        self.information_button = DirectCheckButton(boxImage=(GUIDataDirectoryPath + "information_marker.jpg",
+                                        GUIDataDirectoryPath + "information_marker_pressed.jpg",
+                                        GUIDataDirectoryPath + "information_marker.jpg",
+                                        GUIDataDirectoryPath + "information_marker.jpg"),
                                                     scale=self.buttonScale,
                                                     pos = (0.4*self.windowRatio - self.buttonScale, 0, 0),
                                                     relief=None,
@@ -96,10 +100,10 @@ class GUIClass():
         #                                             parent=self.myFrame,
         #                                             boxPlacement = 'right')
         self.DestroyUnitFunction = None
-        self.destroy_unit_button = DirectButton(image=("panda3d-master/samples/chessboard/models/button_marker_skull.png",
-                                                "panda3d-master/samples/chessboard/models/button_marker_skull_selected.png",
-                                                "panda3d-master/samples/chessboard/models/button_marker_skull.png",
-                                                "panda3d-master/samples/chessboard/models/button_marker_skull.png"),
+        self.destroy_unit_button = DirectButton(image=(GUIDataDirectoryPath + "button_marker_skull.png",
+                                                GUIDataDirectoryPath + "button_marker_skull_selected.png",
+                                                GUIDataDirectoryPath + "button_marker_skull.png",
+                                                GUIDataDirectoryPath + "button_marker_skull.png"),
                                                 scale=self.buttonScale,
                                                 pos=(-0.4*self.windowRatio - self.buttonScale, 0, 0),
                                                 relief=None,
@@ -111,10 +115,10 @@ class GUIClass():
         self.PositionButtonsInFrame(self.myFrame, [self.move_button, self.information_button, self.destroy_unit_button])
 
 
-        self.add_unit_button = DirectCheckButton(boxImage=("panda3d-master/samples/chessboard/models/add_unit_button.png",
-                                                "panda3d-master/samples/chessboard/models/add_unit_button_pressed.png",
-                                                "panda3d-master/samples/chessboard/models/add_unit_button.png",
-                                                "panda3d-master/samples/chessboard/models/add_unit_button.png"),
+        self.add_unit_button = DirectCheckButton(boxImage=(GUIDataDirectoryPath + "add_unit_button.png",
+                                                GUIDataDirectoryPath + "add_unit_button_pressed.png",
+                                                GUIDataDirectoryPath + "add_unit_button.png",
+                                                GUIDataDirectoryPath + "add_unit_button.png"),
                                                  scale=self.buttonScale,
                                                  pos=(-0.9*self.windowRatio - self.buttonScale, 0, 0.5),
                                                  relief=None,
@@ -126,10 +130,10 @@ class GUIClass():
 
 
 
-        self.quitButton = DirectButton(image=("panda3d-master/samples/chessboard/models/quit_button.png",
-                                        "panda3d-master/samples/chessboard/models/quit_button.png",
-                                        "panda3d-master/samples/chessboard/models/quit_button.png",
-                                        "panda3d-master/samples/chessboard/models/quit_button.png"),
+        self.quitButton = DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
+                                        GUIDataDirectoryPath + "quit_button.png",
+                                        GUIDataDirectoryPath + "quit_button.png",
+                                        GUIDataDirectoryPath + "quit_button.png"),
                                        scale=self.buttonScale,
                                        pos=(0.9*self.windowRatio, 0, 0.9),
                                        relief=None,

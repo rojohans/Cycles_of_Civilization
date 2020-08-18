@@ -1,5 +1,8 @@
+import Root_Directory
+
 from direct.showbase.ShowBase import ShowBase
 import sys
+from Library import GUI
 
 
 class ChessboardDemo(ShowBase):
@@ -11,7 +14,7 @@ class ChessboardDemo(ShowBase):
         # Changes the background colour of the scene.
         base.setBackgroundColor(0.1, 0.3, 0.6)
 
-        import GUI
+
         self.GUIObject = GUI.GUIClass(base)
         #self.add_task(self.camera_update, 'camera_update')
         self.add_task(self.GUIObject.window_task, 'window_update')

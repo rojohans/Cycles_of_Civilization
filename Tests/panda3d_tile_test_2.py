@@ -18,20 +18,21 @@ import sys
 import time
 import numpy as np
 
-import TileClass
-import Animation
-
+import Library.TileClass as TileClass
+import Library.Animation as Animation
+import Library.Pathfinding as Pathfinding
+import Root_Directory
 
 # First we define some constants for the colors
 WHITE = (1, 1, 1, 1)
 HIGHLIGHT = (1, 0, 0, 1)
 
-#N_ROWS = 8
-#N_COLONS = 16
+N_ROWS = 8
+N_COLONS = 16
 #N_ROWS = 16
 #N_COLONS = 64
-N_ROWS = 32
-N_COLONS = 128
+#N_ROWS = 32
+#N_COLONS = 128
 #N_ROWS = 150
 #N_COLONS = 150
 
@@ -49,243 +50,11 @@ ELEVATION_SCALE = 0.2
 MODEL_RESOLUTION = 30
 TEXTURE_RESOLUTION = 128
 
-# [-1, 1]   [0, 1]   [1, 1]
-# [-1, 0]      x     [1, 0]
-# [-1, -1]  [0, -1]  [1, -1]
-#ADJACENT_TILES_TEMPLATE = np.array([[-1, 0], [0, -1], [1, 0], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]], dtype = int)
-
-# [1, -1]      [1, 0]       [1, 1]         7  3  6
-# [0, -1]    [row, colon]   [0, 1]         0     2
-# [-1, -1]     [-1, 0]      [-1, 1]        4  1  5
-#ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, 0], [0, 1], [1, 0], [-1, -1], [-1, 1], [1, 1], [1, -1]], dtype = int)
-
 # [1, -1]      [1, 0]       [1, 1]         7  6  5
 # [0, -1]    [row, colon]   [0, 1]         0     4
 # [-1, -1]     [-1, 0]      [-1, 1]        1  2  3
 ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]], dtype = int)
 
-
-#"models/plains_tile.dae"
-MODEL_PATHS = ["panda3d-master/samples/chessboard/models/plains_tile_6.dae",
-               "panda3d-master/samples/chessboard/models/canyon_tile_4.dae",
-               "panda3d-master/samples/chessboard/models/hills_tile_7.dae",
-               "panda3d-master/samples/chessboard/models/mountain_tile_4.dae",
-               "panda3d-master/samples/chessboard/models/slope_tile.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile_corner_outer.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile_corner_inner.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile_canyon.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile_canyon_diagonal.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile_canyon_edge.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile_L.dae",
-               "panda3d-master/samples/chessboard/models/cliff_tile_L_mirror.dae",
-               "panda3d-master/samples/chessboard/models/slope_tile_corner_outer.dae",
-               "panda3d-master/samples/chessboard/models/slope_tile_corner_inner.dae"]
-TEXTURE_PATHS = ["panda3d-master/samples/chessboard/models/foliage_custom_1.jpg",
-                 "panda3d-master/samples/chessboard/models/red_y.jpg",
-                 "panda3d-master/samples/chessboard/models/red_y_square.jpg",
-                 "panda3d-master/samples/chessboard/models/red_y_512_512.jpg",
-                 "panda3d-master/samples/chessboard/models/red_y_128_128.jpg",
-                 "panda3d-master/samples/chessboard/models/red_y_64_64.jpg",
-                 "panda3d-master/samples/chessboard/models/grass_1.jpg",
-                 "panda3d-master/samples/chessboard/models/grass_2.jpg",
-                 "panda3d-master/samples/chessboard/models/grass_3.jpg",
-                 "panda3d-master/samples/chessboard/models/rock_1.jpg"]
-
-# Now we define some helper functions that we will need later
-
-def DetermineTile(row, colon, zMap):
-    angle = 90 * np.random.choice(4)
-    if row > 0 and row < N_ROWS-1:
-        if colon > 0 and colon < N_COLONS-1:
-
-            #if zMap[row, colon] == 0:
-            if True:
-                adjacentCross = np.zeros((8, 2), dtype = int)
-                adjacentCross[:, 0] = int(row) + ADJACENT_TILES_TEMPLATE[:, 0]
-                adjacentCross[:, 1] = int(colon) + ADJACENT_TILES_TEMPLATE[:, 1]
-                adjacentZValues = zMap[adjacentCross[:, 0], adjacentCross[:, 1]]
-
-                adjacentZValues -= zMap[row, colon]
-                adjacentZValues[adjacentZValues < 0] = 0
-
-                if np.sum(adjacentZValues) > 0:
-
-
-                    # CLIFF CORNERS (CANYON)
-                    if adjacentZValues[0] == 1 and adjacentZValues[2] == 1:
-                        model = loader.loadModel(MODEL_PATHS[8])
-                        angle = 180
-                    elif adjacentZValues[1] == 1 and adjacentZValues[3] == 1:
-                        model = loader.loadModel(MODEL_PATHS[8])
-                        angle = 90
-
-
-                    # CLIFF CORNERS (CANYON, DIAGONAL)
-                    elif adjacentZValues[4] == 1 and adjacentZValues[6] == 1 and adjacentZValues[7] == 0 and adjacentZValues[5] == 0 and adjacentZValues[0] == 0 and adjacentZValues[1] == 0 and adjacentZValues[2] == 0 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[9])
-                        angle = 90
-                    elif adjacentZValues[7] == 1 and adjacentZValues[5] == 1 and adjacentZValues[4] == 0 and adjacentZValues[6] == 0 and adjacentZValues[0] == 0 and adjacentZValues[1] == 0 and adjacentZValues[2] == 0 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[9])
-                        angle = 0
-
-
-                    # CLIFF CORNERS (CANYON, EDGE)
-                    elif adjacentZValues[4] == 1 and adjacentZValues[5] == 1 and adjacentZValues[1] == 0 and adjacentZValues[0] == 0 and adjacentZValues[2] == 0:
-                        model = loader.loadModel(MODEL_PATHS[10])
-                        angle = 180
-                    elif adjacentZValues[6] == 1 and adjacentZValues[5] == 1 and adjacentZValues[2] == 0 and adjacentZValues[1] == 0 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[10])
-                        angle = 270
-                    elif adjacentZValues[7] == 1 and adjacentZValues[6] == 1 and adjacentZValues[3] == 0 and adjacentZValues[0] == 0 and adjacentZValues[2] == 0:
-                        model = loader.loadModel(MODEL_PATHS[10])
-                        angle = 0
-                    elif adjacentZValues[7] == 1 and adjacentZValues[4] == 1 and adjacentZValues[0] == 0 and adjacentZValues[1] == 0 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[10])
-                        angle = 90
-
-
-                    # CLIFF L
-                    elif adjacentZValues[5] == 1  and adjacentZValues[6] == 1 and adjacentZValues[3] == 1 and adjacentZValues[2] == 0:
-                        model = loader.loadModel(MODEL_PATHS[11])
-                        angle = 270
-                    elif adjacentZValues[7] == 1  and adjacentZValues[6] == 1 and adjacentZValues[0] == 1 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[11])
-                        angle = 0
-                    elif adjacentZValues[4] == 1  and adjacentZValues[7] == 1 and adjacentZValues[1] == 1 and adjacentZValues[0] == 0:
-                        model = loader.loadModel(MODEL_PATHS[11])
-                        angle = 90
-                    elif adjacentZValues[4] == 1  and adjacentZValues[5] == 1 and adjacentZValues[2] == 1 and adjacentZValues[1] == 0:
-                        model = loader.loadModel(MODEL_PATHS[11])
-                        angle = 180
-
-                    
-                    # CLIFF L (MIRRORED)
-                    elif adjacentZValues[4] == 1  and adjacentZValues[7] == 1 and adjacentZValues[3] == 1 and adjacentZValues[0] == 0:
-                        model = loader.loadModel(MODEL_PATHS[12])
-                        angle = 270
-                    elif adjacentZValues[7] == 1  and adjacentZValues[6] == 1 and adjacentZValues[2] == 1 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[12])
-                        angle = 180
-                    elif adjacentZValues[5] == 1  and adjacentZValues[6] == 1 and adjacentZValues[1] == 1 and adjacentZValues[2] == 0:
-                        model = loader.loadModel(MODEL_PATHS[12])
-                        angle = 90
-                    elif adjacentZValues[4] == 1  and adjacentZValues[5] == 1 and adjacentZValues[0] == 1 and adjacentZValues[1] == 0:
-                        model = loader.loadModel(MODEL_PATHS[12])
-                        angle = 0
-
-
-                    # CLIFF CORNERS (INNER)
-                    elif adjacentZValues[0] == 1 and adjacentZValues[1] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        #model = loader.loadModel(MODEL_PATHS[14])
-                        angle = 90
-                    elif adjacentZValues[1] == 1 and adjacentZValues[2] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        #model = loader.loadModel(MODEL_PATHS[14])
-                        angle = 180
-                    elif adjacentZValues[2] == 1 and adjacentZValues[3] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        #model = loader.loadModel(MODEL_PATHS[14])
-                        angle = 270
-                    elif adjacentZValues[3] == 1 and adjacentZValues[0] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        #model = loader.loadModel(MODEL_PATHS[14])
-                        angle = 0
-
-                    elif adjacentZValues[0] == 1 and adjacentZValues[5] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 90
-                    elif adjacentZValues[0] == 1 and adjacentZValues[6] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 0
-                    elif adjacentZValues[1] == 1 and adjacentZValues[7] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 90
-                    elif adjacentZValues[1] == 1 and adjacentZValues[6] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 180
-                    elif adjacentZValues[2] == 1 and adjacentZValues[4] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 180
-                    elif adjacentZValues[2] == 1 and adjacentZValues[7] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 270
-                    elif adjacentZValues[3] == 1 and adjacentZValues[4] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 0
-                    elif adjacentZValues[3] == 1 and adjacentZValues[5] == 1:
-                        model = loader.loadModel(MODEL_PATHS[7])
-                        angle = 270
-
-
-                    # CLIFF SIDES
-                    elif adjacentZValues[0] == 1:
-                        r = np.random.rand()
-                        if r<0.5:
-                            model = loader.loadModel(MODEL_PATHS[4])
-                        else:
-                            model = loader.loadModel(MODEL_PATHS[5])
-                        angle = 0
-                    elif adjacentZValues[1] == 1:
-                        r = np.random.rand()
-                        if r < 0.5:
-                            model = loader.loadModel(MODEL_PATHS[4])
-                        else:
-                            model = loader.loadModel(MODEL_PATHS[5])
-                        angle = 90
-                    elif adjacentZValues[2] == 1:
-                        r = np.random.rand()
-                        if r < 0.5:
-                            model = loader.loadModel(MODEL_PATHS[4])
-                        else:
-                            model = loader.loadModel(MODEL_PATHS[5])
-                        angle = 180
-                    elif adjacentZValues[3] == 1:
-                        r = np.random.rand()
-                        if r < 0.5:
-                            model = loader.loadModel(MODEL_PATHS[4])
-                        else:
-                            model = loader.loadModel(MODEL_PATHS[5])
-                        angle = 270
-
-
-                    # CLIFF CORNERS (OUTER)
-                    elif adjacentZValues[4] == 1 and adjacentZValues[0] == 0 and adjacentZValues[1] == 0:
-                        model = loader.loadModel(MODEL_PATHS[6])
-                        #model = loader.loadModel(MODEL_PATHS[13])
-                        angle = 0
-                        #angle = 90
-                    elif adjacentZValues[5] == 1 and adjacentZValues[1] == 0 and adjacentZValues[2] == 0:
-                        model = loader.loadModel(MODEL_PATHS[6])
-                        #model = loader.loadModel(MODEL_PATHS[13])
-                        angle = 90
-                        #angle = 180
-                    elif adjacentZValues[6] == 1 and adjacentZValues[2] == 0 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[6])
-                        #model = loader.loadModel(MODEL_PATHS[13])
-                        angle = 180
-                        #angle = 270
-                    elif adjacentZValues[7] == 1 and adjacentZValues[0] == 0 and adjacentZValues[3] == 0:
-                        model = loader.loadModel(MODEL_PATHS[6])
-                        #model = loader.loadModel(MODEL_PATHS[13])
-                        angle = 270
-                        #angle = 0
-
-
-                    else:
-                        model = loader.loadModel(MODEL_PATHS[0])
-                else:
-                    model = loader.loadModel(MODEL_PATHS[0])
-            else:
-                model = loader.loadModel(MODEL_PATHS[0])
-        else:
-            model = loader.loadModel(MODEL_PATHS[0])
-    else:
-        model = loader.loadModel(MODEL_PATHS[0])
-
-    model.set_hpr(angle, 90, 0)
-    return model
 
 def CalculateTriangleNormal(p0, p1, p2):
     # The points p0, p1, p2 needs to be given in counter clockwise order.
@@ -297,401 +66,6 @@ def CalculateTriangleNormal(p0, p1, p2):
     c /= np.sqrt(c[0]**2 + c[1]**2 + c[2]**2)
 
     return p3d.Vec3(c[0], c[1], c[2])
-
-def CreateTile(row, colon, elevationMap, tileCenterWidth = 0.7):
-    tileSlopeWidth = (1-tileCenterWidth)/2
-    if row > 0 and row < N_ROWS-1:
-        if colon > 0 and colon < N_COLONS-1:
-
-            tileElevation = elevationMap[row, colon]
-
-            adjacentCross = np.zeros((8, 2), dtype=int)
-            adjacentCross[:, 0] = int(row) + ADJACENT_TILES_TEMPLATE[:, 0]
-            adjacentCross[:, 1] = int(colon) + ADJACENT_TILES_TEMPLATE[:, 1]
-            adjacentZValues = elevationMap[adjacentCross[:, 0], adjacentCross[:, 1]]
-
-            adjacentZValues -= tileElevation
-
-            #adjacentZValues[adjacentZValues > 0] = 0
-            print(adjacentZValues)
-
-            vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
-            vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
-
-
-            pos_writer = p3d.GeomVertexWriter(vertex_data, "vertex")
-            normal_writer = p3d.GeomVertexWriter(vertex_data, "normal")
-            tex_writer = p3d.GeomVertexWriter(vertex_data, 'texcoord')
-            normal = p3d.Vec3(0., -1., 0.)
-
-            #pos_writer.add_data3(0, 1, 2)
-            #pos_writer.add_data3(0, 0, 0)
-            #pos_writer.add_data3(1, 0, 0)
-            #pos_writer.add_data3(1, 1, 1)
-
-            p0 = np.array([colon, row+tileSlopeWidth, tileElevation + adjacentZValues[0]/2])
-            p1 = np.array([colon, row, tileElevation + (adjacentZValues[0] + adjacentZValues[1] + adjacentZValues[2]) / 4])
-            p2 = np.array([colon + tileSlopeWidth, row, tileElevation + adjacentZValues[2]/2])
-            p3 = np.array([colon + tileSlopeWidth, row + tileSlopeWidth, tileElevation])
-
-            p4 = np.array([colon + tileCenterWidth + tileSlopeWidth, row + tileSlopeWidth, tileElevation])
-            p5 = np.array([colon + tileCenterWidth + tileSlopeWidth, row, tileElevation + adjacentZValues[2]/2])
-            p6 = np.array([colon + 1, row, tileElevation + (adjacentZValues[2] + adjacentZValues[3] + adjacentZValues[4]) / 4])
-            p7 = np.array([colon + 1 ,row + tileSlopeWidth, tileElevation + adjacentZValues[4]/2])
-
-            p8 = np.array([colon + tileSlopeWidth + tileCenterWidth, row + 1, tileElevation + adjacentZValues[6]/2])
-            p9 = np.array([colon + tileSlopeWidth + tileCenterWidth, row + tileSlopeWidth + tileCenterWidth, tileElevation])
-            p10 = np.array([colon + 1, row + tileSlopeWidth + tileCenterWidth, tileElevation + adjacentZValues[4]/2])
-            p11 = np.array([colon + 1, row + 1, tileElevation + (adjacentZValues[4] + adjacentZValues[5] + adjacentZValues[6]) / 4])
-
-            p12 = np.array([colon, row + 1, tileElevation + (adjacentZValues[6] + adjacentZValues[7] + adjacentZValues[0]) / 4])
-            p13 = np.array([colon, row + tileSlopeWidth + tileCenterWidth, tileElevation + adjacentZValues[0]/2])
-            p14 = np.array([colon + tileSlopeWidth, row + tileSlopeWidth + tileCenterWidth, tileElevation])
-            p15 = np.array([colon + tileSlopeWidth, row + 1, tileElevation + adjacentZValues[6]/2])
-
-            #tri0Normal = CalculateTriangleNormal()
-
-            pos_writer.add_data3(p0[0], p0[1], p0[2])
-            tex_writer.addData2f(p0[0]-colon, p0[1]-row)
-            pos_writer.add_data3(p1[0], p1[1], p1[2])
-            tex_writer.addData2f(p1[0]-colon, p1[1]-row)
-            pos_writer.add_data3(p2[0], p2[1], p2[2])
-            tex_writer.addData2f(p2[0]-colon, p2[1]-row)
-            pos_writer.add_data3(p3[0], p3[1], p3[2])
-            tex_writer.addData2f(p3[0]-colon, p3[1]-row)
-
-            pos_writer.add_data3(p4[0], p4[1], p4[2])
-            tex_writer.addData2f(p4[0]-colon, p4[1]-row)
-            pos_writer.add_data3(p5[0], p5[1], p5[2])
-            tex_writer.addData2f(p5[0]-colon, p5[1]-row)
-            pos_writer.add_data3(p6[0], p6[1], p6[2])
-            tex_writer.addData2f(p6[0]-colon, p6[1]-row)
-            pos_writer.add_data3(p7[0], p7[1], p7[2])
-            tex_writer.addData2f(p7[0]-colon, p7[1]-row)
-
-            pos_writer.add_data3(p8[0], p8[1], p8[2])
-            tex_writer.addData2f(p8[0]-colon, p8[1]-row)
-            pos_writer.add_data3(p9[0], p9[1], p9[2])
-            tex_writer.addData2f(p9[0]-colon, p9[1]-row)
-            pos_writer.add_data3(p10[0], p10[1], p10[2])
-            tex_writer.addData2f(p10[0]-colon, p10[1]-row)
-            pos_writer.add_data3(p11[0], p11[1], p11[2])
-            tex_writer.addData2f(p11[0]-colon, p11[1]-row)
-
-            pos_writer.add_data3(p12[0], p12[1], p12[2])
-            tex_writer.addData2f(p12[0]-colon, p12[1]-row)
-            pos_writer.add_data3(p13[0], p13[1], p13[2])
-            tex_writer.addData2f(p13[0]-colon, p13[1]-row)
-            pos_writer.add_data3(p14[0], p14[1], p14[2])
-            tex_writer.addData2f(p14[0]-colon, p14[1]-row)
-            pos_writer.add_data3(p15[0], p15[1], p15[2])
-            tex_writer.addData2f(p15[0]-colon, p15[1]-row)
-
-            tri0Normal = CalculateTriangleNormal(p0, p1, p3)
-            tri1Normal = CalculateTriangleNormal(p1, p2, p3)
-
-            tri2Normal = CalculateTriangleNormal(p3, p2, p4)
-            tri3Normal = CalculateTriangleNormal(p2, p5, p4)
-
-            tri4Normal = CalculateTriangleNormal(p4, p5, p6)
-            tri5Normal = CalculateTriangleNormal(p4, p6, p7)
-
-            tri6Normal = CalculateTriangleNormal(p9, p4, p7)
-            tri7Normal = CalculateTriangleNormal(p9, p7, p10)
-
-            tri8Normal = CalculateTriangleNormal(p9, p10, p11)
-            tri9Normal = CalculateTriangleNormal(p8, p9, p11)
-
-            tri10Normal = CalculateTriangleNormal(p14, p9, p8)
-            tri11Normal = CalculateTriangleNormal(p15, p14, p8)
-
-            tri12Normal = CalculateTriangleNormal(p12, p14, p15)
-            tri13Normal = CalculateTriangleNormal(p12, p13, p14)
-
-            tri14Normal = CalculateTriangleNormal(p13, p3, p14)
-            tri15Normal = CalculateTriangleNormal(p10, p0, p3)
-
-            tri16Normal = CalculateTriangleNormal(p14, p3, p9)
-            tri17Normal = CalculateTriangleNormal(p3, p4, p9)
-
-
-
-            normal_writer.add_data3((tri0Normal + tri15Normal)/2)
-            normal_writer.add_data3((tri0Normal + tri1Normal)/2)
-            normal_writer.add_data3((tri1Normal + tri2Normal + tri3Normal)/3)
-            normal_writer.add_data3((tri0Normal + tri1Normal + tri2Normal + tri17Normal + tri16Normal + tri14Normal + tri15Normal) / 7)
-            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
-
-            normal_writer.add_data3((tri17Normal + tri2Normal + tri3Normal + tri4Normal + tri5Normal + tri6Normal) / 6)
-            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
-            normal_writer.add_data3((tri3Normal + tri4Normal) / 2)
-            normal_writer.add_data3((tri4Normal + tri5Normal) / 2)
-            normal_writer.add_data3((tri5Normal + tri6Normal + tri7Normal) / 3)
-
-            normal_writer.add_data3((tri9Normal + tri10Normal + tri11Normal) / 3)
-            normal_writer.add_data3(
-                (tri6Normal + tri7Normal + tri8Normal + tri9Normal + tri10Normal + tri16Normal + tri17Normal) / 7)
-            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
-            normal_writer.add_data3((tri7Normal + tri8Normal) / 2)
-            normal_writer.add_data3((tri8Normal + tri9Normal) / 2)
-
-            normal_writer.add_data3((tri12Normal + tri13Normal) / 2)
-            normal_writer.add_data3((tri13Normal + tri14Normal + tri15Normal) / 3)
-            normal_writer.add_data3(
-                (tri10Normal + tri11Normal + tri12Normal + tri13Normal + tri14Normal + tri16Normal) / 6)
-            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
-            normal_writer.add_data3((tri11Normal + tri12Normal) / 2)
-
-            # since the normal is the same for each vertex, just add it three consecutive times
-            #for _ in range(16):
-            #    normal_writer.add_data3(normal)
-
-            tri0 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri0.add_next_vertices(3)
-            tri0.add_vertices(0, 1, 3)
-            tri1 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri1.add_next_vertices(3)
-            tri1.add_vertices(1, 2, 3)
-
-            tri2 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri2.add_next_vertices(3)
-            tri2.add_vertices(3, 2, 4)
-            tri3 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri3.add_next_vertices(3)
-            tri3.add_vertices(2, 5, 4)
-
-            tri4 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri4.add_next_vertices(3)
-            tri4.add_vertices(4, 5, 6)
-            tri5 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri5.add_next_vertices(3)
-            tri5.add_vertices(4, 6, 7)
-
-            tri6 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri6.add_next_vertices(3)
-            tri6.add_vertices(9, 4, 7)
-            tri7 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri7.add_next_vertices(3)
-            tri7.add_vertices(9, 7, 10)
-
-            tri8 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri8.add_next_vertices(3)
-            tri8.add_vertices(9, 10, 11)
-            tri9 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri9.add_next_vertices(3)
-            tri9.add_vertices(8, 9, 11)
-
-            tri10 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri10.add_next_vertices(3)
-            tri10.add_vertices(14, 9, 8)
-            tri11 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri11.add_next_vertices(3)
-            tri11.add_vertices(15, 14, 8)
-
-            tri12 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri12.add_next_vertices(3)
-            tri12.add_vertices(12, 14, 15)
-            tri13 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri13.add_next_vertices(3)
-            tri13.add_vertices(12, 13, 14)
-
-            tri14 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri14.add_next_vertices(3)
-            tri14.add_vertices(13, 3, 14)
-            tri15 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri15.add_next_vertices(3)
-            tri15.add_vertices(13, 0, 3)
-
-            tri16 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri16.add_next_vertices(3)
-            tri16.add_vertices(14, 3, 9)
-            tri17 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri17.add_next_vertices(3)
-            tri17.add_vertices(3, 4, 9)
-
-            geom = p3d.Geom(vertex_data)
-            geom.add_primitive(tri0)
-            geom.add_primitive(tri1)
-            geom.add_primitive(tri2)
-            geom.add_primitive(tri3)
-            geom.add_primitive(tri4)
-            geom.add_primitive(tri5)
-            geom.add_primitive(tri6)
-            geom.add_primitive(tri7)
-            geom.add_primitive(tri8)
-            geom.add_primitive(tri9)
-            geom.add_primitive(tri10)
-            geom.add_primitive(tri11)
-            geom.add_primitive(tri12)
-            geom.add_primitive(tri13)
-            geom.add_primitive(tri14)
-            geom.add_primitive(tri15)
-            geom.add_primitive(tri16)
-            geom.add_primitive(tri17)
-
-            node = GeomNode("Tile")
-            node.add_geom(geom)
-            tile = p3d.NodePath(node)
-        else:
-            tileElevation = elevationMap[row, colon]
-
-            vertex_format = p3d.GeomVertexFormat.get_v3n3()
-            vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
-
-            pos_writer = p3d.GeomVertexWriter(vertex_data, "vertex")
-            normal_writer = p3d.GeomVertexWriter(vertex_data, "normal")
-            normal = p3d.Vec3(0., 0., 1.)
-
-            pos_writer.add_data3(colon, row, tileElevation)
-            pos_writer.add_data3(colon + 1, row, tileElevation)
-            pos_writer.add_data3(colon + 1, row + 1, tileElevation)
-            pos_writer.add_data3(colon, row + 1, tileElevation)
-            for _ in range(4):
-                normal_writer.add_data3(normal)
-
-            tri0 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri0.add_next_vertices(3)
-            tri0.add_vertices(0, 1, 2)
-            tri1 = p3d.GeomTriangles(p3d.Geom.UH_static)
-            tri1.add_next_vertices(3)
-            tri1.add_vertices(3, 0, 2)
-
-            geom = p3d.Geom(vertex_data)
-            geom.add_primitive(tri0)
-            geom.add_primitive(tri1)
-            node = GeomNode("my_triangle")
-            node.add_geom(geom)
-            tile = p3d.NodePath(node)
-    else:
-        tileElevation = elevationMap[row, colon]
-
-        vertex_format = p3d.GeomVertexFormat.get_v3n3()
-        vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
-
-        pos_writer = p3d.GeomVertexWriter(vertex_data, "vertex")
-        normal_writer = p3d.GeomVertexWriter(vertex_data, "normal")
-        normal = p3d.Vec3(0., 0., 1.)
-
-        pos_writer.add_data3(colon, row, tileElevation)
-        pos_writer.add_data3(colon + 1, row, tileElevation)
-        pos_writer.add_data3(colon + 1, row + 1, tileElevation)
-        pos_writer.add_data3(colon, row + 1, tileElevation)
-        for _ in range(4):
-            normal_writer.add_data3(normal)
-
-        tri0 = p3d.GeomTriangles(p3d.Geom.UH_static)
-        tri0.add_next_vertices(3)
-        tri0.add_vertices(0, 1, 2)
-        tri1 = p3d.GeomTriangles(p3d.Geom.UH_static)
-        tri1.add_next_vertices(3)
-        tri1.add_vertices(3, 0, 2)
-
-        geom = p3d.Geom(vertex_data)
-        geom.add_primitive(tri0)
-        geom.add_primitive(tri1)
-        node = GeomNode("my_triangle")
-        node.add_geom(geom)
-        tile = p3d.NodePath(node)
-    return tile
-
-def CreateTileTexture(row, colon, elevationMap):
-    '''
-    Based on the adjacent tiles a texture is created for the current tile. The texture is returned as output.
-    :param row:
-    :param colon:
-    :param elevationMap:
-    :return:
-    '''
-
-    myImageGrass = p3d.PNMImage()
-    #myImageGrass.read("panda3d-master/samples/chessboard/models/grass_3.jpg")
-    myImageGrass.read("panda3d-master/samples/chessboard/models/desert_1.jpg")
-    #myImageGrass.read("panda3d-master/samples/chessboard/models/tundra_1.jpg")
-
-    myImageRock = p3d.PNMImage()
-    #myImageRock.read("panda3d-master/samples/chessboard/models/rock_1.jpg")
-    #myImageRock.read("panda3d-master/samples/chessboard/models/grass_cliff_1.jpg")
-    myImageRock.read("panda3d-master/samples/chessboard/models/desert_rock_2.jpg")
-    #myImageRock.read("panda3d-master/samples/chessboard/models/tundra_cliff_1.jpg")
-
-
-    filterCenter = p3d.PNMImage()
-    filterCenter.read("panda3d-master/samples/chessboard/models/tile_filter_center.jpg")
-
-    filterSideLeft = p3d.PNMImage()
-    filterSideBottom = p3d.PNMImage()
-    filterSideRight = p3d.PNMImage()
-    filterSideTop = p3d.PNMImage()
-
-    filterSideLeft.read("panda3d-master/samples/chessboard/models/tile_filter_side_Left.jpg")
-    filterSideBottom.read("panda3d-master/samples/chessboard/models/tile_filter_side_Bottom.jpg")
-    filterSideRight.read("panda3d-master/samples/chessboard/models/tile_filter_side_Right.jpg")
-    filterSideTop.read("panda3d-master/samples/chessboard/models/tile_filter_side_Top.jpg")
-
-    filterCornerBottomLeft = p3d.PNMImage()
-    filterCornerBottomRight = p3d.PNMImage()
-    filterCornerTopLeft = p3d.PNMImage()
-    filterCornerTopRight = p3d.PNMImage()
-
-    filterCornerBottomLeft.read("panda3d-master/samples/chessboard/models/tile_filter_corner_Bottom_Left.jpg")
-    filterCornerBottomRight.read("panda3d-master/samples/chessboard/models/tile_filter_corner_Bottom_Right.jpg")
-    filterCornerTopLeft.read("panda3d-master/samples/chessboard/models/tile_filter_corner_Top_Left.jpg")
-    filterCornerTopRight.read("panda3d-master/samples/chessboard/models/tile_filter_corner_Top_Right.jpg")
-
-    tilePartsImage = [myImageGrass,
-                      myImageGrass,
-                      myImageGrass,
-                      myImageGrass,
-                      myImageGrass,
-                      myImageGrass,
-                      myImageGrass,
-                      myImageGrass,
-                      myImageGrass]
-
-    if row > 0 and row < N_ROWS-1:
-        if colon > 0 and colon < N_COLONS-1:
-
-            tileElevation = elevationMap[row, colon]
-
-            adjacentCross = np.zeros((8, 2), dtype=int)
-            adjacentCross[:, 0] = int(row) + ADJACENT_TILES_TEMPLATE[:, 0]
-            adjacentCross[:, 1] = int(colon) + ADJACENT_TILES_TEMPLATE[:, 1]
-            adjacentZValues = elevationMap[adjacentCross[:, 0], adjacentCross[:, 1]]
-
-            adjacentZValues -= tileElevation
-
-            # Makes the sides rock if the slope is too big.
-            if abs(adjacentZValues[0]) > 1: tilePartsImage[1] = myImageRock
-            if abs(adjacentZValues[2]) > 1: tilePartsImage[2] = myImageRock
-            if abs(adjacentZValues[4]) > 1: tilePartsImage[3] = myImageRock
-            if abs(adjacentZValues[6]) > 1: tilePartsImage[4] = myImageRock
-            if abs(adjacentZValues[0]-adjacentZValues[2]) > 1 or abs(adjacentZValues[1]) > 1: tilePartsImage[5] = myImageRock
-            if abs(adjacentZValues[2] - adjacentZValues[4]) > 1 or abs(adjacentZValues[3]) > 1: tilePartsImage[
-                6] = myImageRock
-            if abs(adjacentZValues[0] - adjacentZValues[6]) > 1 or abs(adjacentZValues[7]) > 1: tilePartsImage[
-                7] = myImageRock
-            if abs(adjacentZValues[4] - adjacentZValues[6]) > 1 or abs(adjacentZValues[5]) > 1: tilePartsImage[
-                8] = myImageRock
-
-
-    myEmptyImage = tilePartsImage[0] * filterCenter + \
-                   tilePartsImage[1] * filterSideLeft + \
-                   tilePartsImage[2] * filterSideBottom + \
-                   tilePartsImage[3] * filterSideRight + \
-                   tilePartsImage[4] * filterSideTop + \
-                   tilePartsImage[5] * filterCornerBottomLeft + \
-                   tilePartsImage[6] * filterCornerBottomRight + \
-                   tilePartsImage[7] * filterCornerTopLeft + \
-                   tilePartsImage[8] * filterCornerTopRight
-    #myEmptyImage = tilePartsImage[0] * filterCenter
-
-    # Assume we already have myImage which is our modified PNMImage
-    tileTexture = p3d.Texture("texture name")
-    # This texture now contains the data from myImage
-    tileTexture.load(myEmptyImage)
-
-    return tileTexture
-
 
 def DiscretizeElevationMap(zMap, N_ELEVATION_LAYERS):
     zMap = np.abs(np.round((N_ELEVATION_LAYERS-1) * zMap))
@@ -715,7 +89,7 @@ class ChessboardDemo(ShowBase):
         self.MODEL_RESOLUTION = MODEL_RESOLUTION
         self.TEXTURE_RESOLUTION = TEXTURE_RESOLUTION
 
-        import GUI
+        import Library.GUI as GUI
         self.GUIObject = GUI.GUIClass(base, debugText = True)
         self.add_task(self.GUIObject.window_task, 'window_update')
 
@@ -770,7 +144,7 @@ class ChessboardDemo(ShowBase):
 
         # Now we create the chess board and its pieces
 
-        import Noise
+        import Library.Noise as Noise
 
         gridSize = 128
         points = np.zeros((N_ROWS* N_COLONS, 3))
@@ -853,7 +227,7 @@ class ChessboardDemo(ShowBase):
                                        tileList = self.tileList,
                                        standardClicker= self.StandardClicker,
                                        ChessboardDemo = self)
-        import FeatureTemplateDictionary
+        import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
         self.featureTemplateDictionary = FeatureTemplateDictionary.GetFeatureTemplateDictionary()
 
         TileClass.FeatureClass.Initialize(featureTemplates = self.featureTemplateDictionary, pandaProgram = self)
@@ -963,27 +337,28 @@ class ChessboardDemo(ShowBase):
                     self.tileList[iTile].Wrap('left')
 
 
-                rootModel = (loader.loadModel("panda3d-master/samples/chessboard/models/oak_1.bam"))
+                rootModel = (loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/8_bit_test.bam"))
                 rootModel.reparentTo(self.featureRoot)
                 models = []
 
                 if True:
                     if True:
-                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                    type='temperate_forest',
-                                                                                    numberOfcomponents=20))
-                        '''
-                        for i in range(20):
-                            #models.append(loader.loadModel("panda3d-master/samples/chessboard/models/8_bit_test.bam"))
+                        if True:
+                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                        type='8_bit_test',
+                                                                                        numberOfcomponents=20))
+                        else:
+                            for i in range(20):
+                                #models.append(loader.loadModel("panda3d-master/samples/chessboard/models/8_bit_test.bam"))
 
-                            #models.append(loader.loadModel("panda3d-master/samples/chessboard/models/oak_1.bam"))
-                            #models[-1].setPos(p3d.LPoint3(colon + 0.5, row + 0.5, 5.0))
-                            #models[-1].reparentTo(self.featureRoot)
-                            
-                            models.append(self.featureRoot.attachNewNode("Placeholder"))
-                            models[-1].setPos(p3d.LPoint3(colon + 0.5, row + 0.5, 5.0))
-                            rootModel.instanceTo(models[-1])
-                        '''
+                                #models.append(loader.loadModel("panda3d-master/samples/chessboard/models/oak_1.bam"))
+                                #models[-1].setPos(p3d.LPoint3(colon + 0.5, row + 0.5, 5.0))
+                                #models[-1].reparentTo(self.featureRoot)
+
+                                models.append(self.featureRoot.attachNewNode("Placeholder"))
+                                models[-1].setPos(p3d.LPoint3(colon + 0.5, row + 0.5, 5.0))
+                                rootModel.instanceTo(models[-1])
+
 
                         # 8_bit_test
                         #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
@@ -1068,13 +443,13 @@ class ChessboardDemo(ShowBase):
         toc = time.time()
         print('TextureTile and other objects: {}'.format(toc-tic))
 
-        import Pathfinding
+
         self.movementGraph = Pathfinding.MapGraph()
         self.movementGraph.CreateEdgesSimple(N_ROWS, N_COLONS)
 
         TileClass.TileClass.SaveDictionariesToFile()
 
-        self.unitMarker = loader.loadModel("panda3d-master/samples/chessboard/models/unit_select_marker.dae")
+        self.unitMarker = loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/unit_select_marker.dae")
         self.unitMarker.setPos(LPoint3(0 + 0.5, 0 + 0.5, ELEVATION_SCALE * (0.1 + self.z[0, 0])))
         self.unitMarker.set_hpr(0, 90, 0)
         #unitMarker.wrt_reparent_to(render)
@@ -1167,8 +542,8 @@ class ChessboardDemo(ShowBase):
         # and our class will respond to it by calling 'self.zoom_control(1.0)'
         #self.accept(key_config['camera_zoom']['zoom_in'], self.zoom_control, [-0.5])
         #self.accept(key_config['camera_zoom']['zoom_out'], self.zoom_control, [0.5])
-        self.accept('wheel_up', self.zoom_control, [-0.15])
-        self.accept('wheel_down', self.zoom_control, [0.15])
+        self.accept('wheel_up', self.zoom_control, [-0.55])
+        self.accept('wheel_down', self.zoom_control, [0.55])
         # for other keys we want to know if the player is holding down a key
         # self.key_down will be a dict that will have the names of events as keys
         # and True as the value if a key is pressed else False

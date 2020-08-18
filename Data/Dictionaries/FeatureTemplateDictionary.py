@@ -3,6 +3,7 @@ from pandac import *
 from direct import *
 from panda3d.core import *
 from direct.showbase.Loader import *
+import Root_Directory
 
 class FeatureProperties():
     def __init__(self, models, weights, scaleRange):
@@ -39,62 +40,62 @@ def GetFeatureTemplateDictionary():
 
     featureTemplateDictionary = {}
     featureTemplateDictionary['spruce_forest'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/spruce_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/spruce_1.bam")],
         [1],
         [[0.8, 1.1]])
     featureTemplateDictionary['birch_forest'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/birch_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/birch_1.bam")],
         [1],
         [[0.5, 1.1]])
     featureTemplateDictionary['pine_forest'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/pine_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam")],
         [1],
         [[0.7, 1.1]])
     featureTemplateDictionary['gold_ore'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/gold_model_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/gold_model_1.bam")],
         [1],
         [[1, 1]])
     featureTemplateDictionary['town'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/house_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/house_1.bam")],
         [1],
         [[1.0, 1.0]])
-    featureTemplateDictionary['wheat_field'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/wheat_1.bam")],
-        [1],
-        [[1.9, 2.1]])
+    #featureTemplateDictionary['wheat_field'] = FeatureProperties(
+    #    [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/models/wheat_1.bam")],
+    #    [1],
+    #    [[1.9, 2.1]])
     featureTemplateDictionary['oak_forest'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/oak_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/oak_1.bam")],
         [1],
         [[0.5, 1.1]])
     featureTemplateDictionary['palm_forest'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/palm_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_1.bam")],
         [1],
         [[0.5, 1]])
     featureTemplateDictionary['jungle_trees'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/kapok_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_1.bam")],
         [1],
         [[0.8, 1.2]])
     featureTemplateDictionary['jungle'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/kapok_1.bam"),
-         loader.loadModel("panda3d-master/samples/chessboard/models/palm_1.bam"),
-         loader.loadModel("panda3d-master/samples/chessboard/models/fern_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_1.bam"),
+         loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_1.bam"),
+         loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/fern_1.bam")],
         weights = [1, 4, 8],
         scaleRange = [[0.8, 1.2], [0.6, 0.9], [0.9, 1.2]])
     featureTemplateDictionary['temperate_forest'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/oak_1.bam"),
-         loader.loadModel("panda3d-master/samples/chessboard/models/birch_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/oak_1.bam"),
+         loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/birch_1.bam")],
         [1, 3],
         [[0.7, 1.1], [0.7, 1]])
     featureTemplateDictionary['conifer_forest'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/pine_1.bam"),
-         loader.loadModel("panda3d-master/samples/chessboard/models/spruce_1.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam"),
+         loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/spruce_1.bam")],
         weights = [1, 2],
         scaleRange = [[0.8, 1.2], [0.8, 1.1]])
 
     featureTemplateDictionary['8_bit_test'] = FeatureProperties(
-        [loader.loadModel("panda3d-master/samples/chessboard/models/8_bit_test.bam")],
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/8_bit_test.bam")],
         weights = [1],
-        scaleRange = [[0.8, 1.2]])
+        scaleRange = [[2.2, 2.2]])
     return featureTemplateDictionary
 
 

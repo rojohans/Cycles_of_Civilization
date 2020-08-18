@@ -1,7 +1,7 @@
 import numpy as np
 import queue
 
-import TileClass
+import Library.TileClass as TileClass
 
 
 class MapGraph():
