@@ -19,7 +19,10 @@ class Game(ShowBase):
         self.N_COLONS = 128
         self.MODEL_RESOLUTION = 30
         self.ELEVATION_SCALE = 0.3
-        self.RENDER_RADIUS = 5
+        self.RENDER_RADIUS = 12
+
+        self.FEATURE_RENDER_CAPACITY = 1000
+        self.FEATURE_RENDER_DURATION = 500 # The minimum number of frames a feature should be loaded.
 
         self.renderCircle = []
         for row in np.linspace(-self.RENDER_RADIUS, self.RENDER_RADIUS, self.RENDER_RADIUS*2 + 1):
@@ -30,6 +33,9 @@ class Game(ShowBase):
 
         self.featureRoot = render.attachNewNode("featureRoot")
         self.tileList = []
+
+        self.tilesToRender = []
+        self.tilesBeingRendered = []
 
 
         TileClass.TileClass.Initialize(self.N_ROWS, self.N_COLONS,
@@ -65,8 +71,11 @@ class Game(ShowBase):
                     #                                                            type='8_bit_test',
                     #                                                            numberOfcomponents=20))
                     self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='jungle',
+                                                                                type='temperate_forest',
                                                                                 numberOfcomponents=20))
+
+                    self.tileList[iTile].features[0].node
+
                 else:
 
                     for i in range(20):
@@ -165,7 +174,7 @@ class Game(ShowBase):
 
         self.last_mouse_pos = None
 
-        #self.add_task(self.AttachDetachNodes, 'Attach_Detach_Nodes')
+        self.add_task(self.AttachDetachNodes, 'Attach_Detach_Nodes')
 
     def Camera_Zoom_Scaling(self, axis, zoom):
         if axis == 'x':
@@ -254,6 +263,33 @@ class Game(ShowBase):
         elif self.inputDictionary['arrow_right'] or self.inputDictionary['d']:
             self.camera_node.set_pos(self.camera_node,
                                      self.camera_right_vector * 0.01 * self.camera_move_speed * dt / 0.03)
+        if self.inputDictionary['arrow_up'] or \
+                self.inputDictionary['w'] or \
+                self.inputDictionary['arrow_down'] or \
+                self.inputDictionary['s'] or \
+                self.inputDictionary['arrow_left'] or \
+                self.inputDictionary['a'] or \
+                self.inputDictionary['arrow_right'] or \
+                self.inputDictionary['d']:
+            renderCircle = self.GetRenderCircle()
+            for tilePos in renderCircle:
+                if tilePos[1] >= 0 and tilePos[1] < self.N_ROWS:
+                    iTile = TileClass.TileClass.CoordinateToIndex(tilePos[1], tilePos[0])
+
+                    if self.tilesBeingRendered.count(iTile) == 1:
+                        # already exists
+                        self.tilesBeingRendered.remove(iTile)
+                        self.tilesBeingRendered.insert(0, iTile)
+                    else:
+                        self.tilesBeingRendered.insert(0, iTile)
+                        self.tilesToRender.append(iTile)
+
+                    '''
+                    if self.tileList[iTile].featureDuration < 0:
+                        self.tileList[iTile].featureDuration = self.FEATURE_RENDER_DURATION
+                    else:
+                        self.tileList[iTile].featureDuration = self.FEATURE_RENDER_DURATION - 1
+                    '''
 
 
         # When the camera traverses over the edge (west or east) it wraps around to the other side.
@@ -267,12 +303,7 @@ class Game(ShowBase):
         # --------------------------------------------------------------------------------------------------------------
         # --------------------------------------------------------------------------------------------------------------
 
-    def AttachDetachNodes(self, task):
-        '''
-        Dynamically attaches (reparentTo()) and detaches (detachNode()) to improve performance.
-        :param task:
-        :return:
-        '''
+    def GetRenderCircle(self):
         position = self.camera_node.get_pos()
         position = np.floor(position)
         position = position[0:2]
@@ -283,7 +314,18 @@ class Game(ShowBase):
         renderCircle[:, 1] += position[1]
 
         renderCircle[:, 0] = (renderCircle[:, 0]+self.N_COLONS) % self.N_COLONS
+        return renderCircle
 
+    def AttachDetachNodes(self, task):
+        '''
+        Dynamically attaches (reparentTo()) and detaches (detachNode()) to improve performance.
+        :param task:
+        :return:
+        '''
+
+        '''
+        renderCircle = self.GetRenderCircle()
+        
         for row in range(self.N_ROWS):
             for colon in range(self.N_COLONS):
                 iTile = TileClass.TileClass.CoordinateToIndex(row, colon)
@@ -292,6 +334,33 @@ class Game(ShowBase):
             if tilePos[1] >= 0 and tilePos[1] < self.N_ROWS:
                 iTile = TileClass.TileClass.CoordinateToIndex(tilePos[1], tilePos[0])
                 self.tileList[iTile].features[0].node.reparentTo(self.featureRoot)
+        '''
+
+        '''
+        for row in range(self.N_ROWS):
+            for colon in range(self.N_COLONS):
+                iTile = TileClass.TileClass.CoordinateToIndex(row, colon)
+                if self.tileList[iTile].featureDuration == self.FEATURE_RENDER_DURATION:
+                    self.tileList[iTile].features[0].node = loader.loadModel(Root_Directory.Path(style = 'unix') + '/Data/Cached_Tiles/' + 'feature' + str(iTile) + '.bam')
+                    self.tileList[iTile].features[0].node.reparentTo(self.featureRoot)
+                elif self.tileList[iTile].featureDuration == 0:
+                    self.tileList[iTile].features[0].node.removeNode()
+                self.tileList[iTile].featureDuration -= 1
+        '''
+
+        if len(self.tilesToRender) > 0:
+            print('A node is read from file and added to the game')
+            tileToRender = self.tilesToRender.pop()
+            self.tileList[tileToRender].features[0].node = loader.loadModel(Root_Directory.Path(style='unix') + '/Data/Cached_Tiles/' + 'feature' + str(tileToRender) + '.bam')
+            self.tileList[tileToRender].features[0].node.reparentTo(self.featureRoot)
+        if len(self.tilesBeingRendered) > self.FEATURE_RENDER_CAPACITY:
+            #for i in range(len(self.tilesBeingRendered) - self.FEATURE_RENDER_CAPACITY):
+            #    tileToRemove = self.tilesBeingRendered.pop()
+            #    self.tileList[tileToRemove].features[0].node.removeNode()
+            tileToRemove = self.tilesBeingRendered.pop()
+            self.tileList[tileToRemove].features[0].node.removeNode()
+            print('render capacity has been reached')
+
 
         return task.cont
 

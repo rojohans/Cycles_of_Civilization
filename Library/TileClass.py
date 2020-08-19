@@ -45,6 +45,7 @@ class TileClass(Entity):
         # A list of references to the features occupying the tile. A feature could be; any kind of forest, a river or a
         # road.
         self.features = []
+        self.featureDuration = -1 # If 0: the node will be destroyed.
 
 
     def CalculateTriangleNormal(self, p0, p1, p2):
@@ -1951,14 +1952,10 @@ class FeatureClass(Entity):
             node.setTransparency(p3d.TransparencyAttrib.MAlpha)
             node.clearModelNodes()
         self.node.flattenStrong()
-        #self.node.flattenLight()
 
-        #self.node.writeBamFile('tmpBamFile' + '.bam')
-        #self.node.removeNode()
-
-        #self.node = loader.loadModel(modelPath = 'tmpBamFile.bam')
-        #self.node.setPos(p3d.LPoint3(self.colon + 0.5, self.row + 0.5, self.pandaProgram.ELEVATION_SCALE * parentTile.elevation))
-        #self.node.reparentTo(self.pandaProgram.featureRoot)
+        iTile = TileClass.CoordinateToIndex(parentTile.row, parentTile.colon)
+        self.node.writeBamFile(Root_Directory.Path(style = 'unix') + '/Data/Cached_Tiles/' + 'feature' + str(iTile) + '.bam')
+        self.node.removeNode()
 
         # something is wrong. Too much memory is required. more memory is needed after the flattenStrong() call.
 
