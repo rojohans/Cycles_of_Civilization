@@ -45,7 +45,6 @@ class TileClass(Entity):
         # A list of references to the features occupying the tile. A feature could be; any kind of forest, a river or a
         # road.
         self.features = []
-        self.featureDuration = -1 # If 0: the node will be destroyed.
 
 
     def CalculateTriangleNormal(self, p0, p1, p2):
@@ -1837,19 +1836,31 @@ class FeatureClass(Entity):
         self.tile = parentTile
         self.type = type
         self.hprValue = hprValue
+        self.numberOfComponents = numberOfcomponents
         self.distributionType = distributionType
+        self.distributionValue = distributionValue
+        self.gridAlignedHPR = gridAlignedHPR
 
-        self.node = self.pandaProgram.featureRoot.attachNewNode('featureNode')
+        self.template = self.featureTemplates[self.type]
+
+        self.positionValues = None
+        self.hprValues = None
+        self.scaleValues = []
+        self.templateIndices = []
 
 
-        positioningWeights = np.ones([self.pandaProgram.MODEL_RESOLUTION, self.pandaProgram.MODEL_RESOLUTION])
+        self.CreateComponentData()
+        self.CreateNodes()
 
-        gridVectors = None
-
-
-        if distributionType == 'spread':
-            modelCoordinates = np.zeros((numberOfcomponents, 2), dtype = int)
-            for iComponent in range(numberOfcomponents):
+    def CreateComponentData(self):
+        '''
+        Creates all the data needed to place the nodes; position, scale, model types.
+        :return:
+        '''
+        if self.distributionType == 'spread':
+            positioningWeights = np.ones([self.pandaProgram.MODEL_RESOLUTION, self.pandaProgram.MODEL_RESOLUTION])
+            self.positionValues = np.zeros((self.numberOfComponents, 2), dtype=int)
+            for iComponent in range(self.numberOfComponents):
                 totalWeight = 0
                 for row in range(self.pandaProgram.MODEL_RESOLUTION):
                     for colon in range(self.pandaProgram.MODEL_RESOLUTION):
@@ -1863,31 +1874,32 @@ class FeatureClass(Entity):
                         if r < accumulativeWeights:
 
                             if a == 0:
-                                modelCoordinates[iComponent, :] = [colon, row]
+                                self.positionValues[iComponent, :] = [colon, row]
                                 a = 1
                             # break
 
                 for row in range(self.pandaProgram.MODEL_RESOLUTION):
                     for colon in range(self.pandaProgram.MODEL_RESOLUTION):
                         positioningWeights[row, colon] += np.sqrt(
-                            (modelCoordinates[iComponent, 0] - colon) ** 2 + (modelCoordinates[iComponent, 1] - row) ** 2) ** distributionValue
+                            (self.positionValues[iComponent, 0] - colon) ** 2 + (
+                                        self.positionValues[iComponent, 1] - row) ** 2) ** self.distributionValue
 
-        elif distributionType == 'random':
-            modelCoordinates = np.random.randint(0, self.pandaProgram.MODEL_RESOLUTION, [numberOfcomponents, 2])
-        elif distributionType == 'grid':
-            modelCoordinates = np.zeros((numberOfcomponents, 2), dtype = int)
+        elif self.distributionType == 'random':
+            self.positionValues = np.random.randint(0, self.pandaProgram.MODEL_RESOLUTION, [self.numberOfComponents, 2])
+        elif self.distributionType == 'grid':
+            gridVectors = None
+            self.positionValues = np.zeros((self.numberOfComponents, 2), dtype=int)
             if gridVectors == None:
                 angle = 2 * np.pi * np.random.rand()
-                #angle = np.pi/2
-                if gridAlignedHPR: self.hprValue = [-angle * 180 / np.pi, 90, 0]
+                # angle = np.pi/2
+                if self.gridAlignedHPR: self.hprValue = [-angle * 180 / np.pi, 90, 0]
                 gridVectors = [[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]]
 
                 v1 = gridVectors[0] / np.sqrt(2)
                 v2 = gridVectors[1] / np.sqrt(2)
 
-            #r = (np.random.randint(0, distributionValue, 2) - ((distributionValue-1) / 2)) / ((distributionValue-1) / 2)
-            t1Range = np.linspace(-1, 1, distributionValue)
-            t2Range = np.linspace(-1, 1, distributionValue)
+            t1Range = np.linspace(-1, 1, self.distributionValue)
+            t2Range = np.linspace(-1, 1, self.distributionValue)
 
             gridPoints = []
             for t1 in t1Range:
@@ -1896,76 +1908,60 @@ class FeatureClass(Entity):
                     py = int(np.floor(self.pandaProgram.MODEL_RESOLUTION * (0.5 + v1[1] * t1 + v2[1] * t2)))
 
                     if 0 <= px and px < self.pandaProgram.MODEL_RESOLUTION and \
-                       0 <= py and py < self.pandaProgram.MODEL_RESOLUTION:
+                            0 <= py and py < self.pandaProgram.MODEL_RESOLUTION:
                         gridPoints.append([px, py])
 
-
-
-            if len(gridPoints) > numberOfcomponents:
-                choosenPoints = np.random.choice(len(gridPoints), numberOfcomponents, replace=False)
-                for i in range(numberOfcomponents):
-                    modelCoordinates[i, 0] = gridPoints[choosenPoints[i]][0]
-                    modelCoordinates[i, 1] = gridPoints[choosenPoints[i]][1]
+            if len(gridPoints) > self.numberOfComponents:
+                choosenPoints = np.random.choice(len(gridPoints), self.numberOfComponents, replace=False)
+                for i in range(self.numberOfComponents):
+                    self.positionValues[i, 0] = gridPoints[choosenPoints[i]][0]
+                    self.positionValues[i, 1] = gridPoints[choosenPoints[i]][1]
             else:
-                numberOfcomponents = len(gridPoints)
-                for i in range(numberOfcomponents):
-                    modelCoordinates[i, 0] = gridPoints[i][0]
-                    modelCoordinates[i, 1] = gridPoints[i][1]
+                self.numberOfComponents = len(gridPoints)
+                for i in range(self.numberOfComponents):
+                    self.positionValues[i, 0] = gridPoints[i][0]
+                    self.positionValues[i, 1] = gridPoints[i][1]
 
-
-
-
-
-        # Place the objects randomly.
-        nodes = [self.node.attachNewNode('single_feature') for i in range(numberOfcomponents)]
-        for iNode, node in enumerate(nodes):
-
-            featureTemplate = self.featureTemplates[type]
-            r = np.random.rand()
+        # Access template data
+        for i in range(self.numberOfComponents):
+            r0 = np.random.rand()
+            r1 = np.random.rand()
             weigthsSummed = 0
-            for i, weight in enumerate(featureTemplate.weights):
+            for iModel, weight in enumerate(self.template.weights):
                 weigthsSummed += weight
-                if r < weigthsSummed:
-                    featureTemplate.models[i].copyTo(node)
-                    #featureTemplate.models[i].instanceTo(node)
-                    scaleRange = featureTemplate.scaleRange[i]
+                if r0 < weigthsSummed:
+                    self.templateIndices.append(iModel)
+                    scaleRange = self.template.scaleRange[iModel]
+                    self.scaleValues.append(scaleRange[0] + r1*(scaleRange[1]-scaleRange[0]))
                     break
 
+    def CreateNodes(self):
+        '''
+        Creates the nodes of the feature. The nodes are flattened using flattenStrong() to improve performance.
+        :return:
+        '''
+        self.node = self.pandaProgram.featureRoot.attachNewNode('featureNode')
+        nodes = [self.node.attachNewNode('single_feature') for i in range(self.numberOfComponents)]
+        for iNode, node in enumerate(nodes):
 
-            node.setPos(p3d.LPoint3(self.colon + modelCoordinates[iNode, 0] / self.pandaProgram.MODEL_RESOLUTION,
-                                    self.row + 1 - modelCoordinates[iNode, 1] / self.pandaProgram.MODEL_RESOLUTION,
-                                    self.pandaProgram.ELEVATION_SCALE * parentTile.topography[
-                                        modelCoordinates[iNode, 1], modelCoordinates[iNode, 0]]))
+            self.template.models[self.templateIndices[iNode]].copyTo(node)
 
+            node.setPos(p3d.LPoint3(self.colon + self.positionValues[iNode, 0] / self.pandaProgram.MODEL_RESOLUTION,
+                                    self.row + 1 - self.positionValues[iNode, 1] / self.pandaProgram.MODEL_RESOLUTION,
+                                    self.pandaProgram.ELEVATION_SCALE * self.tile.topography[
+                                        self.positionValues[iNode, 1], self.positionValues[iNode, 0]]))
 
             if self.hprValue is None:
                 node.set_hpr(360*np.random.rand(), 90, 0)
             else:
-                node.set_hpr(self.hprValue[0], self.hprValue[1], self.hprValue[2])
+                node.set_hpr(self.hprValue[0] + 90*np.random.randint(0, 4), self.hprValue[1], self.hprValue[2])
 
-            r = np.random.rand()
-            scale = scaleRange[0] + r*(scaleRange[1]-scaleRange[0])
-            node.setScale(scale, scale, scale)
-
-            #featureTemplate.models[i].instanceTo(node)
+            node.setScale(self.scaleValues[iNode], self.scaleValues[iNode], self.scaleValues[iNode])
 
             node.setTransparency(p3d.TransparencyAttrib.MAlpha)
             node.clearModelNodes()
         self.node.flattenStrong()
-
-        iTile = TileClass.CoordinateToIndex(parentTile.row, parentTile.colon)
-        self.node.writeBamFile(Root_Directory.Path(style = 'unix') + '/Data/Cached_Tiles/' + 'feature' + str(iTile) + '.bam')
-        self.node.removeNode()
-
-        # something is wrong. Too much memory is required. more memory is needed after the flattenStrong() call.
-
-    def PositionNode(self):
-        if self.distributionType == 'spread':
-            pass
-
-        elif self.distributionType == 'grid':
-            pass
-
+        
     @classmethod
     def Initialize(cls, featureTemplates, pandaProgram):
         cls.featureTemplates = featureTemplates

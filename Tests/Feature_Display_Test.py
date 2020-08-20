@@ -19,15 +19,15 @@ class Game(ShowBase):
         self.N_COLONS = 128
         self.MODEL_RESOLUTION = 30
         self.ELEVATION_SCALE = 0.3
-        self.RENDER_RADIUS = 12
 
-        self.FEATURE_RENDER_CAPACITY = 1000
-        self.FEATURE_RENDER_DURATION = 500 # The minimum number of frames a feature should be loaded.
+        self.FEATURE_RENDER_RADIUS = 12
+        self.FEATURE_RENDER_CAPACITY = 2000
+        self.FEATURE_RENDER_MAX_SPEED = 2 # The maximum #features to add each frame.
 
         self.renderCircle = []
-        for row in np.linspace(-self.RENDER_RADIUS, self.RENDER_RADIUS, self.RENDER_RADIUS*2 + 1):
-            for colon in np.linspace(-self.RENDER_RADIUS, self.RENDER_RADIUS, self.RENDER_RADIUS * 2 + 1):
-                if np.sqrt(row**2 + colon**2) <= self.RENDER_RADIUS:
+        for row in np.linspace(-self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS * 2 + 1):
+            for colon in np.linspace(-self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS * 2 + 1):
+                if np.sqrt(row**2 + colon**2) <= self.FEATURE_RENDER_RADIUS:
                     self.renderCircle.append([colon, row])
         self.renderCircle = np.array(self.renderCircle)
 
@@ -70,11 +70,17 @@ class Game(ShowBase):
                     #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
                     #                                                            type='8_bit_test',
                     #                                                            numberOfcomponents=20))
+                    #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                    #                                                            type='temperate_forest',
+                    #                                                            numberOfcomponents=20))
                     self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='temperate_forest',
-                                                                                numberOfcomponents=20))
-
-                    self.tileList[iTile].features[0].node
+                                                                                type='town',
+                                                                                numberOfcomponents=20,
+                                                                                distributionType='grid',
+                                                                                distributionValue=7,
+                                                                                gridAlignedHPR=True
+                                                                                ))
+                    self.tileList[iTile].features[0].node.removeNode()
 
                 else:
 
@@ -95,12 +101,6 @@ class Game(ShowBase):
                         models[-1].setScale(2.2, 2.2, 2.2)
                         models[-1].setTransparency(p3d.TransparencyAttrib.MAlpha)
                         models[-1].clearModelNodes()
-
-
-        import sys
-        print('size of tileList: ', sys.getsizeof(self.tileList))
-        print('size of render: ', sys.getsizeof(render))
-        print('size of featureRoot: ', sys.getsizeof(self.featureRoot))
 
 
         base.setFrameRateMeter(True)
@@ -280,8 +280,9 @@ class Game(ShowBase):
                         # already exists
                         self.tilesBeingRendered.remove(iTile)
                         self.tilesBeingRendered.insert(0, iTile)
+                    elif self.tilesToRender.count(iTile) == 1:
+                        pass
                     else:
-                        self.tilesBeingRendered.insert(0, iTile)
                         self.tilesToRender.append(iTile)
 
                     '''
@@ -318,49 +319,29 @@ class Game(ShowBase):
 
     def AttachDetachNodes(self, task):
         '''
-        Dynamically attaches (reparentTo()) and detaches (detachNode()) to improve performance.
+        Dynamically attaches (reparentTo()) and detaches (detachNode()) to reduce memory usage.
         :param task:
         :return:
         '''
 
-        '''
-        renderCircle = self.GetRenderCircle()
-        
-        for row in range(self.N_ROWS):
-            for colon in range(self.N_COLONS):
-                iTile = TileClass.TileClass.CoordinateToIndex(row, colon)
-                self.tileList[iTile].features[0].node.detachNode()
-        for tilePos in renderCircle:
-            if tilePos[1] >= 0 and tilePos[1] < self.N_ROWS:
-                iTile = TileClass.TileClass.CoordinateToIndex(tilePos[1], tilePos[0])
-                self.tileList[iTile].features[0].node.reparentTo(self.featureRoot)
-        '''
+        for i in range(self.FEATURE_RENDER_MAX_SPEED):
+            if len(self.tilesToRender) > 0:
+                # Add node
+                tileToRender = self.tilesToRender.pop(0)
+                self.tilesBeingRendered.insert(0, tileToRender)
+                #self.tileList[tileToRender].features.append(TileClass.FeatureClass(parentTile=self.tileList[tileToRender],
+                #                                                            type='town',
+                #                                                            numberOfcomponents=20,
+                #                                                            distributionType='grid',
+                #                                                            distributionValue=7,
+                #                                                            gridAlignedHPR=True
+                #d                                                            ))
+                self.tileList[tileToRender].features[0].CreateNodes()
 
-        '''
-        for row in range(self.N_ROWS):
-            for colon in range(self.N_COLONS):
-                iTile = TileClass.TileClass.CoordinateToIndex(row, colon)
-                if self.tileList[iTile].featureDuration == self.FEATURE_RENDER_DURATION:
-                    self.tileList[iTile].features[0].node = loader.loadModel(Root_Directory.Path(style = 'unix') + '/Data/Cached_Tiles/' + 'feature' + str(iTile) + '.bam')
-                    self.tileList[iTile].features[0].node.reparentTo(self.featureRoot)
-                elif self.tileList[iTile].featureDuration == 0:
-                    self.tileList[iTile].features[0].node.removeNode()
-                self.tileList[iTile].featureDuration -= 1
-        '''
-
-        if len(self.tilesToRender) > 0:
-            print('A node is read from file and added to the game')
-            tileToRender = self.tilesToRender.pop()
-            self.tileList[tileToRender].features[0].node = loader.loadModel(Root_Directory.Path(style='unix') + '/Data/Cached_Tiles/' + 'feature' + str(tileToRender) + '.bam')
-            self.tileList[tileToRender].features[0].node.reparentTo(self.featureRoot)
-        if len(self.tilesBeingRendered) > self.FEATURE_RENDER_CAPACITY:
-            #for i in range(len(self.tilesBeingRendered) - self.FEATURE_RENDER_CAPACITY):
-            #    tileToRemove = self.tilesBeingRendered.pop()
-            #    self.tileList[tileToRemove].features[0].node.removeNode()
-            tileToRemove = self.tilesBeingRendered.pop()
-            self.tileList[tileToRemove].features[0].node.removeNode()
-            print('render capacity has been reached')
-
+            if len(self.tilesBeingRendered) > self.FEATURE_RENDER_CAPACITY:
+                # Remove node
+                tileToRemove = self.tilesBeingRendered.pop()
+                self.tileList[tileToRemove].features[0].node.removeNode()
 
         return task.cont
 
