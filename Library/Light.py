@@ -1,5 +1,4 @@
 from panda3d.core import AmbientLight, DirectionalLight, LightAttrib, LVector3
-
 from direct.showbase.ShowBase import ShowBase
 
 class LightClass():
