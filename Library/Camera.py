@@ -142,9 +142,9 @@ class CameraClass():
         # When the camera traverses over the edge (west or east) it wraps around to the other side.
         cameraPosition = self.camera_node.get_pos()
         if cameraPosition[0] < 0:
-            self.camera_node.set_pos((cameraPosition[0] + self.mainProgram.N_COLONS, cameraPosition[1], cameraPosition[2]))
-        if cameraPosition[0] > self.mainProgram.N_COLONS:
-            self.camera_node.set_pos((cameraPosition[0] - self.mainProgram.N_COLONS, cameraPosition[1], cameraPosition[2]))
+            self.camera_node.set_pos((cameraPosition[0] + self.mainProgram.settings.N_COLONS, cameraPosition[1], cameraPosition[2]))
+        if cameraPosition[0] > self.mainProgram.settings.N_COLONS:
+            self.camera_node.set_pos((cameraPosition[0] - self.mainProgram.settings.N_COLONS, cameraPosition[1], cameraPosition[2]))
 
         return task.cont
 
@@ -155,7 +155,7 @@ class CameraClass():
         '''
         renderCircle = self.GetRenderCircle()
         for tilePos in renderCircle:
-            if tilePos[1] >= 0 and tilePos[1] < self.mainProgram.N_ROWS:
+            if tilePos[1] >= 0 and tilePos[1] < self.mainProgram.settings.N_ROWS:
                 iTile = TileClass.TileClass.CoordinateToIndex(tilePos[1], tilePos[0])
 
                 if self.mainProgram.tilesBeingRendered.count(iTile) == 1:
@@ -180,7 +180,7 @@ class CameraClass():
         renderCircle[:, 0] += position[0]
         renderCircle[:, 1] += position[1]
 
-        renderCircle[:, 0] = (renderCircle[:, 0]+self.mainProgram.N_COLONS) % self.mainProgram.N_COLONS
+        renderCircle[:, 0] = (renderCircle[:, 0]+self.mainProgram.settings.N_COLONS) % self.mainProgram.settings.N_COLONS
         return renderCircle
 
     def AttachDetachNodes(self, task):
@@ -190,14 +190,14 @@ class CameraClass():
         :return:
         '''
 
-        for i in range(self.mainProgram.FEATURE_RENDER_MAX_SPEED):
+        for i in range(self.mainProgram.settings.FEATURE_RENDER_MAX_SPEED):
             if len(self.mainProgram.tilesToRender) > 0:
                 # Add node
                 tileToRender = self.mainProgram.tilesToRender.pop(0)
                 self.mainProgram.tilesBeingRendered.insert(0, tileToRender)
                 self.mainProgram.tileList[tileToRender].features[0].CreateNodes()
 
-            if len(self.mainProgram.tilesBeingRendered) > self.mainProgram.FEATURE_RENDER_CAPACITY:
+            if len(self.mainProgram.tilesBeingRendered) > self.mainProgram.settings.FEATURE_RENDER_CAPACITY:
                 # Remove node
                 tileToRemove = self.mainProgram.tilesBeingRendered.pop()
                 self.mainProgram.tileList[tileToRemove].features[0].node.removeNode()

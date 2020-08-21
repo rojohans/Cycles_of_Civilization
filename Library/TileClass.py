@@ -1878,14 +1878,14 @@ class FeatureClass(Entity):
                                 a = 1
                             # break
 
-                for row in range(self.pandaProgram.MODEL_RESOLUTION):
-                    for colon in range(self.pandaProgram.MODEL_RESOLUTION):
+                for row in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+                    for colon in range(self.pandaProgram.settings.MODEL_RESOLUTION):
                         positioningWeights[row, colon] += np.sqrt(
                             (self.positionValues[iComponent, 0] - colon) ** 2 + (
                                         self.positionValues[iComponent, 1] - row) ** 2) ** self.distributionValue
 
         elif self.distributionType == 'random':
-            self.positionValues = np.random.randint(0, self.pandaProgram.MODEL_RESOLUTION, [self.numberOfComponents, 2])
+            self.positionValues = np.random.randint(0, self.pandaProgram.settings.MODEL_RESOLUTION, [self.numberOfComponents, 2])
         elif self.distributionType == 'grid':
             gridVectors = None
             self.positionValues = np.zeros((self.numberOfComponents, 2), dtype=int)
@@ -1904,11 +1904,11 @@ class FeatureClass(Entity):
             gridPoints = []
             for t1 in t1Range:
                 for t2 in t2Range:
-                    px = int(np.floor(self.pandaProgram.MODEL_RESOLUTION * (0.5 + v1[0] * t1 + v2[0] * t2)))
-                    py = int(np.floor(self.pandaProgram.MODEL_RESOLUTION * (0.5 + v1[1] * t1 + v2[1] * t2)))
+                    px = int(np.floor(self.pandaProgram.settings.MODEL_RESOLUTION * (0.5 + v1[0] * t1 + v2[0] * t2)))
+                    py = int(np.floor(self.pandaProgram.settings.MODEL_RESOLUTION * (0.5 + v1[1] * t1 + v2[1] * t2)))
 
-                    if 0 <= px and px < self.pandaProgram.MODEL_RESOLUTION and \
-                            0 <= py and py < self.pandaProgram.MODEL_RESOLUTION:
+                    if 0 <= px and px < self.pandaProgram.settings.MODEL_RESOLUTION and \
+                            0 <= py and py < self.pandaProgram.settings.MODEL_RESOLUTION:
                         gridPoints.append([px, py])
 
             if len(gridPoints) > self.numberOfComponents:
@@ -1946,9 +1946,9 @@ class FeatureClass(Entity):
 
             self.template.models[self.templateIndices[iNode]].copyTo(node)
 
-            node.setPos(p3d.LPoint3(self.colon + self.positionValues[iNode, 0] / self.pandaProgram.MODEL_RESOLUTION,
-                                    self.row + 1 - self.positionValues[iNode, 1] / self.pandaProgram.MODEL_RESOLUTION,
-                                    self.pandaProgram.ELEVATION_SCALE * self.tile.topography[
+            node.setPos(p3d.LPoint3(self.colon + self.positionValues[iNode, 0] / self.pandaProgram.settings.MODEL_RESOLUTION,
+                                    self.row + 1 - self.positionValues[iNode, 1] / self.pandaProgram.settings.MODEL_RESOLUTION,
+                                    self.pandaProgram.settings.ELEVATION_SCALE * self.tile.topography[
                                         self.positionValues[iNode, 1], self.positionValues[iNode, 0]]))
 
             if self.hprValue is None:

@@ -4,7 +4,9 @@ import numpy as np
 
 import Library.TileClass as TileClass
 import Library.Light as Light
+import Library.Camera as Camera
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
+import Settings
 import Root_Directory
 
 
@@ -16,30 +18,23 @@ class Game(ShowBase):
 
         #print(cpMgr)
 
-        self.N_ROWS = 128
-        self.N_COLONS = 128
-        self.MODEL_RESOLUTION = 30
-        self.ELEVATION_SCALE = 0.3
-
-        self.FEATURE_RENDER_RADIUS = 12
-        self.FEATURE_RENDER_CAPACITY = 2000
-        self.FEATURE_RENDER_MAX_SPEED = 2 # The maximum #features to add each frame.
+        self.settings = Settings.SettingsClass()
 
         self.RENDER_CIRCLE = []
-        for row in np.linspace(-self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS * 2 + 1):
-            for colon in np.linspace(-self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS, self.FEATURE_RENDER_RADIUS * 2 + 1):
-                if np.sqrt(row**2 + colon**2) <= self.FEATURE_RENDER_RADIUS:
+        for row in np.linspace(-self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS * 2 + 1):
+            for colon in np.linspace(-self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS * 2 + 1):
+                if np.sqrt(row**2 + colon**2) <= self.settings.FEATURE_RENDER_RADIUS:
                     self.RENDER_CIRCLE.append([colon, row])
         self.RENDER_CIRCLE = np.array(self.RENDER_CIRCLE)
-
+        # --------------------------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------------------------
         self.featureRoot = render.attachNewNode("featureRoot")
         self.tileList = []
 
         self.tilesToRender = []
         self.tilesBeingRendered = []
 
-
-        TileClass.TileClass.Initialize(self.N_ROWS, self.N_COLONS,
+        TileClass.TileClass.Initialize(self.settings.N_ROWS, self.settings.N_COLONS,
                                        tileList = self.tileList,
                                        elevationMap = None,
                                        ADJACENT_TILES_TEMPLATE= None,
@@ -47,29 +42,20 @@ class Game(ShowBase):
                                        grassProbabilityMap=None,
                                        desertProbabilityMap=None,
                                        tundraProbabilityMap=None,
-                                       modelResolution=self.MODEL_RESOLUTION,
+                                       modelResolution=self.settings.MODEL_RESOLUTION,
                                        textureResolution=None,
                                        pandaProgram = self)
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                self.tileList.append(TileClass.TileClass(row, colon, 0))
+                self.tileList[-1].topography = np.zeros((self.settings.MODEL_RESOLUTION, self.settings.MODEL_RESOLUTION))
 
         self.featureTemplateDictionary = FeatureTemplateDictionary.GetFeatureTemplateDictionary()
-
         TileClass.FeatureClass.Initialize(featureTemplates = self.featureTemplateDictionary, pandaProgram = self)
-
-        for row in range(self.N_ROWS):
-            for colon in range(self.N_COLONS):
-                self.tileList.append(TileClass.TileClass(row, colon, 0))
-                self.tileList[-1].topography = np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION))
-
-        for row in range(self.N_ROWS):
-            for colon in range(self.N_COLONS):
-                iTile = colon + row * self.N_COLONS
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                iTile = colon + row * self.settings.N_COLONS
                 r = np.random.rand()
-                #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                #                                                            type='8_bit_test',
-                #                                                            numberOfcomponents=20))
-                #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                #                                                            type='temperate_forest',
-                #                                                            numberOfcomponents=20))
                 if r< 0.5:
                     self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
                                                                                 type='jungle',
@@ -83,13 +69,13 @@ class Game(ShowBase):
                                                                                 gridAlignedHPR=True
                                                                                 ))
                 self.tileList[iTile].features[0].node.removeNode()
-
+        # --------------------------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------------------------
 
         base.setFrameRateMeter(True)
 
         self.lightObject = Light.LightClass()
 
-        import Library.Camera as Camera
         Camera.CameraClass.Initialize(mainProgram = self)
         self.cameraObject = Camera.CameraClass()
 

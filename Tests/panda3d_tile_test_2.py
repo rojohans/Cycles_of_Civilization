@@ -27,10 +27,10 @@ import Root_Directory
 WHITE = (1, 1, 1, 1)
 HIGHLIGHT = (1, 0, 0, 1)
 
-N_ROWS = 8
-N_COLONS = 16
-#N_ROWS = 16
-#N_COLONS = 64
+#N_ROWS = 8
+#N_COLONS = 16
+N_ROWS = 64
+N_COLONS = 64
 #N_ROWS = 32
 #N_COLONS = 128
 #N_ROWS = 150
@@ -345,7 +345,7 @@ class ChessboardDemo(ShowBase):
                 models = []
 
                 if True:
-                    if True:
+                    if False:
                         if True:
                             self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
                                                                                         type='jungle',
@@ -391,7 +391,7 @@ class ChessboardDemo(ShowBase):
                         elif r < 0.7:
                             self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
                                                                                         type='town',
-                                                                                        numberOfcomponents=10,
+                                                                                        numberOfcomponents=20,
                                                                                         distributionType='grid',
                                                                                         distributionValue = 7,
                                                                                         gridAlignedHPR = True))
