@@ -1961,7 +1961,7 @@ class FeatureClass(Entity):
             node.setTransparency(p3d.TransparencyAttrib.MAlpha)
             node.clearModelNodes()
         self.node.flattenStrong()
-        
+
     @classmethod
     def Initialize(cls, featureTemplates, pandaProgram):
         cls.featureTemplates = featureTemplates

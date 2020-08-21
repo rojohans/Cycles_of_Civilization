@@ -15,7 +15,8 @@ class MyGame(ShowBase):
         self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'birch_tree_2_17', 'birch_1')
         self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'oak_tree_1_29', 'oak_1')
         self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'palm_tree_1_6', 'palm_1')
-        self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'jungle_tree_1_9', 'kapok_1')
+        self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'palm_tree_2_7', 'palm_2')
+        self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'kapok_tree_2_2', 'kapok_2')
         self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'jungle_undergrowth_1_2', 'fern_1')
 
         #self.dae2Bam('wheat_2_2', 'wheat_1')

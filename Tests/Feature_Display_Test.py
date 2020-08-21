@@ -3,6 +3,7 @@ import panda3d.core as p3d
 import numpy as np
 
 import Library.TileClass as TileClass
+import Library.Light as Light
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 import Root_Directory
 
@@ -66,13 +67,18 @@ class Game(ShowBase):
         for row in range(self.N_ROWS):
             for colon in range(self.N_COLONS):
                 iTile = colon + row * self.N_COLONS
-                if True:
-                    #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                    #                                                            type='8_bit_test',
-                    #                                                            numberOfcomponents=20))
-                    #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                    #                                                            type='temperate_forest',
-                    #                                                            numberOfcomponents=20))
+                r = np.random.rand()
+                #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                #                                                            type='8_bit_test',
+                #                                                            numberOfcomponents=20))
+                #self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                #                                                            type='temperate_forest',
+                #                                                            numberOfcomponents=20))
+                if r< 0.5:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='jungle',
+                                                                                numberOfcomponents=20))
+                else:
                     self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
                                                                                 type='town',
                                                                                 numberOfcomponents=20,
@@ -80,34 +86,12 @@ class Game(ShowBase):
                                                                                 distributionValue=7,
                                                                                 gridAlignedHPR=True
                                                                                 ))
-                    self.tileList[iTile].features[0].node.removeNode()
-
-                else:
-
-                    for i in range(20):
-                        # models.append(loader.loadModel("panda3d-master/samples/chessboard/models/8_bit_test.bam"))
-
-                        #models.append(loader.loadModel("panda3d-master/samples/chessboard/models/oak_1.bam"))
-
-
-                        models.append(self.featureRoot.attachNewNode('featureNode'))
-
-                        #self.featureTemplateDictionary['8_bit_test'].models[0].copyTo(models[-1])
-                        self.featureTemplateDictionary['8_bit_test'].models[0].instanceTo(models[-1])
-
-                        rowOffset, colonOffset = np.random.randint(0, self.MODEL_RESOLUTION,2)/self.MODEL_RESOLUTION
-                        models[-1].setPos(p3d.LPoint3(colon + colonOffset, row + rowOffset, 0))
-                        models[-1].set_hpr(360 * np.random.rand(), 90, 0)
-                        models[-1].setScale(2.2, 2.2, 2.2)
-                        models[-1].setTransparency(p3d.TransparencyAttrib.MAlpha)
-                        models[-1].clearModelNodes()
+                self.tileList[iTile].features[0].node.removeNode()
 
 
         base.setFrameRateMeter(True)
 
-
-
-
+        self.lights = Light.LightClass()
 
 
         self.camera_node = self.render.attach_new_node('camera_node')
@@ -284,14 +268,6 @@ class Game(ShowBase):
                         pass
                     else:
                         self.tilesToRender.append(iTile)
-
-                    '''
-                    if self.tileList[iTile].featureDuration < 0:
-                        self.tileList[iTile].featureDuration = self.FEATURE_RENDER_DURATION
-                    else:
-                        self.tileList[iTile].featureDuration = self.FEATURE_RENDER_DURATION - 1
-                    '''
-
 
         # When the camera traverses over the edge (west or east) it wraps around to the other side.
         cameraPosition = self.camera_node.get_pos()

@@ -120,7 +120,11 @@ class ChessboardDemo(ShowBase):
         #self.accept('escape', sys.exit)  # Escape quits
         #self.disableMouse()  # Disble mouse camera control
         #camera.setPosHpr(0, -12, 8, 0, -35, 0)  # Set the camera
-        self.setupLights()  # Setup default lighting
+
+        #self.setupLights()  # Setup default lighting
+        import Library.Light as Light
+        self.lights = Light.LightClass()
+
 
         # Since we are using collision detection to do picking, we set it up like
         # any other collision detection system with a traverser and a handler
@@ -344,7 +348,7 @@ class ChessboardDemo(ShowBase):
                     if True:
                         if True:
                             self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                        type='8_bit_test',
+                                                                                        type='jungle',
                                                                                         numberOfcomponents=20))
                         else:
                             for i in range(20):
