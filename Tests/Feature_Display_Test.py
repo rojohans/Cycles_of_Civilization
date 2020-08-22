@@ -16,8 +16,6 @@ class Game(ShowBase):
 
         p3d.PStatClient.connect()
 
-        #print(cpMgr)
-
         self.settings = Settings.SettingsClass()
 
         self.RENDER_CIRCLE = []

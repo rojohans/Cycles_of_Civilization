@@ -11,12 +11,11 @@ class SettingsClass():
         ELEVATION_SCALE : The z-scale used for tiles. A value of 1 will make the tiles 1 unit high and 1 unit wide. A
                           value of 0 will make all tiles flat. A good value might be 0.3.
         FEATUER_RENDER_RADIUS :
-
-
-
+        FEATURE_RENDER_CAPACITY :
+        FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 128
-        self.N_COLONS = 128
+        self.N_ROWS = 32
+        self.N_COLONS = 32
         self.MODEL_RESOLUTION = 30
         self.ELEVATION_SCALE = 0.3
 

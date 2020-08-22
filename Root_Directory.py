@@ -1,4 +1,5 @@
 import os
+import System_Information
 
 def Path(style = None):
     #
@@ -7,8 +8,11 @@ def Path(style = None):
     #
     path = os.path.dirname(__file__)
 
-    if style == 'unix':
-        d, p = path.split(':')
-        path = '/' + d.lower() + p.replace('\\', '/')
+    if System_Information.OPERATING_SYSTEM == 'unix':
+        return path
+    else:
+        if style == 'unix':
+            d, p = path.split(':')
+            path = '/' + d.lower() + p.replace('\\', '/')
 
     return path
