@@ -81,7 +81,7 @@ def GetFeatureTemplateDictionary():
          loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_2.bam"),
          loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/fern_1.bam")],
         weights = [1, 2, 2, 8],
-        scaleRange = [[0.8, 1.2], [0.6, 0.9], [1.3, 1.6], [0.9, 1.2]])
+        scaleRange = [[0.8, 1.2], [0.8, 1.1], [1.3, 1.6], [0.9, 1.2]])
     featureTemplateDictionary['temperate_forest'] = FeatureProperties(
         [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/oak_1.bam"),
          loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/birch_1.bam")],

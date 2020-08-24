@@ -39,6 +39,8 @@ class CameraClass():
 
         self.mainProgram.disableMouse()
 
+        self.cameraUpdateFunctions = []
+
     @classmethod
     def Initialize(cls, mainProgram):
         cls.mainProgram = mainProgram
@@ -128,16 +130,8 @@ class CameraClass():
             self.camera_node.set_pos(self.camera_node,
                                      self.camera_right_vector * 0.01 * self.camera_move_speed * dt / 0.03)
 
-        if self.mainProgram.inputDictionary['arrow_up'] or \
-                self.mainProgram.inputDictionary['w'] or \
-                self.mainProgram.inputDictionary['arrow_down'] or \
-                self.mainProgram.inputDictionary['s'] or \
-                self.mainProgram.inputDictionary['arrow_left'] or \
-                self.mainProgram.inputDictionary['a'] or \
-                self.mainProgram.inputDictionary['arrow_right'] or \
-                self.mainProgram.inputDictionary['d']:
-            self.UpdateFeatureRender()
-
+        for cameraUpdateFunction in self.cameraUpdateFunctions:
+            cameraUpdateFunction()
 
         # When the camera traverses over the edge (west or east) it wraps around to the other side.
         cameraPosition = self.camera_node.get_pos()

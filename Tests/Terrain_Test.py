@@ -8,6 +8,7 @@ import Library.Camera as Camera
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 import Settings
 import Root_Directory
+import Library.World as World
 
 
 class Game(ShowBase):
@@ -18,20 +19,13 @@ class Game(ShowBase):
 
         self.settings = Settings.SettingsClass()
 
-        self.RENDER_CIRCLE = []
-        for row in np.linspace(-self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS * 2 + 1):
-            for colon in np.linspace(-self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS * 2 + 1):
-                if np.sqrt(row**2 + colon**2) <= self.settings.FEATURE_RENDER_RADIUS:
-                    self.RENDER_CIRCLE.append([colon, row])
-        self.RENDER_CIRCLE = np.array(self.RENDER_CIRCLE)
         # --------------------------------------------------------------------------------------------------------------
         # --------------------------------------------------------------------------------------------------------------
-        self.featureRoot = render.attachNewNode("featureRoot")
+
+        World.WorldClass.Initialize(mainProgram = self)
+        worldObject = World.WorldClass()
+
         self.tileList = []
-
-        self.tilesToRender = []
-        self.tilesBeingRendered = []
-
         TileClass.TileClass.Initialize(self.settings.N_ROWS, self.settings.N_COLONS,
                                        tileList = self.tileList,
                                        elevationMap = None,
@@ -48,47 +42,15 @@ class Game(ShowBase):
                 self.tileList.append(TileClass.TileClass(row, colon, 0))
                 self.tileList[-1].topography = np.zeros((self.settings.MODEL_RESOLUTION, self.settings.MODEL_RESOLUTION))
 
-        self.node = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/simple_tile_brown_light.dae")
-        self.node.set_hpr(0, 90, 0)
-        self.node.setPos(self.settings.N_ROWS/2, self.settings.N_COLONS/2, 0)
-        self.node.setScale(self.settings.N_COLONS, self.settings.N_COLONS, self.settings.N_COLONS)
-        self.node.reparentTo(render)
-
-        self.featureTemplateDictionary = FeatureTemplateDictionary.GetFeatureTemplateDictionary()
-        TileClass.FeatureClass.Initialize(featureTemplates = self.featureTemplateDictionary, pandaProgram = self)
-        for row in range(self.settings.N_ROWS):
-            for colon in range(self.settings.N_COLONS):
-                iTile = colon + row * self.settings.N_COLONS
-                r = np.random.rand()
-                if r < 0.4:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='jungle',
-                                                                                numberOfcomponents=20))
-                elif r < 0.8:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='town',
-                                                                                numberOfcomponents=20,
-                                                                                distributionType='grid',
-                                                                                distributionValue=7,
-                                                                                gridAlignedHPR=True
-                                                                                ))
-                else:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='town',
-                                                                                numberOfcomponents=4,
-                                                                                distributionType='random'))
-
-                self.tileList[iTile].features[0].node.removeNode()
         # --------------------------------------------------------------------------------------------------------------
         # --------------------------------------------------------------------------------------------------------------
 
         base.setFrameRateMeter(True)
 
-        self.lightObject = Light.LightClass(shadowsEnabled = False)
+        self.lightObject = Light.LightClass()
 
         Camera.CameraClass.Initialize(mainProgram = self)
         self.cameraObject = Camera.CameraClass()
-        self.cameraObject.cameraUpdateFunctions.append(self.cameraObject.UpdateFeatureRender)
 
         self.key_down = {}
         # mouse1 : left mouse button
@@ -120,7 +82,6 @@ class Game(ShowBase):
         #self.add_task(self.AnimationTask, 'animation_task')
         #self.debugTask = taskMgr.add(self.DebugPicker, 'debugTask')
 
-        self.add_task(self.cameraObject.AttachDetachNodes, 'Attach_Detach_Nodes')
 
     def UpdateKeyDictionary(self, key, status):
         self.inputDictionary[key] = status
@@ -128,4 +89,3 @@ class Game(ShowBase):
 
 game = Game()
 game.run()
-
