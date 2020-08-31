@@ -6,40 +6,49 @@ import time
 import Library.TileClass as TileClass
 import Library.Light as Light
 import Library.Camera as Camera
+import Library.World as World
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 import Settings
 import Root_Directory
-import Library.World as World
-
 
 
 class Game(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+
         p3d.PStatClient.connect()
 
         self.settings = Settings.SettingsClass()
 
+        self.RENDER_CIRCLE = []
+        for row in np.linspace(-self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS * 2 + 1):
+            for colon in np.linspace(-self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS, self.settings.FEATURE_RENDER_RADIUS * 2 + 1):
+                if np.sqrt(row**2 + colon**2) <= self.settings.FEATURE_RENDER_RADIUS:
+                    self.RENDER_CIRCLE.append([colon, row])
+        self.RENDER_CIRCLE = np.array(self.RENDER_CIRCLE)
+        # --------------------------------------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------------------------------------
+        self.featureRoot = render.attachNewNode("featureRoot")
         self.collidableRoot = render.attachNewNode('collidableRoot')
         self.tileRoot = self.collidableRoot.attachNewNode("squareRoot")
 
-        tic = time.time()
         World.WorldClass.Initialize(mainProgram = self)
         self.world = World.WorldClass()
-        toc = time.time()
-        print('world creation time: {}'.format(toc - tic))
 
         self.SetupTiles()
+
+        self.SetupFeatures()
 
         # --------------------------------------------------------------------------------------------------------------
         # --------------------------------------------------------------------------------------------------------------
 
         base.setFrameRateMeter(True)
 
-        self.lightObject = Light.LightClass()
+        self.lightObject = Light.LightClass(shadowsEnabled = False)
 
         Camera.CameraClass.Initialize(mainProgram = self)
         self.cameraObject = Camera.CameraClass()
+        self.cameraObject.cameraUpdateFunctions.append(self.cameraObject.UpdateFeatureRender)
 
         self.key_down = {}
         # mouse1 : left mouse button
@@ -71,9 +80,47 @@ class Game(ShowBase):
         #self.add_task(self.AnimationTask, 'animation_task')
         #self.debugTask = taskMgr.add(self.DebugPicker, 'debugTask')
 
+        self.add_task(self.cameraObject.AttachDetachNodes, 'Attach_Detach_Nodes')
 
     def UpdateKeyDictionary(self, key, status):
         self.inputDictionary[key] = status
+
+    def SetupFeatures(self):
+        self.tilesToRender = []
+        self.tilesBeingRendered = []
+
+        self.featureTemplateDictionary = FeatureTemplateDictionary.GetFeatureTemplateDictionary()
+        TileClass.FeatureClass.Initialize(featureTemplates = self.featureTemplateDictionary, pandaProgram = self)
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                iTile = colon + row * self.settings.N_COLONS
+                r = np.random.rand()
+                if r < 0.2:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='jungle',
+                                                                                numberOfcomponents=20))
+                elif r < 0.4:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='town',
+                                                                                numberOfcomponents=20,
+                                                                                distributionType='grid',
+                                                                                distributionValue=7,
+                                                                                gridAlignedHPR=True
+                                                                                ))
+                elif r < 0.6:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='farm',
+                                                                                numberOfcomponents=1,
+                                                                                distributionType='random'))
+                elif r < 0.8:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='conifer_forest',
+                                                                                numberOfcomponents=20))
+                else:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='temperate_forest',
+                                                                                numberOfcomponents=20))
+                self.tileList[iTile].features[0].node.removeNode()
 
     def SetupTiles(self):
         self.tileList = []
@@ -160,3 +207,4 @@ class Game(ShowBase):
 
 game = Game()
 game.run()
+

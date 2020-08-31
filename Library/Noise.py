@@ -70,7 +70,7 @@ class Perlin2D():
         middleValue = self.LinearInterpolation(bottomValue, topValue, v)
         return middleValue
 
-    def SampleOctaves(self, x, y, persistance = 0.5, initialOctavesToSkip = 0):
+    def SampleOctaves(self, x, y, persistance = 1, initialOctavesToSkip = 0):
         '''
         Samples the noise at different resolutions. The different noise values are weighted and then summed.
         :param x:

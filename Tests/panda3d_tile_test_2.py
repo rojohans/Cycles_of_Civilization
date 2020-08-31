@@ -164,10 +164,11 @@ class ChessboardDemo(ShowBase):
 
         print(points)
 
-        z = Noise.PerlinNoiseSpherical(gridSize, points, numberOfInitialIterationsToSkip, amplitudeScaling)
-        grassPropabilityList = Noise.PerlinNoiseSpherical(gridSize, points, numberOfInitialIterationsToSkip, amplitudeScaling=1.0)
-        desertPropabilityList = Noise.PerlinNoiseSpherical(gridSize, points, numberOfInitialIterationsToSkip, amplitudeScaling=1.0)
-        tundraProbabilityList = Noise.PerlinNoiseSpherical(gridSize, points, numberOfInitialIterationsToSkip, amplitudeScaling=1.0)
+        z = np.random.rand(N_ROWS*N_COLONS, 1)
+        grassPropabilityList = np.random.rand(N_ROWS*N_COLONS, 1)
+        desertPropabilityList = np.random.rand(N_ROWS*N_COLONS, 1)
+        tundraProbabilityList = np.random.rand(N_ROWS*N_COLONS, 1)
+
 
         self.z = np.zeros((N_ROWS, N_COLONS))
         for row in range(N_ROWS):
@@ -214,14 +215,6 @@ class ChessboardDemo(ShowBase):
 
         TileClass.TileClass.Initialize(N_ROWS, N_COLONS,
                                        tileList = self.tileList,
-                                       elevationMap = self.z,
-                                       ADJACENT_TILES_TEMPLATE= ADJACENT_TILES_TEMPLATE,
-                                       TILE_CENTER_WIDTH=TILE_CENTER_WIDTH,
-                                       grassProbabilityMap=grassProbabilityMap,
-                                       desertProbabilityMap=desertProbabilityMap,
-                                       tundraProbabilityMap=tundraProbabilityMap,
-                                       modelResolution=MODEL_RESOLUTION,
-                                       textureResolution=TEXTURE_RESOLUTION,
                                        pandaProgram = self)
 
         TileClass.UnitClass.Initialize(unitRoot = self.unitRoot,

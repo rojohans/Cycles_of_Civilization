@@ -29,19 +29,10 @@ class Game(ShowBase):
         self.featureRoot = render.attachNewNode("featureRoot")
         self.tileList = []
 
-        self.tilesToRender = []
-        self.tilesBeingRendered = []
+
 
         TileClass.TileClass.Initialize(self.settings.N_ROWS, self.settings.N_COLONS,
                                        tileList = self.tileList,
-                                       elevationMap = None,
-                                       ADJACENT_TILES_TEMPLATE= None,
-                                       TILE_CENTER_WIDTH=None,
-                                       grassProbabilityMap=None,
-                                       desertProbabilityMap=None,
-                                       tundraProbabilityMap=None,
-                                       modelResolution=self.settings.MODEL_RESOLUTION,
-                                       textureResolution=None,
                                        pandaProgram = self)
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
@@ -54,31 +45,8 @@ class Game(ShowBase):
         self.node.setScale(self.settings.N_COLONS, self.settings.N_COLONS, self.settings.N_COLONS)
         self.node.reparentTo(render)
 
-        self.featureTemplateDictionary = FeatureTemplateDictionary.GetFeatureTemplateDictionary()
-        TileClass.FeatureClass.Initialize(featureTemplates = self.featureTemplateDictionary, pandaProgram = self)
-        for row in range(self.settings.N_ROWS):
-            for colon in range(self.settings.N_COLONS):
-                iTile = colon + row * self.settings.N_COLONS
-                r = np.random.rand()
-                if r < 0.4:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='jungle',
-                                                                                numberOfcomponents=20))
-                elif r < 0.8:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='town',
-                                                                                numberOfcomponents=20,
-                                                                                distributionType='grid',
-                                                                                distributionValue=7,
-                                                                                gridAlignedHPR=True
-                                                                                ))
-                else:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='town',
-                                                                                numberOfcomponents=4,
-                                                                                distributionType='random'))
+        self.SetupFeatures()
 
-                self.tileList[iTile].features[0].node.removeNode()
         # --------------------------------------------------------------------------------------------------------------
         # --------------------------------------------------------------------------------------------------------------
 
@@ -124,6 +92,41 @@ class Game(ShowBase):
 
     def UpdateKeyDictionary(self, key, status):
         self.inputDictionary[key] = status
+
+    def SetupFeatures(self):
+        self.tilesToRender = []
+        self.tilesBeingRendered = []
+
+        self.featureTemplateDictionary = FeatureTemplateDictionary.GetFeatureTemplateDictionary()
+        TileClass.FeatureClass.Initialize(featureTemplates = self.featureTemplateDictionary, pandaProgram = self)
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                iTile = colon + row * self.settings.N_COLONS
+                r = np.random.rand()
+                if r < 0.4:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='jungle',
+                                                                                numberOfcomponents=20))
+                elif r < 0.7:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='town',
+                                                                                numberOfcomponents=20,
+                                                                                distributionType='grid',
+                                                                                distributionValue=7,
+                                                                                gridAlignedHPR=True
+                                                                                ))
+                elif r < 0.8:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='farm',
+                                                                                numberOfcomponents=1,
+                                                                                distributionType='random'))
+                else:
+                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                type='town',
+                                                                                numberOfcomponents=4,
+                                                                                distributionType='random'))
+
+                self.tileList[iTile].features[0].node.removeNode()
 
 
 game = Game()

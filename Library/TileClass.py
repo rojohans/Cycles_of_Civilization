@@ -65,14 +65,14 @@ class TileClass(Entity):
         '''
 
 
-        tileSlopeWidth = (1 - self.TILE_CENTER_WIDTH) / 2
+        tileSlopeWidth = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
         if self.row > 0 and self.row < self.N_ROWS - 1:
-            tileElevation = self.elevationMap[self.row, self.colon]
+            tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
 
             adjacentCross = np.zeros((8, 2), dtype=int)
-            adjacentCross[:, 0] = int(self.row) + self.ADJACENT_TILES_TEMPLATE[:, 0]
-            adjacentCross[:, 1] = np.mod(int(self.colon) + self.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
-            adjacentZValues = self.elevationMap[adjacentCross[:, 0], adjacentCross[:, 1]]
+            adjacentCross[:, 0] = int(self.row) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
+            adjacentCross[:, 1] = np.mod(int(self.colon) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
+            adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
 
             adjacentZValues -= tileElevation
 
@@ -104,10 +104,10 @@ class TileClass(Entity):
             points = []
 
             # Creates the vertices.
-            for y in np.linspace(0, 1, self.MODEL_RESOLUTION):
-                for x in np.linspace(0, 1, self.MODEL_RESOLUTION):
-                    a = self.topography[int(np.round((1-y)*(self.MODEL_RESOLUTION-1))),
-                                        int(np.round(x*(self.MODEL_RESOLUTION-1)))]
+            for y in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                for x in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                    a = self.topography[int(np.round((1-y)*(self.pandaProgram.settings.MODEL_RESOLUTION-1))),
+                                        int(np.round(x*(self.pandaProgram.settings.MODEL_RESOLUTION-1)))]
                     #z += 0.1*a/255
                     #z += a/255
 
@@ -124,15 +124,15 @@ class TileClass(Entity):
             tri = p3d.GeomTriangles(p3d.Geom.UH_static)
 
             # Creates the triangles.
-            for y in range(self.MODEL_RESOLUTION - 1):
-                for x in range(self.MODEL_RESOLUTION - 1):
-                    i = x + y * self.MODEL_RESOLUTION
-                    tri.add_vertices(i, i + self.MODEL_RESOLUTION + 1, i + self.MODEL_RESOLUTION)
-                    tri.add_vertices(i, i + 1, i + self.MODEL_RESOLUTION + 1)
+            for y in range(self.pandaProgram.settings.MODEL_RESOLUTION - 1):
+                for x in range(self.pandaProgram.settings.MODEL_RESOLUTION - 1):
+                    i = x + y * self.pandaProgram.settings.MODEL_RESOLUTION
+                    tri.add_vertices(i, i + self.pandaProgram.settings.MODEL_RESOLUTION + 1, i + self.pandaProgram.settings.MODEL_RESOLUTION)
+                    tri.add_vertices(i, i + 1, i + self.pandaProgram.settings.MODEL_RESOLUTION + 1)
 
             # Assigns a normal to each vertex.
-            for y in range(self.MODEL_RESOLUTION):
-                for x in range(self.MODEL_RESOLUTION):
+            for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+                for x in range(self.pandaProgram.settings.MODEL_RESOLUTION):
                     '''
                     i = x + y * self.MODEL_RESOLUTION
                     #print(x)
@@ -172,7 +172,7 @@ class TileClass(Entity):
             tile = p3d.NodePath(node)
 
         else:
-            tileElevation = self.elevationMap[self.row, self.colon]
+            tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
 
             vertex_format = p3d.GeomVertexFormat.get_v3n3()
             vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
@@ -202,6 +202,12 @@ class TileClass(Entity):
             node.add_geom(geom)
             tile = p3d.NodePath(node)
         self.node = tile
+
+    def ApplyTopography(self):
+        self.topographyBase = self.CreateBaseTopography()
+        self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
+
+        self.topography = self.topographyBase + self.topographyTop
 
     def TopographyTile(self):
         if self.row > 0 and self.row < self.N_ROWS - 1:
@@ -243,14 +249,14 @@ class TileClass(Entity):
             self.topography = np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION))
 
     def CreateBaseTopography(self):
-        tileSlopeWidth = (1 - self.TILE_CENTER_WIDTH) / 2
+        tileSlopeWidth = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
         if self.row > 0 and self.row < self.N_ROWS - 1:
-            tileElevation = self.elevationMap[self.row, self.colon]
+            tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
 
             adjacentCross = np.zeros((8, 2), dtype=int)
-            adjacentCross[:, 0] = int(self.row) + self.ADJACENT_TILES_TEMPLATE[:, 0]
-            adjacentCross[:, 1] = np.mod(int(self.colon) + self.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
-            adjacentZValues = self.elevationMap[adjacentCross[:, 0], adjacentCross[:, 1]]
+            adjacentCross[:, 0] = int(self.row) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
+            adjacentCross[:, 1] = np.mod(int(self.colon) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
+            adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
 
             adjacentZValues -= tileElevation
 
@@ -276,21 +282,21 @@ class TileClass(Entity):
             p2 = np.array([self.colon + tileSlopeWidth, self.row, tileElevation + adjacentZValues[2] / 2])
             p3 = np.array([self.colon + tileSlopeWidth, self.row + tileSlopeWidth, tileElevation])
 
-            p4 = np.array([self.colon + self.TILE_CENTER_WIDTH + tileSlopeWidth, self.row + tileSlopeWidth, tileElevation])
+            p4 = np.array([self.colon + self.pandaProgram.settings.TILE_CENTER_WIDTH + tileSlopeWidth, self.row + tileSlopeWidth, tileElevation])
             p5 = np.array(
-                [self.colon + self.TILE_CENTER_WIDTH + tileSlopeWidth, self.row, tileElevation + adjacentZValues[2] / 2])
+                [self.colon + self.pandaProgram.settings.TILE_CENTER_WIDTH + tileSlopeWidth, self.row, tileElevation + adjacentZValues[2] / 2])
             p6 = np.array([self.colon + 1, self.row,
                            tileElevation + (adjacentZValues[2] + adjacentZValues[3] + adjacentZValues[4]) / 4])
             p7 = np.array([self.colon + 1, self.row + tileSlopeWidth, tileElevation + adjacentZValues[4] / 2])
 
             p8 = np.array(
-                [self.colon + tileSlopeWidth + self.TILE_CENTER_WIDTH, self.row + 1,
+                [self.colon + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, self.row + 1,
                  tileElevation + adjacentZValues[6] / 2])
             p9 = np.array(
-                [self.colon + tileSlopeWidth + self.TILE_CENTER_WIDTH, self.row + tileSlopeWidth + self.TILE_CENTER_WIDTH,
+                [self.colon + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH,
                  tileElevation])
             p10 = np.array(
-                [self.colon + 1, self.row + tileSlopeWidth + self.TILE_CENTER_WIDTH,
+                [self.colon + 1, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH,
                  tileElevation + adjacentZValues[4] / 2])
             p11 = np.array([self.colon + 1, self.row + 1,
                             tileElevation + (adjacentZValues[4] + adjacentZValues[5] + adjacentZValues[6]) / 4])
@@ -298,8 +304,8 @@ class TileClass(Entity):
             p12 = np.array([self.colon, self.row + 1,
                             tileElevation + (adjacentZValues[6] + adjacentZValues[7] + adjacentZValues[0]) / 4])
             p13 = np.array(
-                [self.colon, self.row + tileSlopeWidth + self.TILE_CENTER_WIDTH, tileElevation + adjacentZValues[0] / 2])
-            p14 = np.array([self.colon + tileSlopeWidth, self.row + tileSlopeWidth + self.TILE_CENTER_WIDTH, tileElevation])
+                [self.colon, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, tileElevation + adjacentZValues[0] / 2])
+            p14 = np.array([self.colon + tileSlopeWidth, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, tileElevation])
             p15 = np.array([self.colon + tileSlopeWidth, self.row + 1, tileElevation + adjacentZValues[6] / 2])
 
 
@@ -325,10 +331,10 @@ class TileClass(Entity):
             P6 = np.array([0.5, 1,tileElevation + adjacentZValues[6] / 2])
             P7 = np.array([0, 1,tileElevation + (adjacentZValues[6] + adjacentZValues[7] + adjacentZValues[0]) / 4])
 
-            tileSideWith = (1 - self.TILE_CENTER_WIDTH) / 2
+            tileSideWith = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
 
 
-            baseTopography =  np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION))
+            baseTopography =  np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
 
             def InterpolationScaling(value, mode = 'sin', minRange = None, maxRange = None, x = None, y = None):
                 if mode == 'sin':
@@ -337,10 +343,10 @@ class TileClass(Entity):
                     return 1-np.cos(value * np.pi / 2)
                 elif mode == 'special':
                     # The value parameter should probably be: value = 1-value
-                    if value < self.pandaProgram.TILE_CENTER_WIDTH:
+                    if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
                         return 1
                     else:
-                        return np.cos((value-self.pandaProgram.TILE_CENTER_WIDTH)/(1-self.pandaProgram.TILE_CENTER_WIDTH)*np.pi/2)
+                        return np.cos((value-self.pandaProgram.settings.TILE_CENTER_WIDTH)/(1-self.pandaProgram.settings.TILE_CENTER_WIDTH)*np.pi/2)
                 elif mode == 'special_circular':
 
 
@@ -350,7 +356,7 @@ class TileClass(Entity):
                     #np.cos((minRange - self.pandaProgram.TILE_CENTER_WIDTH) / (
                     #            maxRange - self.pandaProgram.TILE_CENTER_WIDTH) * np.pi / 2)
 
-                    if value < self.pandaProgram.TILE_CENTER_WIDTH:
+                    if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
                         return 1
                     else:
 
@@ -361,10 +367,10 @@ class TileClass(Entity):
                         if minRange == maxRange:
                             return 0
                         else:
-                            return np.cos((value-self.pandaProgram.TILE_CENTER_WIDTH)/(maxRange-self.pandaProgram.TILE_CENTER_WIDTH)*np.pi/2)
+                            return np.cos((value-self.pandaProgram.settings.TILE_CENTER_WIDTH)/(maxRange-self.pandaProgram.settings.TILE_CENTER_WIDTH)*np.pi/2)
 
                 elif mode == 'squircle':
-                    if value < self.pandaProgram.TILE_CENTER_WIDTH:
+                    if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
                         return 1
                     else:
                         if value == 0:
@@ -394,8 +400,8 @@ class TileClass(Entity):
             interpolationMode = 'special'
 
             # Creates the vertices.
-            for y in np.linspace(0, 1, self.MODEL_RESOLUTION):
-                for x in np.linspace(0, 1, self.MODEL_RESOLUTION):
+            for y in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                for x in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
 
                     if interpolationMode == 'special':
                         if x <= 0.5 and y <= 0.5:
@@ -848,9 +854,12 @@ class TileClass(Entity):
                     #a = self.topography[int(np.round((1 - y) * (self.MODEL_RESOLUTION - 1))),
                     #                    int(np.round(x * (self.MODEL_RESOLUTION - 1)))]
                     #baseTopography[int(np.round((1 - y) * (self.MODEL_RESOLUTION - 1))), int(np.round(x * (self.MODEL_RESOLUTION - 1)))] = z
-                    baseTopography[int(np.round((1-y) * (self.MODEL_RESOLUTION - 1))),
-                                   int(np.round((x) * (self.MODEL_RESOLUTION - 1)))] = z
-            return baseTopography
+                    baseTopography[int(np.round((1-y) * (self.pandaProgram.settings.MODEL_RESOLUTION - 1))),
+                                   int(np.round((x) * (self.pandaProgram.settings.MODEL_RESOLUTION - 1)))] = z
+
+        else:
+            baseTopography = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
+        return baseTopography
 
     def CreateTopography(self, topographyCode):
 
@@ -890,16 +899,12 @@ class TileClass(Entity):
 
         for row in range(self.N_ROWS-1):
             for colon in range(self.N_COLONS):
+                break
                 bottomLefti = colon + row * self.N_COLONS
                 bottomRighti = np.mod(colon+1, self.N_COLONS) + row * self.N_COLONS
                 topLefti = colon + (row+1) * self.N_COLONS
                 topRighti = np.mod(colon+1, self.N_COLONS) + (row+1) * self.N_COLONS
 
-
-                #bottomLeftTopography = self.tileList[bottomLefti].topography
-                #bottomRightTopography = self.tileList[bottomRighti].topography
-                #topLeftTopography = self.tileList[topLefti].topography
-                #topRightTopography = self.tileList[topRighti].topography
                 bottomLeftTopography = self.tileList[bottomLefti].topographyTop
                 bottomRightTopography = self.tileList[bottomRighti].topographyTop
                 topLeftTopography = self.tileList[topLefti].topographyTop
@@ -912,8 +917,6 @@ class TileClass(Entity):
                 bottomEdgeValues = bottomLeftTopography[0, :].copy()
                 topEdgeValues = topLeftTopography[-1, :].copy()
 
-
-
                 for x in np.linspace(0, blendSize-1, blendSize, dtype=int):
                     xTransitionValue = self.SinusTransition(x / (blendSize - 1))
                     bottomRightTopography[:, x] = bottomRightTopography[:, x] * (1 + xTransitionValue) / 2 + leftEdgeValues * (1 - xTransitionValue) / 2
@@ -923,47 +926,16 @@ class TileClass(Entity):
                     bottomLeftTopography[y, :] = bottomLeftTopography[y, :] * (1 + yTransitionValue) / 2 + topEdgeValues * (1 - yTransitionValue) / 2
                     topLeftTopography[-y - 1, :] = bottomEdgeValues * (1 - yTransitionValue) / 2 + topLeftTopography[-y - 1, :] * (1 + yTransitionValue) / 2
 
-
-
-
                 self.tileList[bottomLefti].topographyTop = bottomLeftTopography
                 self.tileList[bottomRighti].topographyTop = bottomRightTopography
                 self.tileList[topLefti].topographyTop = topLeftTopography
                 self.tileList[topRighti].topographyTop = topRightTopography
 
-                #self.tileList[bottomLefti].topography = bottomLeftTopography
-                #self.tileList[bottomRighti].topography = bottomRightTopography
-                #self.tileList[topLefti].topography = topLeftTopography
-                #self.tileList[topRighti].topography = topRightTopography
-
-
-
-
-
-
                 self.tileList[bottomLefti].topography = self.tileList[bottomLefti].topographyBase + self.tileList[bottomLefti].topographyTop
                 self.tileList[bottomRighti].topography = self.tileList[bottomRighti].topographyBase + self.tileList[bottomRighti].topographyTop
                 self.tileList[topLefti].topography = self.tileList[topLefti].topographyBase + self.tileList[topLefti].topographyTop
                 self.tileList[topRighti].topography = self.tileList[topRighti].topographyBase + self.tileList[topRighti].topographyTop
 
-                #self.tileList[bottomLefti].topography = self.tileList[bottomLefti].topographyBase
-                #self.tileList[bottomRighti].topography = self.tileList[bottomRighti].topographyBase
-                #self.tileList[topLefti].topography = self.tileList[topLefti].topographyBase
-                #self.tileList[topRighti].topography = self.tileList[topRighti].topographyBase
-
-        '''
-        for row in range(self.N_ROWS-1):
-            for colon in range(self.N_COLONS):
-                bottomLefti = colon + row * self.N_COLONS
-                bottomRighti = np.mod(colon+1, self.N_COLONS) + row * self.N_COLONS
-                topLefti = colon + (row+1) * self.N_COLONS
-                topRighti = np.mod(colon+1, self.N_COLONS) + (row+1) * self.N_COLONS
-
-                self.tileList[bottomLefti].topography = self.tileList[bottomLefti].topographyBase + self.tileList[bottomLefti].topographyTop
-                self.tileList[bottomRighti].topography = self.tileList[bottomRighti].topographyBase + self.tileList[bottomRighti].topographyTop
-                self.tileList[topLefti].topography = self.tileList[topLefti].topographyBase + self.tileList[topLefti].topographyTop
-                self.tileList[topRighti].topography = self.tileList[topRighti].topographyBase + self.tileList[topRighti].topographyTop
-        '''
 
         for row in range(self.N_ROWS - 1):
             for colon in range(self.N_COLONS):
@@ -1006,16 +978,16 @@ class TileClass(Entity):
         :return:
         '''
 
-        self.normals = np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION, 3))
+        self.normals = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION, 3))
 
-        for y in range(self.MODEL_RESOLUTION):
-            for x in range(self.MODEL_RESOLUTION):
-                if x !=0 and x != self.MODEL_RESOLUTION-1 and y != 0 and y != self.MODEL_RESOLUTION-1:
+        for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+            for x in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+                if x !=0 and x != self.pandaProgram.settings.MODEL_RESOLUTION-1 and y != 0 and y != self.pandaProgram.settings.MODEL_RESOLUTION-1:
 
-                    diffx = np.array((2/(self.MODEL_RESOLUTION-1), 0, self.topography[self.MODEL_RESOLUTION-y, x+1]-self.topography[self.MODEL_RESOLUTION-y, x-1]))
-                    diffy = np.array((0, 2 / (self.MODEL_RESOLUTION - 1),
-                                      self.topography[self.MODEL_RESOLUTION - y - 2, x] - self.topography[
-                                          self.MODEL_RESOLUTION - y, x]))
+                    diffx = np.array((2/(self.pandaProgram.settings.MODEL_RESOLUTION-1), 0, self.topography[self.pandaProgram.settings.MODEL_RESOLUTION-y, x+1]-self.topography[self.pandaProgram.settings.MODEL_RESOLUTION-y, x-1]))
+                    diffy = np.array((0, 2 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),
+                                      self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 2, x] - self.topography[
+                                          self.pandaProgram.settings.MODEL_RESOLUTION - y, x]))
 
                     self.normals[y, x] = [diffx[1] * diffy[2] - diffx[2] * diffy[1], diffx[2] * diffy[0] - diffx[0] * diffy[2], diffx[0] * diffy[1] - diffx[1] * diffy[0]]
 
@@ -1042,9 +1014,9 @@ class TileClass(Entity):
 
 
                 # Horizontal normals
-                for x in np.linspace(1, self.MODEL_RESOLUTION-2, self.MODEL_RESOLUTION-2, dtype=int):
-                    diffx = np.array((2/(self.MODEL_RESOLUTION-1), 0, bottomLeftTopography[0, x+1]-bottomLeftTopography[0, x-1]))
-                    diffy = np.array((0, 2 / (self.MODEL_RESOLUTION - 1),topLeftTopography[-2, x] - bottomLeftTopography[1, x]))
+                for x in np.linspace(1, self.pandaProgram.settings.MODEL_RESOLUTION-2, self.pandaProgram.settings.MODEL_RESOLUTION-2, dtype=int):
+                    diffx = np.array((2/(self.pandaProgram.settings.MODEL_RESOLUTION-1), 0, bottomLeftTopography[0, x+1]-bottomLeftTopography[0, x-1]))
+                    diffy = np.array((0, 2 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),topLeftTopography[-2, x] - bottomLeftTopography[1, x]))
                     normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
                               diffx[2] * diffy[0] - diffx[0] * diffy[2],
                               diffx[0] * diffy[1] - diffx[1] * diffy[0]]
@@ -1052,9 +1024,9 @@ class TileClass(Entity):
                     topLeftNormals[0, x] = normal
 
                 # Vertical normals
-                for y in np.linspace(1, self.MODEL_RESOLUTION-2, self.MODEL_RESOLUTION-2, dtype=int):
-                    diffx = np.array((2/(self.MODEL_RESOLUTION-1), 0, bottomRightTopography[self.MODEL_RESOLUTION - y - 1, 1]-bottomLeftTopography[self.MODEL_RESOLUTION - y - 1, -2]))
-                    diffy = np.array((0, 2 / (self.MODEL_RESOLUTION - 1),bottomLeftTopography[self.MODEL_RESOLUTION-y-2, -1] - bottomLeftTopography[self.MODEL_RESOLUTION - y, -1]))
+                for y in np.linspace(1, self.pandaProgram.settings.MODEL_RESOLUTION-2, self.pandaProgram.settings.MODEL_RESOLUTION-2, dtype=int):
+                    diffx = np.array((2/(self.pandaProgram.settings.MODEL_RESOLUTION-1), 0, bottomRightTopography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 1, 1]-bottomLeftTopography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 1, -2]))
+                    diffy = np.array((0, 2 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),bottomLeftTopography[self.pandaProgram.settings.MODEL_RESOLUTION-y-2, -1] - bottomLeftTopography[self.pandaProgram.settings.MODEL_RESOLUTION - y, -1]))
                     normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
                               diffx[2] * diffy[0] - diffx[0] * diffy[2],
                               diffx[0] * diffy[1] - diffx[1] * diffy[0]]
@@ -1062,8 +1034,8 @@ class TileClass(Entity):
                     bottomRightNormals[y, 0] = normal
 
                 # Corner normals
-                diffx = np.array((2 / (self.MODEL_RESOLUTION - 1), 0,bottomRightTopography[0, 1] - bottomLeftTopography[0, -2]))
-                diffy = np.array((0, 2 / (self.MODEL_RESOLUTION - 1),topLeftTopography[-2, -1] - bottomLeftTopography[1, -1]))
+                diffx = np.array((2 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1), 0,bottomRightTopography[0, 1] - bottomLeftTopography[0, -2]))
+                diffy = np.array((0, 2 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),topLeftTopography[-2, -1] - bottomLeftTopography[1, -1]))
                 normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
                           diffx[2] * diffy[0] - diffx[0] * diffy[2],
                           diffx[0] * diffy[1] - diffx[1] * diffy[0]]
@@ -1188,6 +1160,31 @@ class TileClass(Entity):
 
         self.node.setTexture(tileTexture)
         #return tileTexture
+
+    def ApplyTexture(self):
+        soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
+        textureArrayFull = self.terrainTextures['soil_fertility_' + str(soilFertility)]
+
+        textureArray = np.zeros((self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION,
+                                 self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION, 3), dtype=np.uint8)
+        textureArray[:, :, 0] = np.uint8(255 * textureArrayFull[:, :, 2])
+        textureArray[:, :, 1] = np.uint8(255 * textureArrayFull[:, :, 1])
+        textureArray[:, :, 2] = np.uint8(255 * textureArrayFull[:, :, 0])
+
+        tex = p3d.Texture()
+        tex.setup2dTexture(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION,
+                           self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION,
+                           p3d.Texture.T_unsigned_byte, p3d.Texture.F_rgb)
+
+
+        buf = textureArray[:, :, :].tostring()
+        tex.setRamImage(buf) # np.array -> texture
+
+        # Use texture pixels without interpolation.
+        #tex.setMagfilter(p3d.Texture.FT_nearest)
+        #tex.setMinfilter(p3d.Texture.FT_nearest)
+
+        self.node.setTexture(tex)
 
     def CreateTextureCodeSimple(self):
         #
@@ -1651,7 +1648,7 @@ class TileClass(Entity):
         #return value
 
     def Wrap(self, direction):
-        self.wrapperNode = self.pandaProgram.squareRoot.attachNewNode('wrapperNode')
+        self.wrapperNode = self.pandaProgram.tileRoot.attachNewNode('wrapperNode')
         self.node.copyTo(self.wrapperNode)
 
         if direction == 'left':
@@ -1662,7 +1659,7 @@ class TileClass(Entity):
             return
 
     @classmethod
-    def Initialize(cls, N_ROWS, N_COLONS, tileList, elevationMap, ADJACENT_TILES_TEMPLATE, TILE_CENTER_WIDTH, grassProbabilityMap, desertProbabilityMap, tundraProbabilityMap, modelResolution, textureResolution, pandaProgram):
+    def Initialize(cls, N_ROWS, N_COLONS, tileList, pandaProgram):
         #
         # The texture dictionary is used to store textures which has been used on a tile. If the same texture is needed
         # for another tile it can simply be retrieved from the dictionary.
@@ -1675,12 +1672,12 @@ class TileClass(Entity):
 
         cls.tileList = tileList
 
-        cls.elevationMap = elevationMap
-        cls.ADJACENT_TILES_TEMPLATE = ADJACENT_TILES_TEMPLATE
-        cls.TILE_CENTER_WIDTH = TILE_CENTER_WIDTH
+        #cls.elevationMap = elevationMap
+        #cls.ADJACENT_TILES_TEMPLATE = ADJACENT_TILES_TEMPLATE
+        #cls.TILE_CENTER_WIDTH = TILE_CENTER_WIDTH
 
-        cls.MODEL_RESOLUTION = modelResolution
-        cls.TEXTUER_RESOLUTION = textureResolution
+        #cls.MODEL_RESOLUTION = modelResolution
+        #cls.TEXTUER_RESOLUTION = textureResolution
 
         try:
             topographyFile = open('topography_dictionary.pkl', 'rb')
@@ -1695,9 +1692,9 @@ class TileClass(Entity):
         except:
             cls.textureDictionary = {}
 
-        cls.grassProbabilityMap = grassProbabilityMap
-        cls.desertProbabilityMap = desertProbabilityMap
-        cls.tundraProbabilityMap = tundraProbabilityMap
+        #cls.grassProbabilityMap = grassProbabilityMap
+        #cls.desertProbabilityMap = desertProbabilityMap
+        #cls.tundraProbabilityMap = tundraProbabilityMap
 
         #terrainCodes = {'grass': 'g', 'desert': 'd', 'tundra': 't', 'cliff': 'c'}
 
@@ -1712,7 +1709,10 @@ class TileClass(Entity):
                                 'tundra':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
                                 'grasscliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
                                 'desertcliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
-                                'tundracliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0]}
+                                'tundracliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_desert_symmetrical.jpg")[:, :, 0],
+                                'topography_roughness_0':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_roughness_0.png")[:, :, 0],
+                                'topography_roughness_1':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_roughness_1.png")[:, :, 0],
+                                'topography_roughness_2':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_roughness_2.png")[:, :, 0]}
 
         cls.topographyFilters = {'center':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_center.jpg")[:, :, 0],
                                  'left':image.imread(Root_Directory.Path() + "/Data/Tile_Data/topography_filter_side_Left.jpg")[:, :, 0],
@@ -1777,7 +1777,11 @@ class TileClass(Entity):
                                'tundra':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra_1.jpg"),
                                'grasscliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/grass_cliff_5.jpg"),
                                'desertcliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/desert_rock_2.jpg"),
-                               'tundracliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra_cliff_2.jpg")}
+                               'tundracliff':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra_cliff_2.jpg"),
+                               'soil_fertility_0':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_0.png"),
+                               'soil_fertility_1':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_1.png"),
+                               'soil_fertility_2':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
+                               'soil_fertility_3':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_3.png")}
 
 
         #cls.terrainTextures = {'grass':image.imread("panda3d-master/samples/chessboard/models/grass_4_symmetrical.jpg"),

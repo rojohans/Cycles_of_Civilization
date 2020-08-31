@@ -1,4 +1,4 @@
-
+import numpy as np
 
 class SettingsClass():
     def __init__(self):
@@ -14,11 +14,35 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 32
-        self.N_COLONS = 32
+        self.N_ROWS = 16
+        self.N_COLONS = 16
+        self.HORIZONTAL_WRAP_BUFFER = 20
+
         self.MODEL_RESOLUTION = 30
+        self.TILE_CENTER_WIDTH = 0.5
+        self.TILE_TEXTURE_RESOLUTION = 128
+        self.ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]],
+                                           dtype=int)
+
         self.ELEVATION_SCALE = 0.3
+        self.DISCRETE_ELEVATION = True
+        self.MAXIMUM_ELEVATION = 5
 
         self.FEATURE_RENDER_RADIUS = 12
         self.FEATURE_RENDER_CAPACITY = 2000
         self.FEATURE_RENDER_MAX_SPEED = 2 # The maximum #features to add each frame.
+
+
+        self.SOIL_FERTILITY_LEVELS = 4
+        self.DISCRETE_SOIL_FERTILITY_LEVELS = False
+        self.SOIL_FERTILITY_DISTRIBUTION = [0.15, 0.3, 0.45, 0.1]
+        #type  : barren  poor  normal  lush
+        #yield :   0     0.5     1     1.25
+
+        self.TOPOGRAPHY_ROUGHNESS_LEVELS = 3
+        self.DISCRETE_TOPOGRAPHY_ROUGHNESS_LEVELS = False
+        self.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION = [0.6, 0.3, 0.1]
+        #type  :  flat    hilly    mountanious
+        #yield :
+
+
