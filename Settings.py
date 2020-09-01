@@ -24,14 +24,23 @@ class SettingsClass():
         self.ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]],
                                            dtype=int)
 
-        self.ELEVATION_SCALE = 0.3
-        self.DISCRETE_ELEVATION = True
-        self.MAXIMUM_ELEVATION = 5
+        self.ROCK_TEXTURE_SLOPE_THRESHOLD = 0.2
+        self.ROCK_TEXTURE_RADIUS = round(self.TILE_TEXTURE_RESOLUTION / (self.MODEL_RESOLUTION*1.2))
+        self.ROCK_TEXTURE_CIRCLE = []
+        for row in np.linspace(-self.ROCK_TEXTURE_RADIUS, self.ROCK_TEXTURE_RADIUS, self.ROCK_TEXTURE_RADIUS * 2 + 1):
+            for colon in np.linspace(-self.ROCK_TEXTURE_RADIUS, self.ROCK_TEXTURE_RADIUS, self.ROCK_TEXTURE_RADIUS * 2 + 1):
+                if np.sqrt(row**2 + colon**2) <= self.ROCK_TEXTURE_RADIUS:
+                    self.ROCK_TEXTURE_CIRCLE.append([colon, row])
+        self.ROCK_TEXTURE_CIRCLE = np.array(self.ROCK_TEXTURE_CIRCLE)
+
 
         self.FEATURE_RENDER_RADIUS = 12
         self.FEATURE_RENDER_CAPACITY = 2000
         self.FEATURE_RENDER_MAX_SPEED = 2 # The maximum #features to add each frame.
 
+        self.ELEVATION_SCALE = 0.3
+        self.DISCRETE_ELEVATION = True
+        self.MAXIMUM_ELEVATION = 5
 
         self.SOIL_FERTILITY_LEVELS = 4
         self.DISCRETE_SOIL_FERTILITY_LEVELS = False

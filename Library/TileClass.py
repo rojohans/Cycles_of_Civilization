@@ -983,13 +983,41 @@ class TileClass(Entity):
         for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
             for x in range(self.pandaProgram.settings.MODEL_RESOLUTION):
                 if x !=0 and x != self.pandaProgram.settings.MODEL_RESOLUTION-1 and y != 0 and y != self.pandaProgram.settings.MODEL_RESOLUTION-1:
-
                     diffx = np.array((2/(self.pandaProgram.settings.MODEL_RESOLUTION-1), 0, self.topography[self.pandaProgram.settings.MODEL_RESOLUTION-y, x+1]-self.topography[self.pandaProgram.settings.MODEL_RESOLUTION-y, x-1]))
                     diffy = np.array((0, 2 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),
                                       self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 2, x] - self.topography[
                                           self.pandaProgram.settings.MODEL_RESOLUTION - y, x]))
+                else:
+                    #print(x)
+                    #print(y)
+                    #print(' ')
+                    if x == 0:
+                        diffx = np.array((1 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1), 0,
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y-1, x + 1] -
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y-1, x]))
+                    else:
+                        diffx = np.array((1 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1), 0,
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y-1, x] -
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y-1, x - 1]))
+                    if y == 0:
+                        diffy = np.array((0, 1 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 2, x] -
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 1, x]))
+                    else:
+                        diffy = np.array((0, 1 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 1, x] -
+                                          self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y, x]))
 
-                    self.normals[y, x] = [diffx[1] * diffy[2] - diffx[2] * diffy[1], diffx[2] * diffy[0] - diffx[0] * diffy[2], diffx[0] * diffy[1] - diffx[1] * diffy[0]]
+                normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
+                          diffx[2] * diffy[0] - diffx[0] * diffy[2],
+                          diffx[0] * diffy[1] - diffx[1] * diffy[0]]
+                self.normals[y, x] = normal
+
+    def NormalizeNormals(self):
+        for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+            for x in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+                normal = self.normals[y, x]
+                self.normals[y, x] = normal / np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
 
     def NormalsCleanup(self):
         '''
@@ -1162,14 +1190,11 @@ class TileClass(Entity):
         #return tileTexture
 
     def ApplyTexture(self):
-        soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
-        textureArrayFull = self.terrainTextures['soil_fertility_' + str(soilFertility)]
-
         textureArray = np.zeros((self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION,
                                  self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION, 3), dtype=np.uint8)
-        textureArray[:, :, 0] = np.uint8(255 * textureArrayFull[:, :, 2])
-        textureArray[:, :, 1] = np.uint8(255 * textureArrayFull[:, :, 1])
-        textureArray[:, :, 2] = np.uint8(255 * textureArrayFull[:, :, 0])
+        textureArray[:, :, 0] = np.uint8(255 * self.textureArray[:, :, 2])
+        textureArray[:, :, 1] = np.uint8(255 * self.textureArray[:, :, 1])
+        textureArray[:, :, 2] = np.uint8(255 * self.textureArray[:, :, 0])
 
         tex = p3d.Texture()
         tex.setup2dTexture(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION,
@@ -1181,8 +1206,8 @@ class TileClass(Entity):
         tex.setRamImage(buf) # np.array -> texture
 
         # Use texture pixels without interpolation.
-        #tex.setMagfilter(p3d.Texture.FT_nearest)
-        #tex.setMinfilter(p3d.Texture.FT_nearest)
+        tex.setMagfilter(p3d.Texture.FT_nearest)
+        tex.setMinfilter(p3d.Texture.FT_nearest)
 
         self.node.setTexture(tex)
 
@@ -1380,6 +1405,45 @@ class TileClass(Entity):
         textureCode += leftTerrain[8]
 
         return textureCode
+
+    def CreateTextureArray(self):
+        soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
+        self.textureArray = self.terrainTextures['soil_fertility_' + str(soilFertility)].copy()
+
+    def AddSlopeTexture(self, detail = 'low'):
+        rockTexture = self.terrainTextures['rock']
+        if detail == 'low':
+            for xModel in np.linspace(0, self.pandaProgram.settings.MODEL_RESOLUTION-1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                for yModel in np.linspace(0, self.pandaProgram.settings.MODEL_RESOLUTION-1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                    if self.normals[int(xModel), int(yModel), 2] < self.pandaProgram.settings.ROCK_TEXTURE_SLOPE_THRESHOLD:
+
+                        xTexture = int(round(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION*xModel/self.pandaProgram.settings.MODEL_RESOLUTION))
+                        yTexture = int(round(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION*yModel/self.pandaProgram.settings.MODEL_RESOLUTION))
+
+                        rockCircle = self.pandaProgram.settings.ROCK_TEXTURE_CIRCLE.copy()
+                        rockCircle[:, 0] += xTexture
+                        rockCircle[:, 1] += yTexture
+                        for point in rockCircle:
+                            if point[0] >= 0 and \
+                               point[0] < self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION and \
+                               point[1] >= 0 and \
+                               point[1] < self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION:
+                                #self.textureArray[int(point[0]), int(point[1])] = [0, 0, 0, 1]
+                                self.textureArray[int(point[0]), int(point[1])] = rockTexture[int(point[0]), int(point[1]), :]
+        elif detail == 'high':
+            import scipy
+            interp = scipy.interpolate.RectBivariateSpline(
+                np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION),
+                np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION), self.normals[:, :, 2])
+
+            for x in np.linspace(0, 1, self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION):
+                for y in np.linspace(0, 1, self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION):
+                    zNormal = interp(x, y)
+                    if zNormal < self.pandaProgram.settings.ROCK_TEXTURE_SLOPE_THRESHOLD:
+                        xTexture = int(round((self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION-1) * x))
+                        yTexture = int(round((self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION-1) * y))
+
+                        self.textureArray[xTexture, yTexture] = rockTexture[xTexture, yTexture, :]
 
     def CreateTexture(self, textureCode):
         '''
@@ -1781,8 +1845,8 @@ class TileClass(Entity):
                                'soil_fertility_0':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_0.png"),
                                'soil_fertility_1':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_1.png"),
                                'soil_fertility_2':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
-                               'soil_fertility_3':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_3.png")}
-
+                               'soil_fertility_3':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_3.png"),
+                               'rock':image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png")}
 
         #cls.terrainTextures = {'grass':image.imread("panda3d-master/samples/chessboard/models/grass_4_symmetrical.jpg"),
         #                       'desert':image.imread("panda3d-master/samples/chessboard/models/desert_1_symmetrical.jpg"),

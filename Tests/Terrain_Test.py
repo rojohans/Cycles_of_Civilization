@@ -114,6 +114,7 @@ class Game(ShowBase):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
                 self.tileList[iTile].CreateNormals()
+                self.tileList[iTile].NormalizeNormals()
         toc = time.time()
         print('CreateNormals: {}'.format(toc - tic))
 
@@ -121,6 +122,14 @@ class Game(ShowBase):
         self.tileList[0].NormalsCleanup()
         toc = time.time()
         print('NormalsCleanup: {}'.format(toc - tic))
+
+        tic = time.time()
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                iTile = colon + row * self.settings.N_COLONS
+                self.tileList[iTile].NormalizeNormals()
+        toc = time.time()
+        print('Normalize normals: {}'.format(toc - tic))
 
         tic = time.time()
         for row in range(self.settings.N_ROWS):
@@ -135,13 +144,16 @@ class Game(ShowBase):
         #TileClass.UnitClass.CreateUnit(row=7, colon=13, elevation=self.z[7, 13], type='unit_test')
         #TileClass.UnitClass.CreateUnit(row=5, colon=5, elevation=self.z[5, 5], type='unit_test')
         # TileClass.UnitClass.CreateUnit(row = 8, colon = 61, elevation = self.z[8, 61], type = 'unit_test')
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                iTile = colon + row * self.settings.N_COLONS
+                self.tileList[iTile].CreateTextureArray()
+                self.tileList[iTile].AddSlopeTexture()
 
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
-
                 self.tileList[iTile].ApplyTexture()
-                #self.tileList[iTile].TextureTile()
 
                 self.tileList[iTile].node.reparentTo(self.tileRoot)
                 self.tileList[iTile].node.setScale(1, 1, self.settings.ELEVATION_SCALE)
