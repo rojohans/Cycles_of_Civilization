@@ -2035,6 +2035,40 @@ class FeatureClass(Entity):
         cls.featureTemplates = featureTemplates
         cls.pandaProgram = pandaProgram
 
+    @classmethod
+    def ConstructionMenuFunction(cls, value):
+        print('construct builing')
+        print(value)
+        print()
+        tileID = cls.pandaProgram.selected_tile_ID
+        tile = cls.pandaProgram.tileList[tileID]
+        if value == 0:
+            tile.features.append(FeatureClass(parentTile=tile,
+                                                                        type='farm',
+                                                                        numberOfcomponents=1,
+                                                                        distributionType='random'))
+        elif value == 1:
+            tile.features.append(FeatureClass(parentTile=tile,
+                                                                        type='town',
+                                                                        numberOfcomponents=20,
+                                                                        distributionType='grid',
+                                                                        distributionValue=7,
+                                                                        gridAlignedHPR=True
+                                                                        ))
+        elif value == 2:
+            tile.features.append(FeatureClass(parentTile=tile,
+                                                                        type='jungle',
+                                                                        numberOfcomponents=20))
+        elif value == 3:
+            tile.features.append(FeatureClass(parentTile=tile,
+                                                                        type='conifer_forest',
+                                                                        numberOfcomponents=20))
+        else:
+            tile.features.append(FeatureClass(parentTile=tile,
+                                                                        type='temperate_forest',
+                                                                        numberOfcomponents=20))
+
+
 class NaturalFeature(FeatureClass):
     #
     # Natural features include forest, shrubland and resources
@@ -2095,7 +2129,9 @@ class UnitClass(Entity):
         self.ChessBoardDemo.selected_unit_ID = None
         self.ChessBoardDemo.unitMarker.detachNode()
 
-        self.ChessBoardDemo.GUIObject.myFrame.hide()
+        self.ChessBoardDemo.GUIObject.unitFrame.frame.hide()
+
+        self.ChessBoardDemo.LeftMouseButtonFunction = self.StandardClicker
 
     def SimpleMove(self, row, colon, elevation):
         '''
@@ -2200,6 +2236,7 @@ class UnitClass(Entity):
         :param value:
         :return:
         '''
+        print(value)
         if value == 1:
             cls.ChessBoardDemo.LeftMouseButtonFunction = cls.PlaceUnitClicker
         else:

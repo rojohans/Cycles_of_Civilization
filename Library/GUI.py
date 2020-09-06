@@ -8,9 +8,8 @@ import Root_Directory
 import Library.TileClass as TileClass
 
 class GUIClass():
-    def __init__(self, base, debugText = False):
-
-
+    def __init__(self, base, mainProgram, debugText = False):
+        self.mainProgram = mainProgram
 
         if debugText:
             self.escapeEvent = OnscreenText(
@@ -37,138 +36,79 @@ class GUIClass():
         self.windowSize = (base.win.getXSize(), base.win.getYSize())
 
         self.windowRatio = self.windowSize[0] / self.windowSize[1]
-        self.buttonScale = 0.08
+        #self.buttonScale = 0.08
         self.frameWidth = 0.6*self.windowRatio
 
+        self.unitFrame = UnitFrame(base = base,
+                        parent = base.a2dBottomLeft,
+                        size = [-self.frameWidth, self.frameWidth, -0.1, 0.1],
+                        position = (self.windowRatio, 0, 0.1),
+                        mainProgram = mainProgram,
+                        windowRatio = self.windowRatio)
+        self.tileFrame = TileFrame(base = base,
+                        parent = base.a2dBottomLeft,
+                        size = [-self.frameWidth, self.frameWidth, -0.1, 0.1],
+                        position = (self.windowRatio, 0, 0.1),
+                        mainProgram = mainProgram,
+                        windowRatio = self.windowRatio)
 
-
-        # parent=base.a2dTopLeft,
-        #self.myFrame = DirectFrame(parent = aspect2d,
-        #                      frameColor=(0, 0, 0, 1),
-        #                      frameSize=(-0.6*self.windowRatio, 0.6*self.windowRatio, -0.1, 0.1),
-        #                      pos=(0, 0, -0.9))
-        self.myFrame = DirectFrame(parent = base.a2dBottomLeft,
-                              frameColor=(0, 0, 0, 1),
-                              frameSize=(-self.frameWidth, self.frameWidth, -0.1, 0.1),
-                              pos=(self.windowRatio, 0, 0.1))
-        #self.myFrame = DirectFrame(parent = render2d,
-        #                      frameColor=(0, 0, 0, 1),
-        #                      frameSize=(-1, 1, -1, 0),
-        #                      pos=(0, 0, 0))
-
-        # b = DirectButton(image = "panda3d-master/samples/chessboard/models/unit_move_marker.jpg", scale = 0.5, pos = (0, -1, 0), relief = None)
-        #
         # The scale of the button is the radii of the button, measured in units in windowHeight/2. A button with scale 1
         # will cover the entire height of the window if placed in the center of the screen.
         #
-        self.MoveUnitFunction = None
+        self.unitFrame.frame.hide()
+        self.tileFrame.frame.hide()
 
-        GUIDataDirectoryPath = Root_Directory.Path(style = 'unix') + '/Data/GUI/'
+        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
 
-        self.move_button = DirectCheckButton(boxImage=(GUIDataDirectoryPath + 'unit_move_marker.png',
-                                            GUIDataDirectoryPath + 'unit_move_marker_pressed.png',
-                                            GUIDataDirectoryPath + 'unit_move_marker.png',
-                                            GUIDataDirectoryPath + 'unit_move_marker.png'),
-                                             scale=self.buttonScale,
-                                             pos=(0 - self.buttonScale, 0, 0),
-                                             relief=None,
-                                             boxRelief=None,
-                                             parent=self.myFrame,
-                                             boxPlacement = 'right',
-                                             command = self.MoveUnitButtonFunction)
-        self.move_button.setTransparency(TransparencyAttrib.MAlpha)
 
-        self.information_button = DirectCheckButton(boxImage=(GUIDataDirectoryPath + "information_marker.jpg",
-                                        GUIDataDirectoryPath + "information_marker_pressed.jpg",
-                                        GUIDataDirectoryPath + "information_marker.jpg",
-                                        GUIDataDirectoryPath + "information_marker.jpg"),
-                                                    scale=self.buttonScale,
-                                                    pos = (0.4*self.windowRatio - self.buttonScale, 0, 0),
-                                                    relief=None,
-                                                    boxRelief=None,
-                                                    parent=self.myFrame,
-                                                    boxPlacement = 'right')
-
-        #self.destroy_unit_button = DirectButton(boxImage=("panda3d-master/samples/chessboard/models/button_marker_skull.png",
-        #                                "panda3d-master/samples/chessboard/models/button_marker_skull_selected.png",
-        #                                "panda3d-master/samples/chessboard/models/button_marker_skull.png",
-        #                                "panda3d-master/samples/chessboard/models/button_marker_skull.png"),
-        #                                             scale=self.buttonScale,
-        #                                             pos=(-0.4*self.windowRatio - self.buttonScale, 0, 0),
-        #                                             relief=None,
-        #                                             boxRelief=None,
-        #                                             parent=self.myFrame,
-        #                                             boxPlacement = 'right')
-        self.DestroyUnitFunction = None
-        self.destroy_unit_button = DirectButton(image=(GUIDataDirectoryPath + "button_marker_skull.png",
-                                                GUIDataDirectoryPath + "button_marker_skull_selected.png",
-                                                GUIDataDirectoryPath + "button_marker_skull.png",
-                                                GUIDataDirectoryPath + "button_marker_skull.png"),
-                                                scale=self.buttonScale,
-                                                pos=(-0.4*self.windowRatio - self.buttonScale, 0, 0),
-                                                relief=None,
-                                                parent=self.myFrame,
-                                                command = self.DestroyUnitButtonFunction)
-
-        self.destroy_unit_button.setTransparency(TransparencyAttrib.MAlpha)
-
-        self.PositionButtonsInFrame(self.myFrame, [self.move_button, self.information_button, self.destroy_unit_button])
 
 
         self.add_unit_button = DirectCheckButton(boxImage=(GUIDataDirectoryPath + "add_unit_button.png",
                                                 GUIDataDirectoryPath + "add_unit_button_pressed.png",
                                                 GUIDataDirectoryPath + "add_unit_button.png",
                                                 GUIDataDirectoryPath + "add_unit_button.png"),
-                                                 scale=self.buttonScale,
-                                                 pos=(-0.9*self.windowRatio - self.buttonScale, 0, 0.5),
+                                                 scale=self.mainProgram.settings.BUTTON_SCALE,
+                                                 pos=(-0.9*self.windowRatio - self.mainProgram.settings.BUTTON_SCALE, 0, 0.5),
                                                  relief=None,
                                                  boxRelief=None,
                                                  boxPlacement = 'right',
                                                  command = TileClass.UnitClass.AddUnitButtonFunction)
         self.add_unit_button.setTransparency(TransparencyAttrib.MAlpha)
 
-
-
-
         self.quitButton = DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
                                         GUIDataDirectoryPath + "quit_button.png",
                                         GUIDataDirectoryPath + "quit_button.png",
                                         GUIDataDirectoryPath + "quit_button.png"),
-                                       scale=self.buttonScale,
+                                       scale=self.mainProgram.settings.BUTTON_SCALE,
                                        pos=(0.9*self.windowRatio, 0, 0.9),
                                        relief=None,
                                        command = sys.exit)
         self.quitButton.setTransparency(TransparencyAttrib.MAlpha)
-
-    def MoveUnitButtonFunction(self, value):
-        self.MoveUnitFunction(value)
-
-    def DestroyUnitButtonFunction(self):
-        self.DestroyUnitFunction()
-
-    def PositionButtonsInFrame(self, frame, buttonList):
-        '''
-        Positions the buttons evenly spaced on a horizontal line.
-        :param frame:
-        :param buttonList:
-        :return:
-        '''
-        numberOfButtons = len(buttonList)
-        for i, button in enumerate(buttonList):
-            button.setPos(2 * self.frameWidth * ((i+1)/(numberOfButtons+1)-0.5) - self.buttonScale, 0, 0)
-        button.setPos(2 * self.frameWidth * ((i + 1) / (numberOfButtons + 1) - 0.5), 0, 0)
 
     def window_update(self):
         #self.windowSize = newWindowSize
         self.windowRatio = self.windowSize[0] / self.windowSize[1]
         self.frameWidth = 0.6 * self.windowRatio
 
-        self.myFrame["frameSize"] = (-0.6*self.windowRatio, 0.6*self.windowRatio, -0.1, 0.1)
-        self.myFrame.setPos(self.windowRatio, 0, 0.1)
+        self.unitFrame.windowRatio = self.windowRatio
+        self.unitFrame.frameWidth = self.frameWidth
 
-        self.PositionButtonsInFrame(self.myFrame, [self.move_button, self.information_button, self.destroy_unit_button])
 
-        self.add_unit_button.setPos(-0.9*self.windowRatio - self.buttonScale, 0, 0.5)
+
+
+
+
+
+        self.unitFrame.frame["frameSize"] = (-0.6 * self.windowRatio, 0.6 * self.windowRatio, -0.1, 0.1)
+        self.unitFrame.frame.setPos(self.windowRatio, 0, 0.1)
+
+        self.tileFrame.frame["frameSize"] = (-0.6 * self.windowRatio, 0.6 * self.windowRatio, -0.1, 0.1)
+        self.tileFrame.frame.setPos(self.windowRatio, 0, 0.1)
+
+        self.unitFrame.PositionButtonsInFrame()
+        self.tileFrame.PositionButtonsInFrame()
+
+        self.add_unit_button.setPos(-0.9*self.windowRatio - self.mainProgram.settings.BUTTON_SCALE, 0, 0.5)
         self.quitButton.setPos(0.9*self.windowRatio, 0, 0.9)
 
     def window_task(self, task):
@@ -182,3 +122,137 @@ class GUIClass():
             self.windowSize = (base.win.getXSize(), base.win.getYSize())
             self.window_update()
         return task.again
+
+class CustomFrame():
+    def __init__(self, base, parent, size, position, mainProgram, windowRatio):
+        self.frame = DirectFrame(parent = parent,
+                                 frameColor=(0, 0, 0, 1),
+                                 frameSize=size,
+                                 pos=position)
+        self.mainProgram = mainProgram
+        self.windowRatio = windowRatio
+        self.frameWidth = mainProgram.settings.RELATIVE_SELECTION_FRAME_WIDTH * windowRatio
+        self.buttonScale = self.mainProgram.settings.BUTTON_SCALE
+
+        self.GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+
+        self.buttons = {}
+
+    def PositionButtonsInFrame(self):
+        '''
+        Positions the buttons evenly spaced on a horizontal line.
+        :param frame:
+        :param buttonList:
+        :return:
+        '''
+        numberOfButtons = len(self.buttons)
+        for i, key in enumerate(self.buttons):
+            button = self.buttons[key]
+            button.setPos(2 * self.frameWidth * ((i+1)/(numberOfButtons+1)-0.5) - self.mainProgram.settings.BUTTON_SCALE, 0, 0)
+        button.setPos(2 * self.frameWidth * ((i + 1) / (numberOfButtons + 1) - 0.5), 0, 0)
+
+    def UnToggleButtons(self):
+        '''
+        Untoggles all the check buttons of the frame object.
+        :return:
+        '''
+        for i, key in enumerate(self.buttons):
+            button = self.buttons[key]
+            if isinstance(button, DirectCheckButton):
+                button['indicatorValue'] = False
+                button.setIndicatorValue()
+
+class UnitFrame(CustomFrame):
+    def __init__(self, base, parent, size, position, mainProgram, windowRatio):
+        super().__init__(base, parent, size, position, mainProgram, windowRatio)
+
+        self.MoveUnitFunction = None
+
+        self.buttons['move'] = DirectCheckButton(boxImage=(self.GUIDataDirectoryPath + 'unit_move_marker.png',
+                                                       self.GUIDataDirectoryPath + 'unit_move_marker_pressed.png',
+                                                       self.GUIDataDirectoryPath + 'unit_move_marker.png',
+                                                       self.GUIDataDirectoryPath + 'unit_move_marker.png'),
+                                             scale=self.buttonScale,
+                                             pos=(0 - self.buttonScale, 0, 0),
+                                             relief=None,
+                                             boxRelief=None,
+                                             parent=self.frame,
+                                             boxPlacement='right',
+                                             command=self.MoveUnitButtonFunction)
+        self.buttons['move'].setTransparency(TransparencyAttrib.MAlpha)
+
+
+        self.buttons['information'] = DirectCheckButton(boxImage=(self.GUIDataDirectoryPath + "information_marker.jpg",
+                                                              self.GUIDataDirectoryPath + "information_marker_pressed.jpg",
+                                                              self.GUIDataDirectoryPath + "information_marker.jpg",
+                                                              self.GUIDataDirectoryPath + "information_marker.jpg"),
+                                                    scale=self.buttonScale,
+                                                    pos=(0.4 * self.windowRatio - self.buttonScale, 0, 0),
+                                                    relief=None,
+                                                    boxRelief=None,
+                                                    parent=self.frame,
+                                                    boxPlacement='right')
+
+
+        self.DestroyUnitFunction = None
+        self.buttons['destroy'] = DirectButton(image=(self.GUIDataDirectoryPath + "button_marker_skull.png",
+                                                       self.GUIDataDirectoryPath + "button_marker_skull_selected.png",
+                                                       self.GUIDataDirectoryPath + "button_marker_skull.png",
+                                                       self.GUIDataDirectoryPath + "button_marker_skull.png"),
+                                                scale=self.buttonScale,
+                                                pos=(-0.4 * self.windowRatio - self.buttonScale, 0, 0),
+                                                relief=None,
+                                                parent=self.frame,
+                                                command=self.DestroyUnitButtonFunction)
+
+        self.buttons['destroy'].setTransparency(TransparencyAttrib.MAlpha)
+
+        self.PositionButtonsInFrame()
+
+    def MoveUnitButtonFunction(self, value):
+        self.MoveUnitFunction(value)
+
+    def DestroyUnitButtonFunction(self):
+        self.DestroyUnitFunction()
+
+
+class TileFrame(CustomFrame):
+    def __init__(self, base, parent, size, position, mainProgram, windowRatio):
+        super().__init__(base, parent, size, position, mainProgram, windowRatio)
+
+
+
+        self.ConstructBuildingButtonFunction = None
+        self.buttons['Construct'] = DirectCheckButton(boxImage=(self.GUIDataDirectoryPath + 'construct_building.png',
+                                                       self.GUIDataDirectoryPath + 'construct_building_pressed.png',
+                                                       self.GUIDataDirectoryPath + 'construct_building.png',
+                                                       self.GUIDataDirectoryPath + 'construct_building.png'),
+                                             scale=self.buttonScale,
+                                             pos=(0 - self.buttonScale, 0, 0),
+                                             relief=None,
+                                             boxRelief=None,
+                                             parent=self.frame,
+                                             boxPlacement='right',
+                                             command=self.OpenCloseConstructionMenu)
+        self.PositionButtonsInFrame()
+
+        self.ConstructionMenuFunction = None
+        self.constructionMenu = DirectDialog(dialogName = 'Construct menu',
+                                             buttonTextList = ['farm', 'town', 'jungle', 'conifer forest', 'temperate forest'],
+                                             command = self.ConstructionMenuButtonFunction)
+        self.constructionMenu.hide()
+
+    def ConstructionMenuButtonFunction(self, value):
+        self.ConstructionMenuFunction(value)
+
+    def OpenCloseConstructionMenu(self, value):
+        if value == 1:
+            self.constructionMenu.show()
+        else:
+            self.constructionMenu.hide()
+
+
+
+
+
+

@@ -189,11 +189,15 @@ class CameraClass():
                 # Add node
                 tileToRender = self.mainProgram.tilesToRender.pop(0)
                 self.mainProgram.tilesBeingRendered.insert(0, tileToRender)
-                self.mainProgram.tileList[tileToRender].features[0].CreateNodes()
+                for feature in self.mainProgram.tileList[tileToRender].features:
+                    feature.CreateNodes()
+                #self.mainProgram.tileList[tileToRender].features[0].CreateNodes()
 
             if len(self.mainProgram.tilesBeingRendered) > self.mainProgram.settings.FEATURE_RENDER_CAPACITY:
                 # Remove node
                 tileToRemove = self.mainProgram.tilesBeingRendered.pop()
-                self.mainProgram.tileList[tileToRemove].features[0].node.removeNode()
+                for feature in self.mainProgram.tileList[tileToRemove].features:
+                    feature.node.removeNode()
+                #self.mainProgram.tileList[tileToRemove].features[0].node.removeNode()
         return task.cont
 

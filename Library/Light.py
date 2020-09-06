@@ -7,22 +7,22 @@ class LightClass():
         ambientLight.setColor((0.2, 0.2, .2, 1))
         directionalLight = DirectionalLight("directionalLight")
         directionalLight.setDirection(LVector3(25, 25, -45))
-        directionalLight.setColor((0.1, 0.1, 0.15, 1))
+        directionalLight.setColor((0.1, 0.1, 0.2, 1))
         #directionalLight.setColor((0, 0, 0.05, 1))
 
         directionalLight2 = DirectionalLight("directionalLight")
         directionalLight2.setDirection(LVector3(50, 0, -45))
-        directionalLight2.setColor((0.1, 0.1, 0.15, 1))
+        directionalLight2.setColor((0.1, 0.1, 0.2, 1))
         #directionalLight2.setColor((0, 0, 0.05, 1))
 
         directionalLight3 = DirectionalLight("directionalLight")
         directionalLight3.setDirection(LVector3(0, 50, -45))
-        directionalLight3.setColor((0.1, 0.1, 0.15, 1))
+        directionalLight3.setColor((0.1, 0.1, 0.2, 1))
         #directionalLight3.setColor((0, 0, 0.05, 1))
 
         directionalLight4 = DirectionalLight("directionalLight")
         directionalLight4.setDirection(LVector3(-25, -25, -45))
-        directionalLight4.setColor((0.1, 0.1, 0.15, 1))
+        directionalLight4.setColor((0.1, 0.1, 0.2, 1))
         #directionalLight4.setColor((0, 0, 0.05, 1))
 
         render.setLight(render.attachNewNode(directionalLight))

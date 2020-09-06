@@ -35,7 +35,7 @@ class SettingsClass():
 
 
         self.FEATURE_RENDER_RADIUS = 12
-        self.FEATURE_RENDER_CAPACITY = 2000
+        self.FEATURE_RENDER_CAPACITY = 2000 # the maximum # tiles which will be kept in RAM.
         self.FEATURE_RENDER_MAX_SPEED = 2 # The maximum #features to add each frame.
 
         self.ELEVATION_SCALE = 0.3
@@ -54,4 +54,6 @@ class SettingsClass():
         #type  :  flat    hilly    mountanious
         #yield :
 
-
+        # ==================== GUI ================================================================================
+        self.BUTTON_SCALE = 0.08
+        self.RELATIVE_SELECTION_FRAME_WIDTH = 0.6

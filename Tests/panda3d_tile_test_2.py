@@ -89,7 +89,7 @@ class ChessboardDemo(ShowBase):
         self.TEXTURE_RESOLUTION = TEXTURE_RESOLUTION
 
         import Library.GUI as GUI
-        self.GUIObject = GUI.GUIClass(base, debugText = True)
+        self.GUIObject = GUI.GUIClass(base, debugText = True, mainProgram = self)
         self.add_task(self.GUIObject.window_task, 'window_update')
 
 
@@ -125,7 +125,6 @@ class ChessboardDemo(ShowBase):
         import Library.Light as Light
         self.lights = Light.LightClass()
 
-
         # Since we are using collision detection to do picking, we set it up like
         # any other collision detection system with a traverser and a handler
         self.picker = CollisionTraverser()  # Make a traverser
@@ -143,11 +142,6 @@ class ChessboardDemo(ShowBase):
         self.pickerNode.addSolid(self.pickerRay)
         # Register the ray as something that can cause collisions
         self.picker.addCollider(self.pickerNP, self.pq)
-        #self.picker.showCollisions(render)
-
-        # Now we create the chess board and its pieces
-
-        import Library.Noise as Noise
 
         gridSize = 128
         points = np.zeros((N_ROWS* N_COLONS, 3))
@@ -760,7 +754,7 @@ class ChessboardDemo(ShowBase):
             self.selected_unit_ID = None
             self.unitMarker.detachNode()
 
-            self.GUIObject.myFrame.hide()
+            self.GUIObject.unitFrame.hide()
 
             TileClass.UnitClass.AddUnitButtonFunction(0)
             self.GUIObject.add_unit_button['indicatorValue'] = False
@@ -789,10 +783,6 @@ class ChessboardDemo(ShowBase):
         else:
             dt = globalClock.get_dt()
             self.leftMouseClickCooldown -= dt
-        return task.cont
-
-    def AnimationTask(self, task):
-        Animation.AnimationClass.AnimationTaskFunction()
         return task.cont
 
     def StandardPicker(self):
@@ -833,7 +823,7 @@ class ChessboardDemo(ShowBase):
                                    ELEVATION_SCALE * (self.units[unitID].elevation + 0.1))
             self.unitMarker.reparentTo(render)
 
-            self.GUIObject.myFrame.show()
+            self.GUIObject.unitFrame.show()
             self.GUIObject.DestroyUnitFunction = self.units[unitID].Destroy
             self.GUIObject.MoveUnitFunction = self.units[unitID].MoveUnitButtonFunction
 
