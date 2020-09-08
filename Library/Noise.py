@@ -1,8 +1,5 @@
 import numpy as np
 
-from scipy import interpolate
-
-
 class Perlin2D():
     def __init__(self, maxOctaves = 5):
 

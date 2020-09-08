@@ -239,7 +239,8 @@ class TileFrame(CustomFrame):
         self.ConstructionMenuFunction = None
         self.constructionMenu = DirectDialog(dialogName = 'Construct menu',
                                              buttonTextList = ['farm', 'town', 'jungle', 'conifer forest', 'temperate forest'],
-                                             command = self.ConstructionMenuButtonFunction)
+                                             command = self.ConstructionMenuButtonFunction,
+                                             pos = (0, 0, 1))
         self.constructionMenu.hide()
 
     def ConstructionMenuButtonFunction(self, value):

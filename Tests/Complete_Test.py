@@ -54,7 +54,7 @@ class Game(ShowBase):
 
         self.SetupTiles()
 
-        self.SetupFeatures()
+        self.SetupFeatures(empty = False)
         self.GUIObject.tileFrame.ConstructionMenuFunction = TileClass.FeatureClass.ConstructionMenuFunction
 
         Animation.AnimationClass.Initialize(self.settings.ELEVATION_SCALE, self)
@@ -110,46 +110,47 @@ class Game(ShowBase):
     def UpdateKeyDictionary(self, key, status):
         self.inputDictionary[key] = status
 
-    def SetupFeatures(self):
+    def SetupFeatures(self, empty = False):
         self.tilesToRender = []
         self.tilesBeingRendered = []
 
         self.featureTemplateDictionary = FeatureTemplateDictionary.GetFeatureTemplateDictionary()
         TileClass.FeatureClass.Initialize(featureTemplates = self.featureTemplateDictionary, pandaProgram = self)
-        for row in range(self.settings.N_ROWS):
-            for colon in range(self.settings.N_COLONS):
-                iTile = colon + row * self.settings.N_COLONS
-                r = np.random.rand()
-                if r < 0.15:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='jungle',
-                                                                                numberOfcomponents=20))
-                    self.tileList[iTile].features[0].node.removeNode()
-                elif r < 0.3:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='town',
-                                                                                numberOfcomponents=20,
-                                                                                distributionType='grid',
-                                                                                distributionValue=7,
-                                                                                gridAlignedHPR=True
-                                                                                ))
-                    self.tileList[iTile].features[0].node.removeNode()
-                elif r < 0.45:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='farm',
-                                                                                numberOfcomponents=1,
-                                                                                distributionType='random'))
-                    self.tileList[iTile].features[0].node.removeNode()
-                elif r < 0.6:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='conifer_forest',
-                                                                                numberOfcomponents=20))
-                    self.tileList[iTile].features[0].node.removeNode()
-                elif r < 0.75:
-                    self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                type='temperate_forest',
-                                                                                numberOfcomponents=20))
-                    self.tileList[iTile].features[0].node.removeNode()
+        if empty == False:
+            for row in range(self.settings.N_ROWS):
+                for colon in range(self.settings.N_COLONS):
+                    iTile = colon + row * self.settings.N_COLONS
+                    r = np.random.rand()
+                    if r < 0.15:
+                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                    type='jungle',
+                                                                                    numberOfcomponents=20))
+                        self.tileList[iTile].features[0].node.removeNode()
+                    elif r < 0.3:
+                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                    type='town',
+                                                                                    numberOfcomponents=20,
+                                                                                    distributionType='grid',
+                                                                                    distributionValue=7,
+                                                                                    gridAlignedHPR=True
+                                                                                    ))
+                        self.tileList[iTile].features[0].node.removeNode()
+                    elif r < 0.45:
+                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                    type='farm',
+                                                                                    numberOfcomponents=1,
+                                                                                    distributionType='random'))
+                        self.tileList[iTile].features[0].node.removeNode()
+                    elif r < 0.6:
+                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                    type='conifer_forest',
+                                                                                    numberOfcomponents=20))
+                        self.tileList[iTile].features[0].node.removeNode()
+                    elif r < 0.75:
+                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                    type='temperate_forest',
+                                                                                    numberOfcomponents=20))
+                        self.tileList[iTile].features[0].node.removeNode()
 
 
     def SetupTiles(self):
