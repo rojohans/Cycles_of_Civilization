@@ -141,6 +141,16 @@ class Game(ShowBase):
         toc = time.time()
         print('CreateNodeExperimental: {}'.format(toc - tic))
 
+        tic = time.time()
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                if self.world.elevation[row, colon] <= 1:
+                    iTile = colon + row * self.settings.N_COLONS
+                    self.tileList[iTile].CreateWaterNode(ocean=True)
+                    self.tileList[iTile].ApplyWaterTexture()
+        toc = time.time()
+        print('Create water nodes: {}'.format(toc - tic))
+
         #TileClass.UnitClass.CreateUnit(row=7, colon=13, elevation=self.z[7, 13], type='unit_test')
         #TileClass.UnitClass.CreateUnit(row=5, colon=5, elevation=self.z[5, 5], type='unit_test')
         # TileClass.UnitClass.CreateUnit(row = 8, colon = 61, elevation = self.z[8, 61], type = 'unit_test')

@@ -68,7 +68,7 @@ class GUIClass():
                                                 GUIDataDirectoryPath + "add_unit_button.png",
                                                 GUIDataDirectoryPath + "add_unit_button.png"),
                                                  scale=self.mainProgram.settings.BUTTON_SCALE,
-                                                 pos=(-0.9*self.windowRatio - self.mainProgram.settings.BUTTON_SCALE, 0, 0.5),
+                                                 pos=(-0.7*self.windowRatio - self.mainProgram.settings.BUTTON_SCALE, 0, 0.8),
                                                  relief=None,
                                                  boxRelief=None,
                                                  boxPlacement = 'right',
@@ -86,29 +86,31 @@ class GUIClass():
         self.quitButton.setTransparency(TransparencyAttrib.MAlpha)
 
     def window_update(self):
+
+        self.tileFrame.constructionMenuFrameSize[0] /= self.windowRatio
+        self.tileFrame.constructionMenuFrameSize[1] /= self.windowRatio
+
         #self.windowSize = newWindowSize
         self.windowRatio = self.windowSize[0] / self.windowSize[1]
         self.frameWidth = 0.6 * self.windowRatio
 
+        self.tileFrame.constructionMenuFrameSize[0] *= self.windowRatio
+        self.tileFrame.constructionMenuFrameSize[1] *= self.windowRatio
+
         self.unitFrame.windowRatio = self.windowRatio
         self.unitFrame.frameWidth = self.frameWidth
-
-
-
-
-
-
 
         self.unitFrame.frame["frameSize"] = (-0.6 * self.windowRatio, 0.6 * self.windowRatio, -0.1, 0.1)
         self.unitFrame.frame.setPos(self.windowRatio, 0, 0.1)
 
         self.tileFrame.frame["frameSize"] = (-0.6 * self.windowRatio, 0.6 * self.windowRatio, -0.1, 0.1)
         self.tileFrame.frame.setPos(self.windowRatio, 0, 0.1)
+        self.tileFrame.constructionMenu["frameSize"] = self.tileFrame.constructionMenuFrameSize
 
         self.unitFrame.PositionButtonsInFrame()
         self.tileFrame.PositionButtonsInFrame()
 
-        self.add_unit_button.setPos(-0.9*self.windowRatio - self.mainProgram.settings.BUTTON_SCALE, 0, 0.5)
+        self.add_unit_button.setPos(-0.7*self.windowRatio - self.mainProgram.settings.BUTTON_SCALE, 0, 0.8)
         self.quitButton.setPos(0.9*self.windowRatio, 0, 0.9)
 
     def window_task(self, task):
@@ -220,9 +222,6 @@ class TileFrame(CustomFrame):
     def __init__(self, base, parent, size, position, mainProgram, windowRatio):
         super().__init__(base, parent, size, position, mainProgram, windowRatio)
 
-
-
-        self.ConstructBuildingButtonFunction = None
         self.buttons['Construct'] = DirectCheckButton(boxImage=(self.GUIDataDirectoryPath + 'construct_building.png',
                                                        self.GUIDataDirectoryPath + 'construct_building_pressed.png',
                                                        self.GUIDataDirectoryPath + 'construct_building.png',
@@ -234,13 +233,59 @@ class TileFrame(CustomFrame):
                                              parent=self.frame,
                                              boxPlacement='right',
                                              command=self.OpenCloseConstructionMenu)
+        self.RemoveFeatureFunction = None
+        self.buttons['remove_feature'] = DirectButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
+                                                       self.GUIDataDirectoryPath + "remove_feature_pressed.png",
+                                                       self.GUIDataDirectoryPath + "remove_feature.png",
+                                                       self.GUIDataDirectoryPath + "remove_feature.png"),
+                                                scale=self.buttonScale,
+                                                pos=(-0.4 * self.windowRatio - self.buttonScale, 0, 0),
+                                                relief=None,
+                                                parent=self.frame,
+                                                command=self.RemoveFeatureButtonFunction)
+
         self.PositionButtonsInFrame()
 
         self.ConstructionMenuFunction = None
-        self.constructionMenu = DirectDialog(dialogName = 'Construct menu',
-                                             buttonTextList = ['farm', 'town', 'jungle', 'conifer forest', 'temperate forest'],
-                                             command = self.ConstructionMenuButtonFunction,
-                                             pos = (0, 0, 1))
+        self.constructionMenuFrameSize = [0, 0.4*windowRatio, -0.7, 0.7]
+        self.constructionMenu = DirectScrolledFrame(canvasSize=(0, 0.4, -4, 0),
+                                      frameSize=self.constructionMenuFrameSize,
+                                      parent=base.a2dBottomLeft)
+        self.constructionMenu.setPos(0, 0, 1)
+        DirectButton(text = 'FARM',
+                     scale=0.1,
+                     pos=(0.275, 0, -0.2),
+                     command=self.ConstructionMenuButtonFunction,
+                     extraArgs = [0],
+                     parent=self.constructionMenu.getCanvas())
+        DirectButton(text='TOWN',
+                     scale=0.1,
+                     pos=(0.275, 0, -0.4),
+                     command=self.ConstructionMenuButtonFunction,
+                     extraArgs=[1],
+                     parent=self.constructionMenu.getCanvas())
+        DirectButton(text='JUNGLE',
+                     scale=0.1,
+                     pos=(0.275, 0, -0.6),
+                     command=self.ConstructionMenuButtonFunction,
+                     extraArgs=[2],
+                     parent=self.constructionMenu.getCanvas())
+        DirectButton(text='CONIFER\nFOREST',
+                     scale=0.1,
+                     pos=(0.275, 0, -0.8),
+                     command=self.ConstructionMenuButtonFunction,
+                     extraArgs=[3],
+                     parent=self.constructionMenu.getCanvas())
+        DirectButton(text='TEMPERATE\nFOREST',
+                     scale=0.1,
+                     pos=(0.275, 0, -1.1),
+                     command=self.ConstructionMenuButtonFunction,
+                     extraArgs=[4],
+                     parent=self.constructionMenu.getCanvas())
+        #self.constructionMenu = DirectDialog(dialogName = 'Construct menu',
+        #                                     buttonTextList = ['farm', 'town', 'jungle', 'conifer forest', 'temperate forest'],
+        #                                     command = self.ConstructionMenuButtonFunction,
+        #                                     pos = (0, 0, 1))
         self.constructionMenu.hide()
 
     def ConstructionMenuButtonFunction(self, value):
@@ -252,8 +297,6 @@ class TileFrame(CustomFrame):
         else:
             self.constructionMenu.hide()
 
-
-
-
-
+    def RemoveFeatureButtonFunction(self):
+        self.RemoveFeatureFunction()
 

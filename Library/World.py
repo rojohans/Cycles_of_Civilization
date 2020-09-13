@@ -6,10 +6,12 @@ class WorldClass():
     def __init__(self, discrete = False):
 
         self.elevation = self.CreateMap(minValue = 0,
-                                        maxValue = self.mainProgram.settings.MAXIMUM_ELEVATION,
-                                        discreteSteps = self.mainProgram.settings.DISCRETE_ELEVATION,
+                                        maxValue = self.mainProgram.settings.ELEVATION_LEVELS-1,
                                         persistance = 0.7,
-                                        initialOctavesToSkip = 2)
+                                        initialOctavesToSkip = 2,
+                                        discreteSteps=self.mainProgram.settings.DISCRETE_ELEVATION,
+                                        applyDistributionFilter = True,
+                                        distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
 
         self.soilFertility = self.CreateMap(minValue = 0,
                                             maxValue = self.mainProgram.settings.SOIL_FERTILITY_LEVELS-1,

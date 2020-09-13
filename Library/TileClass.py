@@ -39,6 +39,8 @@ class TileClass(Entity):
         self.textureCodeSimple = None
         self.textureCode = None
 
+        self.waterNode = None
+
         # The unit is a reference to the unit object which is located on the tile, if any exists.
         self.unit = None
 
@@ -202,6 +204,55 @@ class TileClass(Entity):
             node.add_geom(geom)
             tile = p3d.NodePath(node)
         self.node = tile
+
+    def CreateWaterNode(self, ocean = False):
+        if ocean:
+            waterLevel = 1 + self.pandaProgram.settings.WATER_HEIGHT
+        else:
+            waterLevel = self.elevation + self.pandaProgram.settings.WATER_HEIGHT
+
+        vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
+        vertex_data = p3d.GeomVertexData("water_data", vertex_format, p3d.Geom.UH_static)
+
+        pos_writer = p3d.GeomVertexWriter(vertex_data, "vertex")
+        normal_writer = p3d.GeomVertexWriter(vertex_data, "normal")
+        tex_writer = p3d.GeomVertexWriter(vertex_data, 'texcoord')
+        normal = p3d.Vec3(0., 0., 1.)
+
+        pos_writer.add_data3(self.colon, self.row, waterLevel)
+        tex_writer.addData2f(0, 0)
+        pos_writer.add_data3(self.colon + 1, self.row, waterLevel)
+        tex_writer.addData2f(1, 0)
+        pos_writer.add_data3(self.colon + 1, self.row + 1, waterLevel)
+        tex_writer.addData2f(1, 1)
+        pos_writer.add_data3(self.colon, self.row + 1, waterLevel)
+        tex_writer.addData2f(0, 1)
+        for _ in range(4):
+            normal_writer.add_data3(normal)
+
+        tri0 = p3d.GeomTriangles(p3d.Geom.UH_static)
+        tri0.add_next_vertices(3)
+        tri0.add_vertices(0, 1, 2)
+        tri1 = p3d.GeomTriangles(p3d.Geom.UH_static)
+        tri1.add_next_vertices(3)
+        tri1.add_vertices(3, 0, 2)
+
+        geom = p3d.Geom(vertex_data)
+        geom.add_primitive(tri0)
+        geom.add_primitive(tri1)
+        node = p3d.GeomNode("water_square")
+        node.add_geom(geom)
+        self.waterNode = p3d.NodePath(node)
+
+        self.waterNode.reparentTo(self.pandaProgram.tileRoot)
+        self.waterNode.setTransparency(p3d.TransparencyAttrib.MAlpha)
+
+        self.waterNode.setScale(1, 1, self.pandaProgram.settings.ELEVATION_SCALE)
+        self.waterNode.setTag('square', str(self.CoordinateToIndex(self.row, self.colon)))
+        self.waterNode.setTag('row', str(self.row))
+        self.waterNode.setTag('colon', str(self.colon))
+        self.waterNode.setTag('type', 'tile')
+
 
     def ApplyTopography(self):
         self.topographyBase = self.CreateBaseTopography()
@@ -1211,6 +1262,26 @@ class TileClass(Entity):
 
         self.node.setTexture(tex)
 
+    def ApplyWaterTexture(self):
+        waterTextureArray = self.terrainTextures['water']
+        textureArray = np.zeros((64, 64, 4), dtype=np.uint8)
+        textureArray[:, :, 0] = np.uint8(255 * waterTextureArray[:, :, 2])
+        textureArray[:, :, 1] = np.uint8(255 * waterTextureArray[:, :, 1])
+        textureArray[:, :, 2] = np.uint8(255 * waterTextureArray[:, :, 0])
+        textureArray[:, :, 3] = np.uint8(255 * waterTextureArray[:, :, 3])
+
+        tex = p3d.Texture()
+        tex.setup2dTexture(64, 64, p3d.Texture.T_unsigned_byte, p3d.Texture.F_rgba)
+
+        buf = textureArray[:, :, :].tostring()
+        tex.setRamImage(buf) # np.array -> texture
+
+        # Use texture pixels without interpolation.
+        tex.setMagfilter(p3d.Texture.FT_nearest)
+        tex.setMinfilter(p3d.Texture.FT_nearest)
+
+        self.waterNode.setTexture(tex)
+
     def CreateTextureCodeSimple(self):
         #
         # Returns a string containing a code which specifies the texture.
@@ -1407,29 +1478,36 @@ class TileClass(Entity):
         return textureCode
 
     def CreateTextureArray(self):
-        soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
-        self.textureArray = self.terrainTextures['soil_fertility_' + str(soilFertility)].copy()
+        if self.waterNode == None:
+            soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
+            self.textureArray = self.terrainTextures['soil_fertility_' + str(soilFertility)].copy()
+        else:
+            if self.elevation == 0:
+                self.textureArray = self.terrainTextures['deep_water_terrain'].copy()
+            else:
+                self.textureArray = self.terrainTextures['shallow_water_terrain'].copy()
 
     def AddSlopeTexture(self, detail = 'low'):
-        rockTexture = self.terrainTextures['rock']
-        if detail == 'low':
-            for xModel in np.linspace(0, self.pandaProgram.settings.MODEL_RESOLUTION-1, self.pandaProgram.settings.MODEL_RESOLUTION):
-                for yModel in np.linspace(0, self.pandaProgram.settings.MODEL_RESOLUTION-1, self.pandaProgram.settings.MODEL_RESOLUTION):
-                    if self.normals[int(xModel), int(yModel), 2] < self.pandaProgram.settings.ROCK_TEXTURE_SLOPE_THRESHOLD:
+        if self.elevation > 0:
+            rockTexture = self.terrainTextures['rock']
+            if detail == 'low':
+                for xModel in np.linspace(0, self.pandaProgram.settings.MODEL_RESOLUTION-1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                    for yModel in np.linspace(0, self.pandaProgram.settings.MODEL_RESOLUTION-1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                        if self.normals[int(xModel), int(yModel), 2] < self.pandaProgram.settings.ROCK_TEXTURE_SLOPE_THRESHOLD:
 
-                        xTexture = int(round(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION*xModel/self.pandaProgram.settings.MODEL_RESOLUTION))
-                        yTexture = int(round(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION*yModel/self.pandaProgram.settings.MODEL_RESOLUTION))
+                            xTexture = int(round(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION*xModel/self.pandaProgram.settings.MODEL_RESOLUTION))
+                            yTexture = int(round(self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION*yModel/self.pandaProgram.settings.MODEL_RESOLUTION))
 
-                        rockCircle = self.pandaProgram.settings.ROCK_TEXTURE_CIRCLE.copy()
-                        rockCircle[:, 0] += xTexture
-                        rockCircle[:, 1] += yTexture
-                        for point in rockCircle:
-                            if point[0] >= 0 and \
-                               point[0] < self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION and \
-                               point[1] >= 0 and \
-                               point[1] < self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION:
-                                #self.textureArray[int(point[0]), int(point[1])] = [0, 0, 0, 1]
-                                self.textureArray[int(point[0]), int(point[1])] = rockTexture[int(point[0]), int(point[1]), :]
+                            rockCircle = self.pandaProgram.settings.ROCK_TEXTURE_CIRCLE.copy()
+                            rockCircle[:, 0] += xTexture
+                            rockCircle[:, 1] += yTexture
+                            for point in rockCircle:
+                                if point[0] >= 0 and \
+                                   point[0] < self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION and \
+                                   point[1] >= 0 and \
+                                   point[1] < self.pandaProgram.settings.TILE_TEXTURE_RESOLUTION:
+                                    #self.textureArray[int(point[0]), int(point[1])] = [0, 0, 0, 1]
+                                    self.textureArray[int(point[0]), int(point[1])] = rockTexture[int(point[0]), int(point[1]), :]
         elif detail == 'high':
             import scipy
             interp = scipy.interpolate.RectBivariateSpline(
@@ -1846,7 +1924,10 @@ class TileClass(Entity):
                                'soil_fertility_1':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_1.png"),
                                'soil_fertility_2':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
                                'soil_fertility_3':image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_3.png"),
-                               'rock':image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png")}
+                               'rock':image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png"),
+                               'water':image.imread(Root_Directory.Path() + "/Data/Tile_Data/water.png"),
+                               'deep_water_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/deep_water_terrain.png"),
+                               'shallow_water_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/shallow_water_terrain.png")}
 
         #cls.terrainTextures = {'grass':image.imread("panda3d-master/samples/chessboard/models/grass_4_symmetrical.jpg"),
         #                       'desert':image.imread("panda3d-master/samples/chessboard/models/desert_1_symmetrical.jpg"),
@@ -2068,6 +2149,11 @@ class FeatureClass(Entity):
                                                                         type='temperate_forest',
                                                                         numberOfcomponents=20))
 
+    @classmethod
+    def RemoveFeatureFunction(cls):
+        tile = cls.pandaProgram.tileList[cls.pandaProgram.selected_tile_ID]
+        for feature in tile.features:
+            feature.node.detachNode()
 
 class NaturalFeature(FeatureClass):
     #
