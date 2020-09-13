@@ -153,12 +153,12 @@ class Game(ShowBase):
                                                                                     numberOfcomponents=20))
                         self.tileList[iTile].features[0].node.removeNode()
 
-
     def SetupTiles(self):
         self.tileList = []
         TileClass.TileClass.Initialize(self.settings.N_ROWS, self.settings.N_COLONS,
-                                       tileList=self.tileList,
-                                       pandaProgram=self)
+                                       tileList = self.tileList,
+                                       pandaProgram = self)
+
 
         tic = time.time()
         # Initializes the tiles
@@ -174,8 +174,9 @@ class Game(ShowBase):
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
-                # self.tileList[iTile].TopographyTile()
+                #self.tileList[iTile].TopographyTile()
                 self.tileList[iTile].ApplyTopography()
+
 
         toc = time.time()
         print('TopographyTile: {}'.format(toc - tic))
@@ -184,6 +185,7 @@ class Game(ShowBase):
         self.tileList[0].TopographyCleanUp()
         toc = time.time()
         print('TopographyCleanUp: {}'.format(toc - tic))
+
 
         tic = time.time()
         for row in range(self.settings.N_ROWS):
@@ -217,18 +219,24 @@ class Game(ShowBase):
         toc = time.time()
         print('CreateNodeExperimental: {}'.format(toc - tic))
 
-        # TileClass.UnitClass.CreateUnit(row=7, colon=13, elevation=self.z[7, 13], type='unit_test')
-        # TileClass.UnitClass.CreateUnit(row=5, colon=5, elevation=self.z[5, 5], type='unit_test')
-        # TileClass.UnitClass.CreateUnit(row = 8, colon = 61, elevation = self.z[8, 61], type = 'unit_test')
-
         tic = time.time()
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                if self.world.elevation[row, colon] <= 1:
+                    iTile = colon + row * self.settings.N_COLONS
+                    self.tileList[iTile].CreateWaterNode(ocean=True)
+                    self.tileList[iTile].ApplyWaterTexture()
+        toc = time.time()
+        print('Create water nodes: {}'.format(toc - tic))
+
+        #TileClass.UnitClass.CreateUnit(row=7, colon=13, elevation=self.z[7, 13], type='unit_test')
+        #TileClass.UnitClass.CreateUnit(row=5, colon=5, elevation=self.z[5, 5], type='unit_test')
+        # TileClass.UnitClass.CreateUnit(row = 8, colon = 61, elevation = self.z[8, 61], type = 'unit_test')
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
                 self.tileList[iTile].CreateTextureArray()
-                self.tileList[iTile].AddSlopeTexture(detail = 'low')
-        toc = time.time()
-        print('create texture array and apply slope texture: {}'.format(toc - tic))
+                self.tileList[iTile].AddSlopeTexture()
 
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
@@ -248,10 +256,10 @@ class Game(ShowBase):
                     self.tileList[iTile].Wrap('right')
                 if colon > (self.settings.N_COLONS - self.settings.HORIZONTAL_WRAP_BUFFER):
                     self.tileList[iTile].Wrap('left')
-
-        self.tileMarker = loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/tile_select_marker_3.dae")
+        self.tileMarker = loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/tile_select_marker.dae")
         self.tileMarker.setPos(p3d.LPoint3(0, 0, 0))
         self.tileMarker.set_hpr(0, 90, 0)
+        self.tileMarker.set_scale((0.5, 1, 0.5))
 
     def SetupUnits(self):
         self.units = {}

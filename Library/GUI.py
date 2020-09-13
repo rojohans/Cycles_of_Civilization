@@ -2,6 +2,7 @@ from panda3d.core import TextNode
 from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import *
 from panda3d.core import TransparencyAttrib
+import panda3d.core as p3d
 import sys
 import Root_Directory
 
@@ -31,8 +32,6 @@ class GUIClass():
                 align=TextNode.ALeft, scale=0.05, mayChange=True
             )
 
-
-
         self.windowSize = (base.win.getXSize(), base.win.getYSize())
 
         self.windowRatio = self.windowSize[0] / self.windowSize[1]
@@ -60,6 +59,23 @@ class GUIClass():
 
         GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
 
+
+        self.minimapSizeRelative = 0.2
+        self.minimapRelativeLeftPosition = 2-self.minimapSizeRelative
+        self.minimapSize = self.minimapSizeRelative * self.windowRatio
+        self.minimapPosition = (self.minimapRelativeLeftPosition * self.windowRatio,
+                                0,
+                                self.minimapSizeRelative * self.windowRatio)
+        self.minimap = DirectButton(image=(GUIDataDirectoryPath + "remove_feature.png",
+                                                       GUIDataDirectoryPath + "remove_feature_pressed.png",
+                                                       GUIDataDirectoryPath + "remove_feature.png",
+                                                       GUIDataDirectoryPath + "remove_feature.png"),
+                                                scale=self.minimapSize,
+                                                pos=self.minimapPosition,
+                                                relief=None,
+                                                pressEffect = 0,
+                                                parent=base.a2dBottomLeft,
+                                                command = None)
 
 
 
@@ -96,6 +112,14 @@ class GUIClass():
 
         self.tileFrame.constructionMenuFrameSize[0] *= self.windowRatio
         self.tileFrame.constructionMenuFrameSize[1] *= self.windowRatio
+
+        self.minimapSize = self.minimapSizeRelative * self.windowRatio
+        self.minimapPosition = (self.minimapRelativeLeftPosition * self.windowRatio,
+                                0,
+                                self.minimapSizeRelative * self.windowRatio)
+
+        self.minimap.setPos(self.minimapPosition)
+        self.minimap.setScale(self.minimapSize)
 
         self.unitFrame.windowRatio = self.windowRatio
         self.unitFrame.frameWidth = self.frameWidth

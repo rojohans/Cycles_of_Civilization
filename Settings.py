@@ -40,9 +40,9 @@ class SettingsClass():
 
         self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
         self.ELEVATION_SCALE = 0.3
-        self.ELEVATION_LEVELS = 5
-        self.DISCRETE_ELEVATION = True
-        self.ELEVATION_DISTRIBUTION = [0.4, 0.2, 0.25, 0.1, 0.05]
+        self.ELEVATION_LEVELS = 7
+        self.DISCRETE_ELEVATION = False
+        self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.1, 0.075, 0.05, 0.025]
         #self.MAXIMUM_ELEVATION = 5
 
         self.SOIL_FERTILITY_LEVELS = 4

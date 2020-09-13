@@ -1261,6 +1261,7 @@ class TileClass(Entity):
         tex.setMinfilter(p3d.Texture.FT_nearest)
 
         self.node.setTexture(tex)
+        self.textureArray = None
 
     def ApplyWaterTexture(self):
         waterTextureArray = self.terrainTextures['water']
