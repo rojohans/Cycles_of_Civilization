@@ -38,9 +38,12 @@ class SettingsClass():
         self.FEATURE_RENDER_CAPACITY = 2000 # the maximum # tiles which will be kept in RAM.
         self.FEATURE_RENDER_MAX_SPEED = 2 # The maximum #features to add each frame.
 
+        self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
         self.ELEVATION_SCALE = 0.3
+        self.ELEVATION_LEVELS = 5
         self.DISCRETE_ELEVATION = True
-        self.MAXIMUM_ELEVATION = 5
+        self.ELEVATION_DISTRIBUTION = [0.4, 0.2, 0.25, 0.1, 0.05]
+        #self.MAXIMUM_ELEVATION = 5
 
         self.SOIL_FERTILITY_LEVELS = 4
         self.DISCRETE_SOIL_FERTILITY_LEVELS = False

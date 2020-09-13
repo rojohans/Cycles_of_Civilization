@@ -56,6 +56,7 @@ class Game(ShowBase):
 
         self.SetupFeatures(empty = False)
         self.GUIObject.tileFrame.ConstructionMenuFunction = TileClass.FeatureClass.ConstructionMenuFunction
+        self.GUIObject.tileFrame.RemoveFeatureFunction = TileClass.FeatureClass.RemoveFeatureFunction
 
         Animation.AnimationClass.Initialize(self.settings.ELEVATION_SCALE, self)
 
