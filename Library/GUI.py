@@ -35,8 +35,7 @@ class GUIClass():
         self.windowSize = (base.win.getXSize(), base.win.getYSize())
 
         self.windowRatio = self.windowSize[0] / self.windowSize[1]
-        #self.buttonScale = 0.08
-        self.frameWidth = 0.6*self.windowRatio
+        self.frameWidth = self.mainProgram.settings.RELATIVE_SELECTION_FRAME_WIDTH * self.windowRatio
 
         self.unitFrame = UnitFrame(base = base,
                         parent = base.a2dBottomLeft,
@@ -60,24 +59,7 @@ class GUIClass():
         GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
 
 
-        self.minimapSizeRelative = 0.2
-        self.minimapRelativeLeftPosition = 2-self.minimapSizeRelative
-        self.minimapSize = self.minimapSizeRelative * self.windowRatio
-        self.minimapPosition = (self.minimapRelativeLeftPosition * self.windowRatio,
-                                0,
-                                self.minimapSizeRelative * self.windowRatio)
-        self.minimap = DirectButton(image=(GUIDataDirectoryPath + "remove_feature.png",
-                                                       GUIDataDirectoryPath + "remove_feature_pressed.png",
-                                                       GUIDataDirectoryPath + "remove_feature.png",
-                                                       GUIDataDirectoryPath + "remove_feature.png"),
-                                                scale=self.minimapSize,
-                                                pos=self.minimapPosition,
-                                                relief=None,
-                                                pressEffect = 0,
-                                                parent=base.a2dBottomLeft,
-                                                command = None)
-
-
+        self.minimap = Minimap(self.windowRatio, mainProgram=mainProgram)
 
         self.add_unit_button = DirectCheckButton(boxImage=(GUIDataDirectoryPath + "add_unit_button.png",
                                                 GUIDataDirectoryPath + "add_unit_button_pressed.png",
@@ -108,26 +90,20 @@ class GUIClass():
 
         #self.windowSize = newWindowSize
         self.windowRatio = self.windowSize[0] / self.windowSize[1]
-        self.frameWidth = 0.6 * self.windowRatio
+        self.frameWidth = self.mainProgram.settings.RELATIVE_SELECTION_FRAME_WIDTH * self.windowRatio
 
         self.tileFrame.constructionMenuFrameSize[0] *= self.windowRatio
         self.tileFrame.constructionMenuFrameSize[1] *= self.windowRatio
 
-        self.minimapSize = self.minimapSizeRelative * self.windowRatio
-        self.minimapPosition = (self.minimapRelativeLeftPosition * self.windowRatio,
-                                0,
-                                self.minimapSizeRelative * self.windowRatio)
-
-        self.minimap.setPos(self.minimapPosition)
-        self.minimap.setScale(self.minimapSize)
+        self.minimap.OnWindowRatioUpdate(newWindowRatio = self.windowRatio)
 
         self.unitFrame.windowRatio = self.windowRatio
         self.unitFrame.frameWidth = self.frameWidth
 
-        self.unitFrame.frame["frameSize"] = (-0.6 * self.windowRatio, 0.6 * self.windowRatio, -0.1, 0.1)
+        self.unitFrame.frame["frameSize"] = (-self.frameWidth, self.frameWidth, -0.1, 0.1)
         self.unitFrame.frame.setPos(self.windowRatio, 0, 0.1)
 
-        self.tileFrame.frame["frameSize"] = (-0.6 * self.windowRatio, 0.6 * self.windowRatio, -0.1, 0.1)
+        self.tileFrame.frame["frameSize"] = (-self.frameWidth, self.frameWidth, -0.1, 0.1)
         self.tileFrame.frame.setPos(self.windowRatio, 0, 0.1)
         self.tileFrame.constructionMenu["frameSize"] = self.tileFrame.constructionMenuFrameSize
 
@@ -164,6 +140,9 @@ class CustomFrame():
 
         self.buttons = {}
 
+        self.size = None
+        self.position = None
+
     def PositionButtonsInFrame(self):
         '''
         Positions the buttons evenly spaced on a horizontal line.
@@ -177,6 +156,12 @@ class CustomFrame():
             button.setPos(2 * self.frameWidth * ((i+1)/(numberOfButtons+1)-0.5) - self.mainProgram.settings.BUTTON_SCALE, 0, 0)
         button.setPos(2 * self.frameWidth * ((i + 1) / (numberOfButtons + 1) - 0.5), 0, 0)
 
+    def PositionButtonsInFrameVertically(self):
+        numberOfButtons = len(self.buttons)
+        for i, key in enumerate(self.buttons):
+            button = self.buttons[key]
+            button.setPos(0, 0, 2 * self.frameWidth * ((i+1)/(numberOfButtons+1)-0.5) - self.mainProgram.settings.BUTTON_SCALE)
+
     def UnToggleButtons(self):
         '''
         Untoggles all the check buttons of the frame object.
@@ -187,6 +172,23 @@ class CustomFrame():
             if isinstance(button, DirectCheckButton):
                 button['indicatorValue'] = False
                 button.setIndicatorValue()
+
+    def UpdatePositionAndSize(self):
+        pass
+
+    def OnWindowRatioUpdate(self, newWindowRatio):
+        '''
+        this function should be called when the ratio of the window changes. It updates the size and positin of the
+        object. Thus enabling it to always be positioned in the correct relative location in the window.
+        :param newWindowRatio:
+        :return:
+        '''
+        self.windowRatio = newWindowRatio
+
+        self.UpdatePositionAndSize(newWindowRatio)
+
+        self.frame["frameSize"] = self.size
+        self.frame.setPos(self.position)
 
 class UnitFrame(CustomFrame):
     def __init__(self, base, parent, size, position, mainProgram, windowRatio):
@@ -324,3 +326,89 @@ class TileFrame(CustomFrame):
     def RemoveFeatureButtonFunction(self):
         self.RemoveFeatureFunction()
 
+class MinimapSelectionFrame(CustomFrame):
+    def __init__(self, base, parent, mainProgram, windowRatio):
+        self.widthRelative = 0.05
+        self.heightRelative = 0.2
+
+        self.UpdatePositionAndSize(windowRatio)
+
+        super().__init__(base, parent, self.size, self.position, mainProgram, windowRatio)
+
+    def UpdatePositionAndSize(self, windowRatio):
+        self.size = [-self.widthRelative * windowRatio,
+                     self.widthRelative * windowRatio,
+                     -self.heightRelative * windowRatio,
+                     self.heightRelative * windowRatio]
+        self.position = ((2 - 2*self.heightRelative - self.widthRelative) * windowRatio,
+                         0,
+                         self.heightRelative * windowRatio)
+
+class Minimap():
+    def __init__(self, windowRatio, mainProgram):
+        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+
+        self.windowRatio = windowRatio
+        self.mainProgram = mainProgram
+
+        self.sizeRelative = 0.2
+        self.leftPositionRelative = 2-self.sizeRelative
+
+        self.size = self.sizeRelative * self.windowRatio
+        self.position = (self.leftPositionRelative * self.windowRatio, 0, self.sizeRelative * self.windowRatio)
+
+        self.minimap = DirectButton(image=(GUIDataDirectoryPath + "remove_feature.png",
+                                           GUIDataDirectoryPath + "remove_feature_pressed.png",
+                                           GUIDataDirectoryPath + "remove_feature.png",
+                                           GUIDataDirectoryPath + "remove_feature.png"),
+                                    scale=self.size,
+                                    pos=self.position,
+                                    relief=None,
+                                    pressEffect = 0,
+                                    parent=base.a2dBottomLeft,
+                                    command = None)
+        self.selectionFrame = MinimapSelectionFrame(base=base,
+                                                    parent=base.a2dBottomLeft,
+                                                    mainProgram=self.mainProgram,
+                                                    windowRatio=self.windowRatio)
+
+
+        self.buttons['Biome'] = DirectRadioButton(boxImage=(self.GUIDataDirectoryPath + 'construct_building.png',
+                                                       self.GUIDataDirectoryPath + 'construct_building_pressed.png',
+                                                       self.GUIDataDirectoryPath + 'construct_building.png',
+                                                       self.GUIDataDirectoryPath + 'construct_building.png'),
+                                             scale=self.buttonScale,
+                                             pos=(0 - self.buttonScale, 0, 0),
+                                             relief=None,
+                                             boxRelief=None,
+                                             parent=self.frame,
+                                             boxPlacement='right',
+                                             command=self.OpenCloseConstructionMenu)
+        self.RemoveFeatureFunction = None
+        self.buttons['Altitude'] = DirectRadioButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
+                                                       self.GUIDataDirectoryPath + "remove_feature_pressed.png",
+                                                       self.GUIDataDirectoryPath + "remove_feature.png",
+                                                       self.GUIDataDirectoryPath + "remove_feature.png"),
+                                                scale=self.buttonScale,
+                                                pos=(-0.4 * self.windowRatio - self.buttonScale, 0, 0),
+                                                relief=None,
+                                                parent=self.frame,
+                                                command=self.RemoveFeatureButtonFunction)
+
+
+    def OnWindowRatioUpdate(self, newWindowRatio):
+        '''
+        This function should be called when the size of the window has been changed. This function recomputes the size
+        of position of the minimap and updates the object accordingly.
+        :param newWindowRatio:
+        :return:
+        '''
+        self.windowRatio = newWindowRatio
+
+        self.size = self.sizeRelative * self.windowRatio
+        self.position = (self.leftPositionRelative * self.windowRatio, 0, self.sizeRelative * self.windowRatio)
+
+        self.minimap.setPos(self.position)
+        self.minimap.setScale(self.size)
+
+        self.selectionFrame.OnWindowRatioUpdate(newWindowRatio)

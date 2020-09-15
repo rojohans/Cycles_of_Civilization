@@ -5,46 +5,8 @@ import sys
 from Library import GUI
 import Settings
 
-from direct.gui.DirectGui import *
-import direct.directbase.DirectStart
-
-myframe = DirectScrolledFrame(canvasSize=(0, 0.4, 0, 4),
-                              frameSize=(-0.2, 0.2, -0.5, 0.5),
-                              parent = base.a2dBottomLeft)
-myframe.setPos(0.2, 0, 0.5)
-GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
-DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png"),
-                               scale=0.1,
-                               pos=(0.2, 0, 0.2),
-                               relief=None,
-                               command=None,
-                          parent = myframe.getCanvas())
-DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png"),
-                               scale=0.1,
-                               pos=(0.2, 0, 0.4),
-                               relief=None,
-                               command=None,
-                          parent = myframe.getCanvas())
-DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png",
-                                      GUIDataDirectoryPath + "quit_button.png"),
-                               scale=0.1,
-                               pos=(0.2, 0, 0.6),
-                               relief=None,
-                               command=None,
-                          parent = myframe.getCanvas())
-run()
-quit()
-
-
-
+#from direct.gui.DirectGui import *
+#import direct.directbase.DirectStart
 
 class ChessboardDemo(ShowBase):
     def __init__(self):

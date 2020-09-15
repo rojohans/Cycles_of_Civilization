@@ -59,4 +59,4 @@ class SettingsClass():
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08
-        self.RELATIVE_SELECTION_FRAME_WIDTH = 0.6
+        self.RELATIVE_SELECTION_FRAME_WIDTH = 0.5
