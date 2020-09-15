@@ -38,6 +38,8 @@ class SettingsClass():
         self.FEATURE_RENDER_CAPACITY = 2000 # the maximum # tiles which will be kept in RAM.
         self.FEATURE_RENDER_MAX_SPEED = 2 # The maximum #features to add each frame.
 
+
+        # ================ WORLD GENERATION ============================================================================
         self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
         self.ELEVATION_SCALE = 0.3
         self.ELEVATION_LEVELS = 7
@@ -60,3 +62,5 @@ class SettingsClass():
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08
         self.RELATIVE_SELECTION_FRAME_WIDTH = 0.5
+
+        self.MINIMAP_SELECTION_BUTTON_SCALE = 0.8 # A percentage of the frame width

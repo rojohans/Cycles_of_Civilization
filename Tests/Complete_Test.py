@@ -256,7 +256,7 @@ class Game(ShowBase):
                     self.tileList[iTile].Wrap('right')
                 if colon > (self.settings.N_COLONS - self.settings.HORIZONTAL_WRAP_BUFFER):
                     self.tileList[iTile].Wrap('left')
-        self.tileMarker = loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/tile_select_marker.dae")
+        self.tileMarker = loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/tile_select_marker_3.dae")
         self.tileMarker.setPos(p3d.LPoint3(0, 0, 0))
         self.tileMarker.set_hpr(0, 90, 0)
         self.tileMarker.set_scale((0.5, 1, 0.5))

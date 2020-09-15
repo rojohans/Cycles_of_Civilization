@@ -4,8 +4,9 @@ from direct.gui.DirectGui import *
 from panda3d.core import TransparencyAttrib
 import panda3d.core as p3d
 import sys
-import Root_Directory
+import numpy as np
 
+import Root_Directory
 import Library.TileClass as TileClass
 
 class GUIClass():
@@ -139,9 +140,11 @@ class CustomFrame():
         self.GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
 
         self.buttons = {}
+        self.UpdateButtonPosition = None
+        self.buttonOffset = [0, 0, 0]
 
-        self.size = None
-        self.position = None
+        #self.size = None
+        #self.position = None
 
     def PositionButtonsInFrame(self):
         '''
@@ -156,11 +159,14 @@ class CustomFrame():
             button.setPos(2 * self.frameWidth * ((i+1)/(numberOfButtons+1)-0.5) - self.mainProgram.settings.BUTTON_SCALE, 0, 0)
         button.setPos(2 * self.frameWidth * ((i + 1) / (numberOfButtons + 1) - 0.5), 0, 0)
 
-    def PositionButtonsInFrameVertically(self):
+    def PositionButtonsInFrameVertically(self, offset):
         numberOfButtons = len(self.buttons)
+        frameWidth = (self.size[1]-self.size[0])
+        frameHeight = (self.size[3] - self.size[2])
+        buttonPositionsVertical = self.position[2] + np.linspace(-frameHeight/2 + frameWidth/2, frameHeight/2 - frameWidth/2, numberOfButtons)
         for i, key in enumerate(self.buttons):
             button = self.buttons[key]
-            button.setPos(0, 0, 2 * self.frameWidth * ((i+1)/(numberOfButtons+1)-0.5) - self.mainProgram.settings.BUTTON_SCALE)
+            button.setPos(self.position[0] + offset[0], + offset[1], buttonPositionsVertical[i] + offset[2])
 
     def UnToggleButtons(self):
         '''
@@ -186,6 +192,7 @@ class CustomFrame():
         self.windowRatio = newWindowRatio
 
         self.UpdatePositionAndSize(newWindowRatio)
+        self.UpdateButtonPosition(self.buttonOffset)
 
         self.frame["frameSize"] = self.size
         self.frame.setPos(self.position)
@@ -327,13 +334,71 @@ class TileFrame(CustomFrame):
         self.RemoveFeatureFunction()
 
 class MinimapSelectionFrame(CustomFrame):
-    def __init__(self, base, parent, mainProgram, windowRatio):
+    def __init__(self, base, parent, mainProgram, windowRatio, minimap):
+        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
         self.widthRelative = 0.05
         self.heightRelative = 0.2
+        self.minimap = minimap
 
         self.UpdatePositionAndSize(windowRatio)
-
         super().__init__(base, parent, self.size, self.position, mainProgram, windowRatio)
+
+        self.buttonScale = self.mainProgram.settings.MINIMAP_SELECTION_BUTTON_SCALE*(self.size[1] - self.size[0])/2
+        self.buttonOffset = [self.buttonScale, 0, 0]
+
+        self.buttons['Biome'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_biome.png',
+                                                       GUIDataDirectoryPath + 'minimap_selection_biome_pressed.png', None),
+                                             scale=self.buttonScale,
+                                             pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                             relief=None,
+                                             parent=base.a2dBottomLeft,
+                                             variable = self.minimap.viewFilter,
+                                                  value = ['biome'],
+                                            indicatorValue = 1,
+                                             command=self.minimap.UpdateView)
+        self.buttons['Elevation'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_elevation.png',
+                                                       GUIDataDirectoryPath + 'minimap_selection_elevation_pressed.png', None),
+                                                scale=self.buttonScale,
+                                                pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                                relief=None,
+                                                parent=base.a2dBottomLeft,
+                                                     variable=self.minimap.viewFilter,
+                                                     value=['elevation'],
+                                                      indicatorValue=0,
+                                                command=self.minimap.UpdateView)
+        self.buttons['Fertility'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_fertility.png',
+                                                            GUIDataDirectoryPath + 'minimap_selection_fertility_pressed.png', None),
+                                                     scale=self.buttonScale,
+                                                     pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                                     relief=None,
+                                                     parent=base.a2dBottomLeft,
+                                                      variable=self.minimap.viewFilter,
+                                                      value=['fertility'],
+                                                      indicatorValue=0,
+                                                     command=self.minimap.UpdateView)
+        self.buttons['Roughness'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_roughness.png',
+                                                             GUIDataDirectoryPath + 'minimap_selection_roughness_pressed.png', None),
+                                                      scale=self.buttonScale,
+                                                      pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                                      relief=None,
+                                                      parent=base.a2dBottomLeft,
+                                                      variable=self.minimap.viewFilter,
+                                                      value=['roughness'],
+                                                      indicatorValue=0,
+                                                      command=self.minimap.UpdateView)
+
+        # Links the radio buttons together.
+        buttons = []
+        for key in self.buttons:
+            button = self.buttons[key]
+            buttons.append(button)
+        for key in self.buttons:
+            button = self.buttons[key]
+            button.indicator['text'] = ('', '') # Disables the default asterix
+            button.setOthers(buttons)
+
+        self.UpdateButtonPosition = self.PositionButtonsInFrameVertically
+        self.UpdateButtonPosition(offset = self.buttonOffset)
 
     def UpdatePositionAndSize(self, windowRatio):
         self.size = [-self.widthRelative * windowRatio,
@@ -357,6 +422,8 @@ class Minimap():
         self.size = self.sizeRelative * self.windowRatio
         self.position = (self.leftPositionRelative * self.windowRatio, 0, self.sizeRelative * self.windowRatio)
 
+        self.viewFilter = [''] # Changed by the selection buttons
+
         self.minimap = DirectButton(image=(GUIDataDirectoryPath + "remove_feature.png",
                                            GUIDataDirectoryPath + "remove_feature_pressed.png",
                                            GUIDataDirectoryPath + "remove_feature.png",
@@ -370,31 +437,8 @@ class Minimap():
         self.selectionFrame = MinimapSelectionFrame(base=base,
                                                     parent=base.a2dBottomLeft,
                                                     mainProgram=self.mainProgram,
-                                                    windowRatio=self.windowRatio)
-
-
-        self.buttons['Biome'] = DirectRadioButton(boxImage=(self.GUIDataDirectoryPath + 'construct_building.png',
-                                                       self.GUIDataDirectoryPath + 'construct_building_pressed.png',
-                                                       self.GUIDataDirectoryPath + 'construct_building.png',
-                                                       self.GUIDataDirectoryPath + 'construct_building.png'),
-                                             scale=self.buttonScale,
-                                             pos=(0 - self.buttonScale, 0, 0),
-                                             relief=None,
-                                             boxRelief=None,
-                                             parent=self.frame,
-                                             boxPlacement='right',
-                                             command=self.OpenCloseConstructionMenu)
-        self.RemoveFeatureFunction = None
-        self.buttons['Altitude'] = DirectRadioButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
-                                                       self.GUIDataDirectoryPath + "remove_feature_pressed.png",
-                                                       self.GUIDataDirectoryPath + "remove_feature.png",
-                                                       self.GUIDataDirectoryPath + "remove_feature.png"),
-                                                scale=self.buttonScale,
-                                                pos=(-0.4 * self.windowRatio - self.buttonScale, 0, 0),
-                                                relief=None,
-                                                parent=self.frame,
-                                                command=self.RemoveFeatureButtonFunction)
-
+                                                    windowRatio=self.windowRatio,
+                                                    minimap = self)
 
     def OnWindowRatioUpdate(self, newWindowRatio):
         '''
@@ -412,3 +456,6 @@ class Minimap():
         self.minimap.setScale(self.size)
 
         self.selectionFrame.OnWindowRatioUpdate(newWindowRatio)
+
+    def UpdateView(self):
+        print(self.viewFilter)
