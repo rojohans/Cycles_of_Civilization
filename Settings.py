@@ -15,7 +15,7 @@ class SettingsClass():
         FEATURE_RENDER_MAX_SPEED :
         '''
         self.N_ROWS = 16
-        self.N_COLONS = 16
+        self.N_COLONS = 32
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 30
@@ -64,3 +64,6 @@ class SettingsClass():
         self.RELATIVE_SELECTION_FRAME_WIDTH = 0.5
 
         self.MINIMAP_SELECTION_BUTTON_SCALE = 0.8 # A percentage of the frame width
+        self.MINIMAP_RESOLUTION = [256, 256]
+
+

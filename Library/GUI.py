@@ -411,7 +411,7 @@ class MinimapSelectionFrame(CustomFrame):
 
 class Minimap():
     def __init__(self, windowRatio, mainProgram):
-        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+        self.GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
 
         self.windowRatio = windowRatio
         self.mainProgram = mainProgram
@@ -424,10 +424,10 @@ class Minimap():
 
         self.viewFilter = [''] # Changed by the selection buttons
 
-        self.minimap = DirectButton(image=(GUIDataDirectoryPath + "remove_feature.png",
-                                           GUIDataDirectoryPath + "remove_feature_pressed.png",
-                                           GUIDataDirectoryPath + "remove_feature.png",
-                                           GUIDataDirectoryPath + "remove_feature.png"),
+        self.minimap = DirectButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
+                                           self.GUIDataDirectoryPath + "remove_feature_pressed.png",
+                                           self.GUIDataDirectoryPath + "remove_feature.png",
+                                           self.GUIDataDirectoryPath + "remove_feature.png"),
                                     scale=self.size,
                                     pos=self.position,
                                     relief=None,
@@ -457,5 +457,42 @@ class Minimap():
 
         self.selectionFrame.OnWindowRatioUpdate(newWindowRatio)
 
+    def UpdateViewImage(self, type = 'biome'):
+
+        import matplotlib
+        from scipy import interpolate
+
+        maxMapSize = np.max((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
+        print(maxMapSize)
+
+        points = []
+        values = []
+        for row in range(self.mainProgram.settings.N_ROWS):
+            for colon in range(self.mainProgram.settings.N_COLONS):
+                points.append([row/maxMapSize, colon/maxMapSize])
+                values.append(self.mainProgram.world.elevation[row, colon])
+        print(points)
+        print(np.shape(points))
+        print(values)
+        print(np.shape(values))
+
+        interpolator = interpolate.LinearNDInterpolator(points, values, 0)
+
+
+
+
+        #self.mainProgram.world.elevation
+        imageArray = np.zeros((self.mainProgram.settings.MINIMAP_RESOLUTION, self.mainProgram.settings.MINIMAP_RESOLUTION, 3))
+
+        #matplotlib.image.imsave('name.png', array)
+
+
+        pass
+
     def UpdateView(self):
-        print(self.viewFilter)
+        '''
+        The image displayed in the minimap is changed according to the button pushed.
+        '''
+        self.UpdateViewImage(type=self.viewFilter[0])
+
+        #self.minimap.setImage((self.GUIDataDirectoryPath + 'minimap_selection_' + self.viewFilter[0] + '.png'))
