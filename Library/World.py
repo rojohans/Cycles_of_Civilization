@@ -29,6 +29,10 @@ class WorldClass():
                                                   applyDistributionFilter = True,
                                                   distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
 
+        self.soilFertility[self.elevation<=1] = -1
+
+        #self.waterAbundance =
+
     def CreateMap(self,
                   minValue = 0,
                   maxValue = 1,
@@ -108,10 +112,12 @@ class WorldClass():
 
         return map
 
-    def VisualizeMap(self, map):
+    @classmethod
+    def VisualizeMaps(cls, maps):
         import matplotlib.pyplot as plt
-        plt.figure()
-        plt.imshow(map)
+        for map in maps:
+            plt.figure()
+            plt.imshow(map)
         plt.show()
 
     @classmethod

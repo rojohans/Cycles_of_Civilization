@@ -5,6 +5,8 @@ from panda3d.core import TransparencyAttrib
 import panda3d.core as p3d
 import sys
 import numpy as np
+import matplotlib
+from scipy import interpolate
 
 import Root_Directory
 import Library.TileClass as TileClass
@@ -352,40 +354,40 @@ class MinimapSelectionFrame(CustomFrame):
                                              pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
                                              relief=None,
                                              parent=base.a2dBottomLeft,
-                                             variable = self.minimap.viewFilter,
+                                             variable = self.minimap.minimapFilter,
                                                   value = ['biome'],
                                             indicatorValue = 1,
-                                             command=self.minimap.UpdateView)
+                                             command=self.minimap.UpdateMinimap)
         self.buttons['Elevation'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_elevation.png',
                                                        GUIDataDirectoryPath + 'minimap_selection_elevation_pressed.png', None),
                                                 scale=self.buttonScale,
                                                 pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
                                                 relief=None,
                                                 parent=base.a2dBottomLeft,
-                                                     variable=self.minimap.viewFilter,
+                                                     variable=self.minimap.minimapFilter,
                                                      value=['elevation'],
                                                       indicatorValue=0,
-                                                command=self.minimap.UpdateView)
+                                                command=self.minimap.UpdateMinimap)
         self.buttons['Fertility'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_fertility.png',
                                                             GUIDataDirectoryPath + 'minimap_selection_fertility_pressed.png', None),
                                                      scale=self.buttonScale,
                                                      pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
                                                      relief=None,
                                                      parent=base.a2dBottomLeft,
-                                                      variable=self.minimap.viewFilter,
+                                                      variable=self.minimap.minimapFilter,
                                                       value=['fertility'],
                                                       indicatorValue=0,
-                                                     command=self.minimap.UpdateView)
+                                                     command=self.minimap.UpdateMinimap)
         self.buttons['Roughness'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_roughness.png',
                                                              GUIDataDirectoryPath + 'minimap_selection_roughness_pressed.png', None),
                                                       scale=self.buttonScale,
                                                       pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
                                                       relief=None,
                                                       parent=base.a2dBottomLeft,
-                                                      variable=self.minimap.viewFilter,
+                                                      variable=self.minimap.minimapFilter,
                                                       value=['roughness'],
                                                       indicatorValue=0,
-                                                      command=self.minimap.UpdateView)
+                                                      command=self.minimap.UpdateMinimap)
 
         # Links the radio buttons together.
         buttons = []
@@ -422,7 +424,12 @@ class Minimap():
         self.size = self.sizeRelative * self.windowRatio
         self.position = (self.leftPositionRelative * self.windowRatio, 0, self.sizeRelative * self.windowRatio)
 
-        self.viewFilter = [''] # Changed by the selection buttons
+        self.minimapFilter = [''] # Changed by the selection buttons
+        self.minimapFilterUpToDate = {}
+        self.minimapFilterUpToDate['biome'] = False
+        self.minimapFilterUpToDate['fertility'] = False
+        self.minimapFilterUpToDate['roughness'] = False
+        self.minimapFilterUpToDate['elevation'] = False
 
         self.minimap = DirectButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
                                            self.GUIDataDirectoryPath + "remove_feature_pressed.png",
@@ -457,42 +464,105 @@ class Minimap():
 
         self.selectionFrame.OnWindowRatioUpdate(newWindowRatio)
 
-    def UpdateViewImage(self, type = 'biome'):
+    def UpdateMinimapImage(self, type = 'biome'):
 
-        import matplotlib
-        from scipy import interpolate
+        if type == 'biome':
+            #baseMap =
+            pass
+        elif type == 'elevation':
+            baseMap = self.mainProgram.world.elevation
+        elif type == 'fertility':
+            baseMap = self.mainProgram.world.soilFertility
+        elif type == 'roughness':
+            baseMap = self.mainProgram.world.topographyRoughness
 
+        interpolatedMap = self.GetInterpolatedMap(baseMap = baseMap)
+
+        #MapToImage()
+        #EncodeColours()
+
+        #self.mainProgram.world.VisualizeMaps([self.mainProgram.world.elevation, interpolatedMap])
+
+        imageArray = np.zeros((self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1], 3))
+
+        if type == 'fertility':
+            interpolatorRed = interpolate.interp1d(range(4),
+                                     self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS[:, 0],
+                                     bounds_error=False,
+                                     fill_value=(self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[0, 0],
+                                                 self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[1, 0]))
+            redMap = interpolatorRed(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
+            redMap = np.reshape(redMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
+
+            interpolatorGreen = interpolate.interp1d(range(4),
+                                     self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS[:, 1],
+                                     bounds_error=False,
+                                     fill_value=(self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[0, 1],
+                                                 self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[1, 1]))
+            greenMap = interpolatorGreen(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
+            greenMap = np.reshape(greenMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
+
+            interpolatorBlue = interpolate.interp1d(range(4),
+                                     self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS[:, 2],
+                                     bounds_error=False,
+                                     fill_value=(self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[0, 2],
+                                                 self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[1, 2]))
+            blueMap = interpolatorBlue(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
+            blueMap = np.reshape(blueMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
+
+            imageArray[:, :, 0] = redMap
+            imageArray[:, :, 1] = greenMap
+            imageArray[:, :, 2] = blueMap
+
+        else:
+            for row in range(self.mainProgram.settings.MINIMAP_RESOLUTION[0]):
+                for colon in range(self.mainProgram.settings.MINIMAP_RESOLUTION[1]):
+                    imageArray[row, colon, 0] = interpolatedMap[row, colon] / (self.mainProgram.settings.ELEVATION_LEVELS-0)
+                    imageArray[row, colon, 1] = interpolatedMap[row, colon] / (self.mainProgram.settings.ELEVATION_LEVELS-0)
+                    imageArray[row, colon, 2] = interpolatedMap[row, colon] / (self.mainProgram.settings.ELEVATION_LEVELS-0)
+
+        print('-----------------------------')
+        print(np.min(self.mainProgram.world.elevation))
+        print(np.max(self.mainProgram.world.elevation))
+        print(np.min(interpolatedMap))
+        print(np.max(interpolatedMap))
+        print('-----------------------------')
+
+        tmpDataPath = Root_Directory.Path(style='unix') + '/Data/tmp_Data/'
+        matplotlib.image.imsave(tmpDataPath + 'minimap_image_' + type + '.png', imageArray)
+
+
+
+
+
+    def GetInterpolatedMap(self, baseMap):
+        '''
+        The basemap is used as a low resolution template from which a high resolution interpolation is made. The high
+        resolution interpolated map is returned. Linear interpolation is used.
+        '''
         maxMapSize = np.max((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
-        print(maxMapSize)
 
-        points = []
-        values = []
-        for row in range(self.mainProgram.settings.N_ROWS):
-            for colon in range(self.mainProgram.settings.N_COLONS):
-                points.append([row/maxMapSize, colon/maxMapSize])
-                values.append(self.mainProgram.world.elevation[row, colon])
-        print(points)
-        print(np.shape(points))
-        print(values)
-        print(np.shape(values))
+        xGap = (1-self.mainProgram.settings.N_COLONS/maxMapSize)/2
+        yGap = (1-self.mainProgram.settings.N_ROWS/maxMapSize)/2
+        interpolator = interpolate.interp2d(np.linspace(xGap, 1-xGap, self.mainProgram.settings.N_COLONS),
+                                            np.linspace(yGap, 1-yGap, self.mainProgram.settings.N_ROWS),
+                                            np.flip(baseMap, 0), kind='linear', fill_value=-1)
 
-        interpolator = interpolate.LinearNDInterpolator(points, values, 0)
+        return interpolator(np.linspace(0, 1, self.mainProgram.settings.MINIMAP_RESOLUTION[0]), np.linspace(0, 1, self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
 
-
-
-
-        #self.mainProgram.world.elevation
-        imageArray = np.zeros((self.mainProgram.settings.MINIMAP_RESOLUTION, self.mainProgram.settings.MINIMAP_RESOLUTION, 3))
-
-        #matplotlib.image.imsave('name.png', array)
-
-
-        pass
-
-    def UpdateView(self):
+    def UpdateMinimap(self):
         '''
         The image displayed in the minimap is changed according to the button pushed.
         '''
-        self.UpdateViewImage(type=self.viewFilter[0])
+        if self.minimapFilterUpToDate[self.minimapFilter[0]] == False:
+            self.UpdateMinimapImage(type=self.minimapFilter[0])
+            self.minimapFilterUpToDate[self.minimapFilter[0]] = True
 
-        #self.minimap.setImage((self.GUIDataDirectoryPath + 'minimap_selection_' + self.viewFilter[0] + '.png'))
+
+        tmpDataPath = Root_Directory.Path(style='unix') + '/Data/tmp_Data/'
+        self.minimap.setImage(tmpDataPath + 'minimap_image_' + self.minimapFilter[0] + '.png')
+
+        # All teaxtures are released (removed from RAM) to enable the minimap image to change. This however is probably
+        # not good for performance since textures of trees/houses and other features are removed aswell. Optimally only
+        # the minimap textures should be released.
+        p3d.TexturePool.releaseAllTextures()
