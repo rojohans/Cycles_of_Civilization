@@ -86,6 +86,24 @@ class GUIClass():
                                        command = sys.exit)
         self.quitButton.setTransparency(TransparencyAttrib.MAlpha)
 
+
+        self.displayFeaturesPositionRelative = [1.85, 0, 0.45]
+        self.displayFeaturesPosition = (self.displayFeaturesPositionRelative[0]*self.windowRatio,
+                                        0,
+                                        self.displayFeaturesPositionRelative[2]*self.windowRatio)
+        self.displayFeaturesButton = DirectCheckButton(boxImage=(GUIDataDirectoryPath + "feature_toggle.png",
+                                                           GUIDataDirectoryPath + "feature_toggle_pressed.png",
+                                                           GUIDataDirectoryPath + "feature_toggle.png",
+                                                           GUIDataDirectoryPath + "feature_toggle.png"),
+                                                 scale=self.mainProgram.settings.BUTTON_SCALE,
+                                                 pos=self.displayFeaturesPosition,
+                                                 relief=None,
+                                                 boxRelief=None,
+                                                 boxPlacement='right',
+                                                 parent=base.a2dBottomLeft,
+                                                 command=self.DisplayFeatureFunction)
+        self.displayFeaturesButton.setTransparency(TransparencyAttrib.MAlpha)
+
     def window_update(self):
 
         self.tileFrame.constructionMenuFrameSize[0] /= self.windowRatio
@@ -110,6 +128,11 @@ class GUIClass():
         self.tileFrame.frame.setPos(self.windowRatio, 0, 0.1)
         self.tileFrame.constructionMenu["frameSize"] = self.tileFrame.constructionMenuFrameSize
 
+        self.displayFeaturesPosition = (self.displayFeaturesPositionRelative[0]*self.windowRatio,
+                                        0,
+                                        self.displayFeaturesPositionRelative[2]*self.windowRatio)
+        self.displayFeaturesButton.setPos(self.displayFeaturesPosition)
+
         self.unitFrame.PositionButtonsInFrame()
         self.tileFrame.PositionButtonsInFrame()
 
@@ -127,6 +150,12 @@ class GUIClass():
             self.windowSize = (base.win.getXSize(), base.win.getYSize())
             self.window_update()
         return task.again
+
+    def DisplayFeatureFunction(self, value):
+        if value == 1:
+            self.mainProgram.featureRoot.hide()
+        elif value == 0:
+            self.mainProgram.featureRoot.show()
 
 class CustomFrame():
     def __init__(self, base, parent, size, position, mainProgram, windowRatio):
