@@ -255,8 +255,18 @@ class TileClass(Entity):
 
 
     def ApplyTopography(self):
+        '''
+        The topography_roughness value is -1 where there is water. So at that place the flat topography will be used.
+        :return:
+        '''
         self.topographyBase = self.CreateBaseTopography()
-        self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
+
+        if self.pandaProgram.world.topographyRoughness[self.row, self.colon] >=0:
+            self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
+        else:
+            self.topographyTop = self.terrainTopography[
+                'topography_roughness_0']
+
 
         self.topography = self.topographyBase + self.topographyTop
 

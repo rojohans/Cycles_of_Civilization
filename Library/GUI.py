@@ -471,64 +471,56 @@ class Minimap():
             pass
         elif type == 'elevation':
             baseMap = self.mainProgram.world.elevation
+            colourRamp = self.mainProgram.settings.ELEVATION_MINIMAP_COLOURS
+            colourBounds = self.mainProgram.settings.ELEVATION_MINIMAP_COLOURS_BOUNDS
+            numberOfValues = self.mainProgram.settings.ELEVATION_LEVELS
         elif type == 'fertility':
             baseMap = self.mainProgram.world.soilFertility
+            colourRamp = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS
+            colourBounds = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS
+            numberOfValues = self.mainProgram.settings.SOIL_FERTILITY_LEVELS
         elif type == 'roughness':
             baseMap = self.mainProgram.world.topographyRoughness
+            colourRamp = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS
+            colourBounds = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS
+            numberOfValues = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS
 
         interpolatedMap = self.GetInterpolatedMap(baseMap = baseMap)
 
         #MapToImage()
         #EncodeColours()
 
-        #self.mainProgram.world.VisualizeMaps([self.mainProgram.world.elevation, interpolatedMap])
-
         imageArray = np.zeros((self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1], 3))
 
-        if type == 'fertility':
-            interpolatorRed = interpolate.interp1d(range(4),
-                                     self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS[:, 0],
-                                     bounds_error=False,
-                                     fill_value=(self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[0, 0],
-                                                 self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[1, 0]))
-            redMap = interpolatorRed(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
-            redMap = np.reshape(redMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
+        interpolatorRed = interpolate.interp1d(range(numberOfValues),
+                                 colourRamp[:, 0],
+                                 bounds_error=False,
+                                 fill_value=(colourBounds[0, 0],
+                                             colourBounds[1, 0]))
+        redMap = interpolatorRed(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
+        redMap = np.reshape(redMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
 
-            interpolatorGreen = interpolate.interp1d(range(4),
-                                     self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS[:, 1],
-                                     bounds_error=False,
-                                     fill_value=(self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[0, 1],
-                                                 self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[1, 1]))
-            greenMap = interpolatorGreen(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
-            greenMap = np.reshape(greenMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
+        interpolatorGreen = interpolate.interp1d(range(numberOfValues),
+                                 colourRamp[:, 1],
+                                 bounds_error=False,
+                                 fill_value=(colourBounds[0, 1],
+                                             colourBounds[1, 1]))
+        greenMap = interpolatorGreen(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
+        greenMap = np.reshape(greenMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
 
-            interpolatorBlue = interpolate.interp1d(range(4),
-                                     self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS[:, 2],
-                                     bounds_error=False,
-                                     fill_value=(self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[0, 2],
-                                                 self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS[1, 2]))
-            blueMap = interpolatorBlue(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
-            blueMap = np.reshape(blueMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
+        interpolatorBlue = interpolate.interp1d(range(numberOfValues),
+                                 colourRamp[:, 2],
+                                 bounds_error=False,
+                                 fill_value=(colourBounds[0, 2],
+                                             colourBounds[1, 2]))
+        blueMap = interpolatorBlue(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
+        blueMap = np.reshape(blueMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
 
-            imageArray[:, :, 0] = redMap
-            imageArray[:, :, 1] = greenMap
-            imageArray[:, :, 2] = blueMap
+        imageArray[:, :, 0] = redMap
+        imageArray[:, :, 1] = greenMap
+        imageArray[:, :, 2] = blueMap
 
-        else:
-            for row in range(self.mainProgram.settings.MINIMAP_RESOLUTION[0]):
-                for colon in range(self.mainProgram.settings.MINIMAP_RESOLUTION[1]):
-                    imageArray[row, colon, 0] = interpolatedMap[row, colon] / (self.mainProgram.settings.ELEVATION_LEVELS-0)
-                    imageArray[row, colon, 1] = interpolatedMap[row, colon] / (self.mainProgram.settings.ELEVATION_LEVELS-0)
-                    imageArray[row, colon, 2] = interpolatedMap[row, colon] / (self.mainProgram.settings.ELEVATION_LEVELS-0)
-
-        print('-----------------------------')
-        print(np.min(self.mainProgram.world.elevation))
-        print(np.max(self.mainProgram.world.elevation))
-        print(np.min(interpolatedMap))
-        print(np.max(interpolatedMap))
-        print('-----------------------------')
-
-        tmpDataPath = Root_Directory.Path(style='unix') + '/Data/tmp_Data/'
+        tmpDataPath = Root_Directory.Path() + '/Data/tmp_Data/'
         matplotlib.image.imsave(tmpDataPath + 'minimap_image_' + type + '.png', imageArray)
 
 

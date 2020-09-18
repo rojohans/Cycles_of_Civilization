@@ -45,12 +45,12 @@ class SettingsClass():
         self.ELEVATION_LEVELS = 7
         self.DISCRETE_ELEVATION = False
         self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.1, 0.075, 0.05, 0.025]
-        self.ELEVATION_MINIMAP_COLOURS = np.array([(0.0, 0.0, 0.0),
-                                                   (0.16, 0.16, 0.16),
-                                                   (0.32, 0.32, 0.32),
-                                                   (0.5, 0.5, 0.5),
-                                                   (0.66, 0.66, 0.66),
-                                                   (0.82, 0.82, 0.82),
+        self.ELEVATION_MINIMAP_COLOURS = np.array([(0.1, 0.1, 0.3),
+                                                   (0.1, 0.3, 0.9),
+                                                   (0.15, 0.5, 0.05),
+                                                   (0.8, 0.8, 0.1),
+                                                   (0.8, 0.4, 0.3),
+                                                   (0.2, 0.2, 0.25),
                                                    (1.0, 1.0, 1.0)])
         self.ELEVATION_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
                                                           (1.0, 1.0, 1.0)])
@@ -61,7 +61,7 @@ class SettingsClass():
         # type  : barren  poor  normal  lush
         # yield :   0     0.5     1     1.25
         self.SOIL_FERTILITY_MINIMAP_COLOURS = np.array([(0.3, 0.3, 0.3),
-                                                        (0.6, 0.5, 0.4),
+                                                        (0.55, 0.55, 0.4),
                                                         (0.6, 0.9, 0.3),
                                                         (0.15, 0.6, 0.05)])
         self.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
@@ -73,11 +73,16 @@ class SettingsClass():
         self.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION = [0.6, 0.3, 0.1]
         #type  :  flat    hilly    mountanious
         #yield :
-        self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS = np.array([(0.3, 0.3, 0.3),
-                                                              (0.6, 0.6, 0.6),
-                                                              (1.0, 1.0, 1.0)])
+        #self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS = np.array([(0.3, 0.3, 0.3),
+        #                                                      (0.6, 0.6, 0.6),
+        #                                                      (1.0, 1.0, 1.0)])
+        #self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
+        #                                                             (1.0, 1.0, 1.0)])
+        self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),       # white
+                                                              (0.6, 0.6, 0.3),       # yellow/light brown
+                                                              (0.25, 0.2, 0.1)])    # dark brown
         self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
-                                                                     (1.0, 1.0, 1.0)])
+                                                                     (0.25, 0.2, 0.1)])
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08

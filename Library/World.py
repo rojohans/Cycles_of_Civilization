@@ -30,6 +30,7 @@ class WorldClass():
                                                   distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
 
         self.soilFertility[self.elevation<=1] = -1
+        self.topographyRoughness[self.elevation <= 1] = -1
 
         #self.waterAbundance =
 
