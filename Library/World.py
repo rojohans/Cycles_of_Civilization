@@ -15,7 +15,7 @@ class WorldClass():
 
         self.soilFertility = self.CreateMap(minValue = 0,
                                             maxValue = self.mainProgram.settings.SOIL_FERTILITY_LEVELS-1,
-                                            persistance = 1.5,
+                                            persistance = 1.2,
                                             initialOctavesToSkip = 3,
                                             discreteSteps = self.mainProgram.settings.DISCRETE_SOIL_FERTILITY_LEVELS,
                                             applyDistributionFilter = True,

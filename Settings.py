@@ -14,8 +14,8 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 16
-        self.N_COLONS = 32
+        self.N_ROWS = 32
+        self.N_COLONS = 64
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 30
@@ -44,9 +44,9 @@ class SettingsClass():
         self.ELEVATION_SCALE = 0.3
         self.ELEVATION_LEVELS = 7
         self.DISCRETE_ELEVATION = False
-        self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.1, 0.075, 0.05, 0.025]
+        self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.135, 0.065, 0.04, 0.01]
         self.ELEVATION_MINIMAP_COLOURS = np.array([(0.1, 0.1, 0.3),
-                                                   (0.1, 0.3, 0.9),
+                                                   (0.1, 0.3, 0.7),
                                                    (0.15, 0.5, 0.05),
                                                    (0.8, 0.8, 0.1),
                                                    (0.8, 0.4, 0.3),
@@ -67,17 +67,11 @@ class SettingsClass():
         self.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
                                                                (0.15, 0.6, 0.05)])
 
-
         self.TOPOGRAPHY_ROUGHNESS_LEVELS = 3
         self.DISCRETE_TOPOGRAPHY_ROUGHNESS_LEVELS = False
         self.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION = [0.6, 0.3, 0.1]
         #type  :  flat    hilly    mountanious
         #yield :
-        #self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS = np.array([(0.3, 0.3, 0.3),
-        #                                                      (0.6, 0.6, 0.6),
-        #                                                      (1.0, 1.0, 1.0)])
-        #self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
-        #                                                             (1.0, 1.0, 1.0)])
         self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),       # white
                                                               (0.6, 0.6, 0.3),       # yellow/light brown
                                                               (0.25, 0.2, 0.1)])    # dark brown
