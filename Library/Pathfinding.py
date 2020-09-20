@@ -20,6 +20,7 @@ class MapGraph():
     def CreateEdgesSimple(self, N_ROWS, N_COLONS):
         for x in range(N_COLONS):
             for y in range(N_ROWS):
+                iTile = TileClass.TileClass.CoordinateToIndex(y, x)
                 if y == 0:
                     # Southern border
                     self.edges[TileClass.TileClass.CoordinateToIndex(y, x)] = \
@@ -28,8 +29,11 @@ class MapGraph():
                          TileClass.TileClass.CoordinateToIndex(y + 1, (x - 1)%N_COLONS),
                          TileClass.TileClass.CoordinateToIndex(y + 1, x%N_COLONS),
                          TileClass.TileClass.CoordinateToIndex(y + 1, (x + 1)%N_COLONS)]
-                    #self.cost[]
-                    self.cost[TileClass.TileClass.CoordinateToIndex(y, x)] = [1, 1, 1.5, 1, 1.5]
+                    self.cost[TileClass.TileClass.CoordinateToIndex(y, x)] = [1,
+                                                                              1,
+                                                                              1.5,
+                                                                              1,
+                                                                              1.5]
                 elif y == N_ROWS-1:
                     # Northern border
                     self.edges[TileClass.TileClass.CoordinateToIndex(y, x)] = \
@@ -38,7 +42,11 @@ class MapGraph():
                          TileClass.TileClass.CoordinateToIndex(y - 1, (x - 1)%N_COLONS),
                          TileClass.TileClass.CoordinateToIndex(y - 1, x%N_COLONS),
                          TileClass.TileClass.CoordinateToIndex(y - 1, (x + 1)%N_COLONS)]
-                    self.cost[TileClass.TileClass.CoordinateToIndex(y, x)] = [1, 1, 1.5, 1, 1.5]
+                    self.cost[TileClass.TileClass.CoordinateToIndex(y, x)] = [1,
+                                                                              1,
+                                                                              1.5,
+                                                                              1,
+                                                                              1.5]
                 else:
                     self.edges[TileClass.TileClass.CoordinateToIndex(y, x)] = \
                         [TileClass.TileClass.CoordinateToIndex(y, (x - 1)%N_COLONS),
@@ -49,7 +57,98 @@ class MapGraph():
                          TileClass.TileClass.CoordinateToIndex(y + 1, (x - 1)%N_COLONS),
                          TileClass.TileClass.CoordinateToIndex(y + 1, x%N_COLONS),
                          TileClass.TileClass.CoordinateToIndex(y + 1, (x + 1)%N_COLONS)]
-                    self.cost[TileClass.TileClass.CoordinateToIndex(y, x)] = [1, 1, 1.5, 1, 1.5, 1.5, 1, 1.5]
+                    self.cost[TileClass.TileClass.CoordinateToIndex(y, x)] = [1,
+                                                                              1,
+                                                                              1.5,
+                                                                              1,
+                                                                              1.5,
+                                                                              1.5,
+                                                                              1,
+                                                                              1.5]
+    def CreateEdges(self, N_ROWS, N_COLONS):
+        for x in range(N_COLONS):
+            for y in range(N_ROWS):
+                iTile = TileClass.TileClass.CoordinateToIndex(y, x)
+                if y == 0:
+                    # Southern border
+                    self.edges[TileClass.TileClass.CoordinateToIndex(y, x)] = \
+                        [TileClass.TileClass.CoordinateToIndex(y, (x - 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y, (x + 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y + 1, (x - 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y + 1, x%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y + 1, (x + 1)%N_COLONS)]
+                    self.cost[iTile] = [self.DetermineCost(iTile, self.edges[iTile][0]),
+                                        self.DetermineCost(iTile, self.edges[iTile][1]),
+                                        self.DetermineCost(iTile, self.edges[iTile][2]),
+                                        self.DetermineCost(iTile, self.edges[iTile][3]),
+                                        self.DetermineCost(iTile, self.edges[iTile][4])]
+                elif y == N_ROWS-1:
+                    # Northern border
+                    self.edges[TileClass.TileClass.CoordinateToIndex(y, x)] = \
+                        [TileClass.TileClass.CoordinateToIndex(y, (x - 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y, (x + 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y - 1, (x - 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y - 1, x%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y - 1, (x + 1)%N_COLONS)]
+                    self.cost[iTile] = [self.DetermineCost(iTile, self.edges[iTile][0]),
+                                        self.DetermineCost(iTile, self.edges[iTile][1]),
+                                        self.DetermineCost(iTile, self.edges[iTile][2]),
+                                        self.DetermineCost(iTile, self.edges[iTile][3]),
+                                        self.DetermineCost(iTile, self.edges[iTile][4])]
+                else:
+                    self.edges[TileClass.TileClass.CoordinateToIndex(y, x)] = \
+                        [TileClass.TileClass.CoordinateToIndex(y, (x - 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y, (x + 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y - 1, (x - 1) % N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y - 1, x % N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y - 1, (x + 1) % N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y + 1, (x - 1)%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y + 1, x%N_COLONS),
+                         TileClass.TileClass.CoordinateToIndex(y + 1, (x + 1)%N_COLONS)]
+                    self.cost[iTile] = [self.DetermineCost(iTile, self.edges[iTile][0]),
+                                        self.DetermineCost(iTile, self.edges[iTile][1]),
+                                        self.DetermineCost(iTile, self.edges[iTile][2]),
+                                        self.DetermineCost(iTile, self.edges[iTile][3]),
+                                        self.DetermineCost(iTile, self.edges[iTile][4]),
+                                        self.DetermineCost(iTile, self.edges[iTile][5]),
+                                        self.DetermineCost(iTile, self.edges[iTile][6]),
+                                        self.DetermineCost(iTile, self.edges[iTile][7])]
+
+    @classmethod
+    def DetermineCost(cls, tile1ID, tile2ID):
+        tile1 = cls.mainProgram.tileList[tile1ID]
+        tile2 = cls.mainProgram.tileList[tile2ID]
+        leftTile = TileClass.TileClass.CoordinateToIndex(tile1.row, (tile1.colon - 1) % cls.mainProgram.settings.N_COLONS)
+        rightTile = TileClass.TileClass.CoordinateToIndex(tile1.row, (tile1.colon + 1) % cls.mainProgram.settings.N_COLONS)
+        underTile = TileClass.TileClass.CoordinateToIndex(tile1.row - 1, tile1.colon % cls.mainProgram.settings.N_COLONS)
+        upperTile = TileClass.TileClass.CoordinateToIndex(tile1.row + 1, tile1.colon % cls.mainProgram.settings.N_COLONS)
+        if tile2ID == leftTile or tile2ID == rightTile or tile2ID == underTile or tile2ID == upperTile:
+            # Vertical or horisontal alignment
+            cost = 1
+        else:
+            # Diagonal alignment
+            cost = 1.5
+
+        elevationDifference = np.abs(tile1.elevation - tile2.elevation)
+        if elevationDifference == 0:
+            elevationCostModifier = 1
+        elif elevationDifference == 1:
+            elevationCostModifier = 2
+        else:
+            elevationCostModifier = 100000000
+        cost *= elevationCostModifier
+
+        featureCostModifier = 1 + (len(tile1.features) + len(tile2.features))/2
+        cost *= featureCostModifier
+
+        roughnessCostModifier = 1 +(cls.mainProgram.world.topographyRoughness[tile1.row, tile1.colon] +
+                                    cls.mainProgram.world.topographyRoughness[tile2.row, tile2.colon])/2
+        cost *= roughnessCostModifier
+
+        if tile1.isWater or tile2.isWater:
+            cost *= 100000000
+
+        return cost
 
     def CreateEdgesFromElevationMap(self, elevationMap, N_ROWS, N_COLONS):
         for row in range(N_ROWS):
@@ -59,6 +158,10 @@ class MapGraph():
                 adjacentCross = np.zeros((8, 2), dtype=int)
                 adjacentCross[:, 0] = int(self.row) + self.ADJACENT_TILES_TEMPLATE[:, 0]
                 adjacentCross[:, 1] = np.mod(int(self.colon) + self.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
+
+    @classmethod
+    def Initialize(cls, mainProgram):
+        cls.mainProgram = mainProgram
 
 def SimplePathfinding(startNode, endNode, graph):
     '''

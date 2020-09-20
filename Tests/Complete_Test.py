@@ -121,37 +121,43 @@ class Game(ShowBase):
             for row in range(self.settings.N_ROWS):
                 for colon in range(self.settings.N_COLONS):
                     iTile = colon + row * self.settings.N_COLONS
-                    r = np.random.rand()
-                    if r < 0.15:
-                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                    type='jungle',
-                                                                                    numberOfcomponents=20))
-                        self.tileList[iTile].features[0].node.removeNode()
-                    elif r < 0.3:
-                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                    type='town',
-                                                                                    numberOfcomponents=20,
-                                                                                    distributionType='grid',
-                                                                                    distributionValue=7,
-                                                                                    gridAlignedHPR=True
-                                                                                    ))
-                        self.tileList[iTile].features[0].node.removeNode()
-                    elif r < 0.45:
-                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                    type='farm',
-                                                                                    numberOfcomponents=1,
-                                                                                    distributionType='random'))
-                        self.tileList[iTile].features[0].node.removeNode()
-                    elif r < 0.6:
-                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                    type='conifer_forest',
-                                                                                    numberOfcomponents=20))
-                        self.tileList[iTile].features[0].node.removeNode()
-                    elif r < 0.75:
-                        self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                    type='temperate_forest',
-                                                                                    numberOfcomponents=20))
-                        self.tileList[iTile].features[0].node.removeNode()
+                    if self.tileList[iTile].isWater:
+                        pass
+                    else:
+                        r = np.random.rand()
+                        a = False
+                        if r < 0.2:
+                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                        type='jungle',
+                                                                                        numberOfcomponents=20))
+                            self.tileList[iTile].features[0].node.removeNode()
+
+                        elif r < 0.4:
+                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                        type='conifer_forest',
+                                                                                        numberOfcomponents=20))
+                            self.tileList[iTile].features[0].node.removeNode()
+                        elif r < 0.6:
+                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                        type='temperate_forest',
+                                                                                        numberOfcomponents=20))
+                            self.tileList[iTile].features[0].node.removeNode()
+                            '''
+                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                        type='town',
+                                                                                        numberOfcomponents=20,
+                                                                                        distributionType='grid',
+                                                                                        distributionValue=7,
+                                                                                        gridAlignedHPR=True
+                                                                                        ))
+                            self.tileList[iTile].features[0].node.removeNode()
+                        elif r < 0.45:
+                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                        type='farm',
+                                                                                        numberOfcomponents=1,
+                                                                                        distributionType='random'))
+                            self.tileList[iTile].features[0].node.removeNode()
+                            '''
 
     def SetupTiles(self):
         self.tileList = []
@@ -159,6 +165,7 @@ class Game(ShowBase):
                                        tileList = self.tileList,
                                        pandaProgram = self)
 
+        Pathfinding.MapGraph.Initialize(mainProgram=self)
         self.mapGraph = Pathfinding.MapGraph()
         self.mapGraph.CreateEdgesSimple(self.settings.N_ROWS, self.settings.N_COLONS)
 
@@ -225,7 +232,8 @@ class Game(ShowBase):
             for colon in range(self.settings.N_COLONS):
                 if self.world.elevation[row, colon] <= 1:
                     iTile = colon + row * self.settings.N_COLONS
-                    self.tileList[iTile].CreateWater()
+                    isOcean = self.world.elevation[row, colon] <= 1
+                    self.tileList[iTile].CreateWater(isOcean = isOcean)
 
         tic = time.time()
         for row in range(self.settings.N_ROWS):
@@ -233,10 +241,7 @@ class Game(ShowBase):
                 #if self.world.elevation[row, colon] <= 1:
                 iTile = colon + row * self.settings.N_COLONS
                 if self.tileList[iTile].isWater or self.tileList[iTile].isShore:
-                    if self.world.elevation[row, colon] <= 1:
-                        self.tileList[iTile].CreateWaterNode(ocean=True)
-                    else:
-                        self.tileList[iTile].CreateWaterNode(ocean = False)
+                    self.tileList[iTile].CreateWaterNode()
                     self.tileList[iTile].ApplyWaterTexture()
         toc = time.time()
         print('Create water nodes: {}'.format(toc - tic))
@@ -285,8 +290,9 @@ class Game(ShowBase):
         self.unitMarker.setPos(p3d.LPoint3(0, 0, 0))
         self.unitMarker.set_hpr(0, 90, 0)
 
+        Pathfinding.MapGraph.Initialize(mainProgram=self)
         self.movementGraph = Pathfinding.MapGraph()
-        self.movementGraph.CreateEdgesSimple(self.settings.N_ROWS, self.settings.N_COLONS)
+        self.movementGraph.CreateEdges(self.settings.N_ROWS, self.settings.N_COLONS)
 
     def SetupPicker(self):
         # Since we are using collision detection to do picking, we set it up like

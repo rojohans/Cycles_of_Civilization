@@ -42,14 +42,17 @@ class SettingsClass():
         # ================ WORLD GENERATION ============================================================================
         self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
         self.ELEVATION_SCALE = 0.3
-        self.ELEVATION_LEVELS = 7
+        self.ELEVATION_LEVELS = 9
         self.DISCRETE_ELEVATION = False
-        self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.135, 0.065, 0.04, 0.01]
+        #self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.135, 0.065, 0.04, 0.01]
+        self.ELEVATION_DISTRIBUTION = [0.325, 0.125, 0.15, 0.135, 0.1, 0.075, 0.05, 0.03, 0.01]
         self.ELEVATION_MINIMAP_COLOURS = np.array([(0.1, 0.1, 0.3),
                                                    (0.1, 0.3, 0.7),
                                                    (0.15, 0.5, 0.05),
+                                                   (0.4, 0.7, 0.1),
                                                    (0.8, 0.8, 0.1),
                                                    (0.8, 0.4, 0.3),
+                                                   (0.5, 0.3, 0.25),
                                                    (0.2, 0.2, 0.25),
                                                    (1.0, 1.0, 1.0)])
         self.ELEVATION_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),

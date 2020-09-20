@@ -376,7 +376,7 @@ class MinimapSelectionFrame(CustomFrame):
 
         self.buttonScale = self.mainProgram.settings.MINIMAP_SELECTION_BUTTON_SCALE*(self.size[1] - self.size[0])/2
         self.buttonOffset = [self.buttonScale, 0, 0]
-
+        '''
         self.buttons['Biome'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_biome.png',
                                                        GUIDataDirectoryPath + 'minimap_selection_biome_pressed.png', None),
                                              scale=self.buttonScale,
@@ -387,6 +387,7 @@ class MinimapSelectionFrame(CustomFrame):
                                                   value = ['biome'],
                                             indicatorValue = 1,
                                              command=self.minimap.UpdateMinimap)
+        '''
         self.buttons['Elevation'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_elevation.png',
                                                        GUIDataDirectoryPath + 'minimap_selection_elevation_pressed.png', None),
                                                 scale=self.buttonScale,

@@ -41,6 +41,7 @@ class TileClass(Entity):
 
         self.isWater = False
         self.isShore = False
+        self.isOcean = False
 
         self.waterNode = None
 
@@ -208,8 +209,8 @@ class TileClass(Entity):
             tile = p3d.NodePath(node)
         self.node = tile
 
-    def CreateWaterNode(self, ocean = False):
-        if ocean:
+    def CreateWaterNode(self):
+        if self.isOcean:
             waterLevel = 1 + self.pandaProgram.settings.WATER_HEIGHT
         else:
             waterLevel = self.elevation + self.pandaProgram.settings.WATER_HEIGHT
@@ -1276,16 +1277,17 @@ class TileClass(Entity):
         self.node.setTexture(tex)
         self.textureArray = None
 
-    def CreateWater(self):
+    def CreateWater(self, isOcean = False):
         self.isWater = True
+        self.isOcean = isOcean
         iTile = self.CoordinateToIndex(self.row, self.colon)
         adjacentTiles = self.pandaProgram.mapGraph.GetConnections(iTile)
         for adjacentTile in adjacentTiles:
             adjacentTile = self.tileList[adjacentTile]
             if adjacentTile.isWater == False:
                 adjacentTile.isShore = True
-                if self.pandaProgram.world.elevation[self.row, self.colon] <= 1:
-                    adjacentTile
+                if isOcean:
+                    adjacentTile.isOcean = True
 
 
 
@@ -1505,7 +1507,7 @@ class TileClass(Entity):
         return textureCode
 
     def CreateTextureArray(self):
-        if self.waterNode == None:
+        if self.isWater == False:
             soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
             self.textureArray = self.terrainTextures['soil_fertility_' + str(soilFertility)].copy()
         else:
@@ -1819,13 +1821,18 @@ class TileClass(Entity):
     def Wrap(self, direction):
         self.wrapperNode = self.pandaProgram.tileRoot.attachNewNode('wrapperNode')
         self.node.copyTo(self.wrapperNode)
+        if self.waterNode is not None:
+            self.wrapperNodeWater = self.pandaProgram.tileRoot.attachNewNode('wrapperNodeWater')
+            self.waterNode.copyTo(self.wrapperNodeWater)
 
         if direction == 'left':
             self.wrapperNode.setPos(self.wrapperNode, (-self.N_COLONS, 0, 0))
-            return
+            if self.waterNode is not None:
+                self.wrapperNodeWater.setPos(self.wrapperNodeWater, (-self.N_COLONS, 0, 0))
         if direction == 'right':
             self.wrapperNode.setPos(self.wrapperNode, (self.N_COLONS, 0, 0))
-            return
+            if self.waterNode is not None:
+                self.wrapperNodeWater.setPos(self.wrapperNodeWater, (self.N_COLONS, 0, 0))
 
     @classmethod
     def Initialize(cls, N_ROWS, N_COLONS, tileList, pandaProgram):
@@ -2137,6 +2144,20 @@ class FeatureClass(Entity):
             node.setTransparency(p3d.TransparencyAttrib.MAlpha)
             node.clearModelNodes()
         self.node.flattenStrong()
+
+        if self.colon < self.pandaProgram.settings.HORIZONTAL_WRAP_BUFFER:
+            self.Wrap('right')
+        if self.colon > (self.pandaProgram.settings.N_COLONS - self.pandaProgram.settings.HORIZONTAL_WRAP_BUFFER):
+            self.Wrap('left')
+
+    def Wrap(self, direction):
+        self.wrapperNode = self.pandaProgram.featureRoot.attachNewNode('wrapperNode')
+        self.node.copyTo(self.wrapperNode)
+
+        if direction == 'left':
+            self.wrapperNode.setPos(self.wrapperNode, (-self.pandaProgram.settings.N_COLONS, 0, 0))
+        if direction == 'right':
+            self.wrapperNode.setPos(self.wrapperNode, (self.pandaProgram.settings.N_COLONS, 0, 0))
 
     @classmethod
     def Initialize(cls, featureTemplates, pandaProgram):
