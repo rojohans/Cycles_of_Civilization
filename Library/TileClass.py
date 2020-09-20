@@ -39,6 +39,9 @@ class TileClass(Entity):
         self.textureCodeSimple = None
         self.textureCode = None
 
+        self.isWater = False
+        self.isShore = False
+
         self.waterNode = None
 
         # The unit is a reference to the unit object which is located on the tile, if any exists.
@@ -1272,6 +1275,19 @@ class TileClass(Entity):
 
         self.node.setTexture(tex)
         self.textureArray = None
+
+    def CreateWater(self):
+        self.isWater = True
+        iTile = self.CoordinateToIndex(self.row, self.colon)
+        adjacentTiles = self.pandaProgram.mapGraph.GetConnections(iTile)
+        for adjacentTile in adjacentTiles:
+            adjacentTile = self.tileList[adjacentTile]
+            if adjacentTile.isWater == False:
+                adjacentTile.isShore = True
+                if self.pandaProgram.world.elevation[self.row, self.colon] <= 1:
+                    adjacentTile
+
+
 
     def ApplyWaterTexture(self):
         waterTextureArray = self.terrainTextures['water']

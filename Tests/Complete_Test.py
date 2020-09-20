@@ -159,6 +159,8 @@ class Game(ShowBase):
                                        tileList = self.tileList,
                                        pandaProgram = self)
 
+        self.mapGraph = Pathfinding.MapGraph()
+        self.mapGraph.CreateEdgesSimple(self.settings.N_ROWS, self.settings.N_COLONS)
 
         tic = time.time()
         # Initializes the tiles
@@ -219,12 +221,22 @@ class Game(ShowBase):
         toc = time.time()
         print('CreateNodeExperimental: {}'.format(toc - tic))
 
-        tic = time.time()
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 if self.world.elevation[row, colon] <= 1:
                     iTile = colon + row * self.settings.N_COLONS
-                    self.tileList[iTile].CreateWaterNode(ocean=True)
+                    self.tileList[iTile].CreateWater()
+
+        tic = time.time()
+        for row in range(self.settings.N_ROWS):
+            for colon in range(self.settings.N_COLONS):
+                #if self.world.elevation[row, colon] <= 1:
+                iTile = colon + row * self.settings.N_COLONS
+                if self.tileList[iTile].isWater or self.tileList[iTile].isShore:
+                    if self.world.elevation[row, colon] <= 1:
+                        self.tileList[iTile].CreateWaterNode(ocean=True)
+                    else:
+                        self.tileList[iTile].CreateWaterNode(ocean = False)
                     self.tileList[iTile].ApplyWaterTexture()
         toc = time.time()
         print('Create water nodes: {}'.format(toc - tic))
