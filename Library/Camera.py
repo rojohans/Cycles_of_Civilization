@@ -112,7 +112,8 @@ class CameraClass():
                     self.zoom += dt * self.camera_zoom_damping
                     if self.zoom > 0: self.zoom = 0
 
-            if self.mainProgram.inputDictionary['mouse4']:
+            if self.mainProgram.inputDictionary['mouse4'] or self.mainProgram.inputDictionary['mouse2']:
+                # Rotate camera.
                 h = self.camera_node.get_h() - mouse_delta.x * self.camera_rotation_speed
                 self.camera_node.set_h(h)
 

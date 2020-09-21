@@ -116,13 +116,22 @@ class MapGraph():
 
     @classmethod
     def DetermineCost(cls, tile1ID, tile2ID):
+        '''
+        Returns the movement cost between two tiles.
+        '''
         tile1 = cls.mainProgram.tileList[tile1ID]
         tile2 = cls.mainProgram.tileList[tile2ID]
-        leftTile = TileClass.TileClass.CoordinateToIndex(tile1.row, (tile1.colon - 1) % cls.mainProgram.settings.N_COLONS)
-        rightTile = TileClass.TileClass.CoordinateToIndex(tile1.row, (tile1.colon + 1) % cls.mainProgram.settings.N_COLONS)
-        underTile = TileClass.TileClass.CoordinateToIndex(tile1.row - 1, tile1.colon % cls.mainProgram.settings.N_COLONS)
-        upperTile = TileClass.TileClass.CoordinateToIndex(tile1.row + 1, tile1.colon % cls.mainProgram.settings.N_COLONS)
-        if tile2ID == leftTile or tile2ID == rightTile or tile2ID == underTile or tile2ID == upperTile:
+        leftTileID = TileClass.TileClass.CoordinateToIndex(tile1.row, (tile1.colon - 1) % cls.mainProgram.settings.N_COLONS)
+        rightTileID = TileClass.TileClass.CoordinateToIndex(tile1.row, (tile1.colon + 1) % cls.mainProgram.settings.N_COLONS)
+        underTileID = TileClass.TileClass.CoordinateToIndex(tile1.row - 1, tile1.colon % cls.mainProgram.settings.N_COLONS)
+        upperTileID = TileClass.TileClass.CoordinateToIndex(tile1.row + 1, tile1.colon % cls.mainProgram.settings.N_COLONS)
+
+        lowerLeftTileID = TileClass.TileClass.CoordinateToIndex(tile1.row-1, (tile1.colon - 1) % cls.mainProgram.settings.N_COLONS)
+        lowerRightTileID = TileClass.TileClass.CoordinateToIndex(tile1.row - 1, (tile1.colon + 1) % cls.mainProgram.settings.N_COLONS)
+        upperLeftTileID = TileClass.TileClass.CoordinateToIndex(tile1.row+1, (tile1.colon - 1) % cls.mainProgram.settings.N_COLONS)
+        upperRightTileID = TileClass.TileClass.CoordinateToIndex(tile1.row + 1, (tile1.colon + 1) % cls.mainProgram.settings.N_COLONS)
+
+        if tile2ID == leftTileID or tile2ID == rightTileID or tile2ID == underTileID or tile2ID == upperTileID:
             # Vertical or horisontal alignment
             cost = 1
         else:
@@ -131,22 +140,46 @@ class MapGraph():
 
         elevationDifference = np.abs(tile1.elevation - tile2.elevation)
         if elevationDifference == 0:
-            elevationCostModifier = 1
+            elevationCostModifier = 0
         elif elevationDifference == 1:
-            elevationCostModifier = 2
+            elevationCostModifier = 1
         else:
             elevationCostModifier = 100000000
-        cost *= elevationCostModifier
+        if tile2ID == lowerLeftTileID:
+            row1, colon1 = TileClass.TileClass.IndexToCoordinate(leftTileID)
+            row2, colon2 = TileClass.TileClass.IndexToCoordinate(underTileID)
+            elvDiff = np.abs(cls.mainProgram.world.elevation[row1, colon1]-cls.mainProgram.world.elevation[row2, colon2])
+            if elvDiff >=2:elevationCostModifier = 100000000
 
-        featureCostModifier = 1 + (len(tile1.features) + len(tile2.features))/2
-        cost *= featureCostModifier
+        elif tile2ID == lowerRightTileID:
+            row1, colon1 = TileClass.TileClass.IndexToCoordinate(rightTileID)
+            row2, colon2 = TileClass.TileClass.IndexToCoordinate(underTileID)
+            elvDiff = np.abs(cls.mainProgram.world.elevation[row1, colon1]-cls.mainProgram.world.elevation[row2, colon2])
+            if elvDiff >=2:elevationCostModifier = 100000000
 
-        roughnessCostModifier = 1 +(cls.mainProgram.world.topographyRoughness[tile1.row, tile1.colon] +
+        elif tile2ID == upperLeftTileID:
+            row1, colon1 = TileClass.TileClass.IndexToCoordinate(leftTileID)
+            row2, colon2 = TileClass.TileClass.IndexToCoordinate(upperTileID)
+            elvDiff = np.abs(cls.mainProgram.world.elevation[row1, colon1]-cls.mainProgram.world.elevation[row2, colon2])
+            if elvDiff >=2:elevationCostModifier = 100000000
+
+        elif tile2ID == upperRightTileID:
+            row1, colon1 = TileClass.TileClass.IndexToCoordinate(upperTileID)
+            row2, colon2 = TileClass.TileClass.IndexToCoordinate(rightTileID)
+            elvDiff = np.abs(cls.mainProgram.world.elevation[row1, colon1]-cls.mainProgram.world.elevation[row2, colon2])
+            if elvDiff >=2:elevationCostModifier = 100000000
+
+        cost += elevationCostModifier
+
+        featureCostModifier = 0 + (len(tile1.features) + len(tile2.features))/2
+        cost += featureCostModifier
+
+        roughnessCostModifier = 0 +(cls.mainProgram.world.topographyRoughness[tile1.row, tile1.colon] +
                                     cls.mainProgram.world.topographyRoughness[tile2.row, tile2.colon])/2
-        cost *= roughnessCostModifier
+        cost += roughnessCostModifier
 
         if tile1.isWater or tile2.isWater:
-            cost *= 100000000
+            cost += 100000000
 
         return cost
 
@@ -206,7 +239,7 @@ def AStar(startNode, endNode, graph):
     '''
     The A* algorithm finds the shortest path between the start node and the end node. The method do not utilize an
     early exit to ensure that the shortest path is indeed found. Performance might be improved by saving calculated
-    paths in a look up table.
+    paths in a look up table. Returns None if no path could be found.
     :param startNode:
     :param endNode:
     :param graph:
@@ -229,20 +262,25 @@ def AStar(startNode, endNode, graph):
             stepCost = graph.GetCost(current, next)
             newCost = cost_so_far[current] + stepCost
 
-            if next not in cost_so_far or newCost < cost_so_far[next]:
+            #if next not in cost_so_far or newCost < cost_so_far[next]:
+            if (next not in cost_so_far or newCost < cost_so_far[next]) and newCost < 10000000:
                 border.put(next, newCost)
                 came_from[next] = current
                 cost_so_far[next] = newCost
 
+    if endNode not in came_from:
+        print('no path exists')
+        return None
+    else:
+        # Retrace back to the start node.
+        current = endNode
+        path = []
+        while current != startNode:
+            path.append(int(current))
+            current = came_from[current]
+        path.append(int(startNode))
+        path.reverse()
 
-    # Retrace back to the start node.
-    current = endNode
-    path = []
-    while current != startNode:
-        path.append(int(current))
-        current = came_from[current]
-    path.append(int(startNode))
-    path.reverse()
+        return path
 
-    return path
 

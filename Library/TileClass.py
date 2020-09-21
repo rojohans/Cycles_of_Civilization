@@ -263,7 +263,28 @@ class TileClass(Entity):
         The topography_roughness value is -1 where there is water. So at that place the flat topography will be used.
         :return:
         '''
-        self.topographyBase = self.CreateBaseTopography()
+
+        baseTopographyCode = self.CreateBaseTopographyCode()
+
+
+        if baseTopographyCode == None:
+            self.topographyBase = self.CreateBaseTopography()
+        else:
+            keyFound = False
+            for key, value in self.baseTopographyDictionary.items():
+                if key == baseTopographyCode:
+                    keyFound = True
+                    # Load an existing topography
+                    self.topographyBase = value.copy()
+                    print('topography retrieved from dictionary')
+                    break
+            #keyFound = False
+            if keyFound == False:
+                # Crate a new topography
+                #self.topographyTop = self.CreateTopography(topographyCode=topographyCode)
+                self.topographyBase = self.CreateBaseTopography()
+                self.baseTopographyDictionary[baseTopographyCode] = self.topographyBase.copy()
+                print('topography calculated from scratch')
 
         if self.pandaProgram.world.topographyRoughness[self.row, self.colon] >=0:
             self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
@@ -271,8 +292,27 @@ class TileClass(Entity):
             self.topographyTop = self.terrainTopography[
                 'topography_roughness_0']
 
+        #tileElevation = self.pandaProgram.settings.ELEVATION_SCALE*self.elevation*np.ones((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
+        self.topography = self.pandaProgram.settings.ELEVATION_SCALE*self.elevation + self.topographyBase# + self.topographyTop
 
-        self.topography = self.topographyBase + self.topographyTop
+    def CreateBaseTopographyCode(self):
+        if self.row > 0 and self.row < self.N_ROWS - 1:
+            tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
+
+            adjacentCross = np.zeros((8, 2), dtype=int)
+            adjacentCross[:, 0] = int(self.row) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
+            adjacentCross[:, 1] = np.mod(int(self.colon) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
+            adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
+
+            adjacentZValues -= tileElevation
+            topographyCode = ''
+            for i, value in enumerate(adjacentZValues):
+                if i > 0:
+                    topographyCode += ':'
+                topographyCode += str(value)
+            return topographyCode
+        else:
+            return None
 
     def TopographyTile(self):
         if self.row > 0 and self.row < self.N_ROWS - 1:
@@ -297,11 +337,6 @@ class TileClass(Entity):
                 if keyFound == False:
                     # Crate a new topography
                     self.topographyTop = self.CreateTopography(topographyCode=topographyCode)
-                    #r = np.random.rand()
-                    #if r < 0.5:
-                    #    self.topographyTop = np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION))
-                    #else:
-                    #    self.topographyTop = 0.5 + np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION))
 
                     self.topographyDictionary[topographyCode] = self.topographyTop.copy()
                     self.topographyBase = self.CreateBaseTopography()
@@ -924,6 +959,7 @@ class TileClass(Entity):
 
         else:
             baseTopography = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
+        baseTopography -= self.elevation * self.pandaProgram.settings.ELEVATION_SCALE
         return baseTopography
 
     def CreateTopography(self, topographyCode):
@@ -1856,6 +1892,14 @@ class TileClass(Entity):
         #cls.TEXTUER_RESOLUTION = textureResolution
 
         try:
+            basefile = open('base_topography_dictionary.pkl', 'rb')
+            cls.baseTopographyDictionary = pickle.load(basefile)
+            basefile.close()
+        except:
+            print('new dictionary was created')
+            cls.baseTopographyDictionary = {}
+
+        try:
             topographyFile = open('topography_dictionary.pkl', 'rb')
             cls.topographyDictionary = pickle.load(topographyFile)
             topographyFile.close()
@@ -1982,6 +2026,8 @@ class TileClass(Entity):
 
     @classmethod
     def SaveDictionariesToFile(cls):
+
+        pickle.dump(cls.baseTopographyDictionary, open('base_topography_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
         pickle.dump(cls.topographyDictionary, open('topography_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
         pickle.dump(cls.textureDictionary, open('texture_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
 
@@ -2306,21 +2352,26 @@ class UnitClass(Entity):
                 path = Pathfinding.AStar(TileClass.CoordinateToIndex(unit.row, unit.colon), tileID, cls.ChessBoardDemo.movementGraph)
                 #path = Pathfinding.SimplePathfinding(TileClass.CoordinateToIndex(unit.row, unit.colon), tileID,cls.ChessBoardDemo.movementGraph)
 
-                coordinatePath = []
-                pathLength = []
-                print(path)
-                print('--------')
-                for i, iTile in enumerate(path):
-                    tile = cls.tileList[iTile]
-                    coordinatePath.append([tile.row, tile.colon, tile.elevation])
-                    if i>0:
-                        pathLength.append(30) #                        THIS IS HARDCODED, SHOULD BE DEFINED AS A MACRO
+                if path == None:
+                    print('--------------------')
+                    print('No valid path exists')
+                    print('--------------------')
+                else:
+                    coordinatePath = []
+                    pathLength = []
+                    print(path)
+                    print('--------')
+                    for i, iTile in enumerate(path):
+                        tile = cls.tileList[iTile]
+                        coordinatePath.append([tile.row, tile.colon, tile.elevation])
+                        if i>0:
+                            pathLength.append(30) #                        THIS IS HARDCODED, SHOULD BE DEFINED AS A MACRO
 
-                cls.tileList[TileClass.CoordinateToIndex(unit.row, unit.colon)].unit = None
-                tileToMoveTo.unit = unit
-                unit.isMoving = True
+                    cls.tileList[TileClass.CoordinateToIndex(unit.row, unit.colon)].unit = None
+                    tileToMoveTo.unit = unit
+                    unit.isMoving = True
 
-                Animation.UnitAnimationClass(unit, coordinatePath, pathLength)
+                    Animation.UnitAnimationClass(unit, coordinatePath, pathLength)
             else:
                 if tileToMoveTo.unit != None:
                     print('A unit already occupy this tile')

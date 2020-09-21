@@ -7,7 +7,7 @@ class WorldClass():
 
         self.elevation = self.CreateMap(minValue = 0,
                                         maxValue = self.mainProgram.settings.ELEVATION_LEVELS-1,
-                                        persistance = 0.7,
+                                        persistance = 0.5,
                                         initialOctavesToSkip = 2,
                                         discreteSteps=self.mainProgram.settings.DISCRETE_ELEVATION,
                                         applyDistributionFilter = True,

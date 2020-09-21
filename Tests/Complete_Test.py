@@ -57,6 +57,8 @@ class Game(ShowBase):
         self.SetupFeatures(empty = False)
         self.GUIObject.tileFrame.ConstructionMenuFunction = TileClass.FeatureClass.ConstructionMenuFunction
         self.GUIObject.tileFrame.RemoveFeatureFunction = TileClass.FeatureClass.RemoveFeatureFunction
+        self.GUIObject.minimap.minimapFilter[0] = 'elevation'
+        self.GUIObject.minimap.UpdateMinimap()
 
         Animation.AnimationClass.Initialize(self.settings.ELEVATION_SCALE, self)
 
@@ -179,19 +181,16 @@ class Game(ShowBase):
 
         tic = time.time()
         # Creates the tile models.
-
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
                 #self.tileList[iTile].TopographyTile()
                 self.tileList[iTile].ApplyTopography()
-
-
         toc = time.time()
         print('TopographyTile: {}'.format(toc - tic))
 
         tic = time.time()
-        self.tileList[0].TopographyCleanUp()
+        #self.tileList[0].TopographyCleanUp()
         toc = time.time()
         print('TopographyCleanUp: {}'.format(toc - tic))
 
@@ -277,6 +276,8 @@ class Game(ShowBase):
         self.tileMarker.setPos(p3d.LPoint3(0, 0, 0))
         self.tileMarker.set_hpr(0, 90, 0)
         self.tileMarker.set_scale((0.5, 1, 0.5))
+
+        TileClass.TileClass.SaveDictionariesToFile()
 
     def SetupUnits(self):
         self.units = {}

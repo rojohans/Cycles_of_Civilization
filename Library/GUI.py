@@ -554,9 +554,6 @@ class Minimap():
         matplotlib.image.imsave(tmpDataPath + 'minimap_image_' + type + '.png', imageArray)
 
 
-
-
-
     def GetInterpolatedMap(self, baseMap):
         '''
         The basemap is used as a low resolution template from which a high resolution interpolation is made. The high
