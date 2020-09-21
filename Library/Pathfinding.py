@@ -234,6 +234,7 @@ def AStar(startNode, endNode, graph):
                 came_from[next] = current
                 cost_so_far[next] = newCost
 
+
     # Retrace back to the start node.
     current = endNode
     path = []
