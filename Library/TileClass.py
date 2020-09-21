@@ -64,6 +64,31 @@ class TileClass(Entity):
 
         return p3d.Vec3(c[0], c[1], c[2])
 
+    def ApplyNode(self):
+        nodeCode = self.CreateNormalsCode()
+
+        if nodeCode == None:
+            self.CreateNodeExperimental()
+        else:
+            keyFound = False
+            for key, value in self.nodeDictionary.items():
+                if key == nodeCode:
+                    keyFound = True
+                    # Load an existing topography
+                    self.node = self.pandaProgram.tileRoot.attachNewNode('tile node')
+                    value.copyTo(self.node)
+                    #self.node = value.copy()
+                    print('node retrieved from dictionary')
+                    break
+            #keyFound = False
+            if keyFound == False:
+                # Crate a new topography
+                self.CreateNodeExperimental()
+                self.nodeDictionary[nodeCode] = self.pandaProgram.tileRoot.attachNewNode('tile node')
+                self.node.copyTo(self.nodeDictionary[nodeCode])
+                self.nodeDictionary[nodeCode].detachNode()
+                print('node calculated from scratch')
+
     def CreateNodeExperimental(self):
         '''
 
@@ -208,6 +233,7 @@ class TileClass(Entity):
             node.add_geom(geom)
             tile = p3d.NodePath(node)
         self.node = tile
+        #return tile
 
     def CreateWaterNode(self):
         if self.isOcean:
@@ -293,7 +319,7 @@ class TileClass(Entity):
                 'topography_roughness_0']
 
         #tileElevation = self.pandaProgram.settings.ELEVATION_SCALE*self.elevation*np.ones((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
-        self.topography = self.pandaProgram.settings.ELEVATION_SCALE*self.elevation + self.topographyBase# + self.topographyTop
+        self.topography = self.elevation + self.topographyBase + self.topographyTop
 
     def CreateBaseTopographyCode(self):
         if self.row > 0 and self.row < self.N_ROWS - 1:
@@ -959,7 +985,7 @@ class TileClass(Entity):
 
         else:
             baseTopography = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
-        baseTopography -= self.elevation * self.pandaProgram.settings.ELEVATION_SCALE
+        baseTopography = baseTopography - self.elevation
         return baseTopography
 
     def CreateTopography(self, topographyCode):
@@ -1072,6 +1098,56 @@ class TileClass(Entity):
                 self.tileList[topLefti].topography = topLeftTopography
                 self.tileList[topRighti].topography = topRightTopography
 
+    def ApplyNormals(self):
+        normalsCode = self.CreateNormalsCode()
+
+        if normalsCode == None:
+            self.normals = self.CreateNormals()
+        else:
+            keyFound = False
+            for key, value in self.normalsDictionary.items():
+                if key == normalsCode:
+                    keyFound = True
+                    # Load an existing topography
+                    self.normals = value.copy()
+                    print('normals retrieved from dictionary')
+                    break
+            #keyFound = False
+            if keyFound == False:
+                # Crate a new topography
+                self.normals = self.CreateNormals()
+                self.normalsDictionary[normalsCode] = self.normals.copy()
+                print('normals calculated from scratch')
+
+    def CreateNormalsCode(self):
+        if self.row > 0 and self.row < self.N_ROWS - 1:
+            tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
+
+            adjacentCross = np.zeros((8, 2), dtype=int)
+            adjacentCross[:, 0] = int(self.row) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
+            adjacentCross[:, 1] = np.mod(int(self.colon) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1],
+                                         self.N_COLONS)
+            adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
+            adjacentRoughnessValues = self.pandaProgram.world.topographyRoughness[adjacentCross[:, 0], adjacentCross[:, 1]]
+
+            adjacentZValues -= tileElevation
+            normalsCode = ''
+
+            # Elevation part of code
+            for i, value in enumerate(adjacentZValues):
+                if i > 0:
+                    normalsCode += ':'
+                normalsCode += str(value)
+            normalsCode += '*'
+            # Roughness part of code
+            for i, value in enumerate(adjacentRoughnessValues):
+                if i > 0:
+                    normalsCode += ':'
+                normalsCode += str(value)
+            return normalsCode
+        else:
+            return None
+
     def CreateNormals(self):
         '''
         The normal is calculated at each vertex of the tile, except for the border vertices. The border normals will
@@ -1079,7 +1155,7 @@ class TileClass(Entity):
         :return:
         '''
 
-        self.normals = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION, 3))
+        normals = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION, 3))
 
         for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
             for x in range(self.pandaProgram.settings.MODEL_RESOLUTION):
@@ -1089,9 +1165,6 @@ class TileClass(Entity):
                                       self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 2, x] - self.topography[
                                           self.pandaProgram.settings.MODEL_RESOLUTION - y, x]))
                 else:
-                    #print(x)
-                    #print(y)
-                    #print(' ')
                     if x == 0:
                         diffx = np.array((1 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1), 0,
                                           self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y-1, x + 1] -
@@ -1112,7 +1185,8 @@ class TileClass(Entity):
                 normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
                           diffx[2] * diffy[0] - diffx[0] * diffy[2],
                           diffx[0] * diffy[1] - diffx[1] * diffy[0]]
-                self.normals[y, x] = normal
+                normals[y, x] = normal
+        return normals
 
     def NormalizeNormals(self):
         for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
@@ -1900,6 +1974,22 @@ class TileClass(Entity):
             cls.baseTopographyDictionary = {}
 
         try:
+            basefile = open('normals_dictionary.pkl', 'rb')
+            cls.normalsDictionary = pickle.load(basefile)
+            basefile.close()
+        except:
+            print('new dictionary was created')
+            cls.normalsDictionary = {}
+
+        try:
+            basefile = open('node_dictionary.pkl', 'rb')
+            cls.nodeDictionary = pickle.load(basefile)
+            basefile.close()
+        except:
+            print('new dictionary was created')
+            cls.nodeDictionary = {}
+
+        try:
             topographyFile = open('topography_dictionary.pkl', 'rb')
             cls.topographyDictionary = pickle.load(topographyFile)
             topographyFile.close()
@@ -2026,8 +2116,9 @@ class TileClass(Entity):
 
     @classmethod
     def SaveDictionariesToFile(cls):
-
+        pickle.dump(cls.normalsDictionary, open('normals_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
         pickle.dump(cls.baseTopographyDictionary, open('base_topography_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
+        pickle.dump(cls.nodeDictionary, open('node_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
         pickle.dump(cls.topographyDictionary, open('topography_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
         pickle.dump(cls.textureDictionary, open('texture_dictionary.pkl', 'wb'), pickle.HIGHEST_PROTOCOL)
 

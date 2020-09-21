@@ -190,7 +190,7 @@ class Game(ShowBase):
         print('TopographyTile: {}'.format(toc - tic))
 
         tic = time.time()
-        #self.tileList[0].TopographyCleanUp()
+        self.tileList[0].TopographyCleanUp()
         toc = time.time()
         print('TopographyCleanUp: {}'.format(toc - tic))
 
@@ -199,7 +199,8 @@ class Game(ShowBase):
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
-                self.tileList[iTile].CreateNormals()
+                self.tileList[iTile].ApplyNormals()
+                #self.tileList[iTile].CreateNormals()
                 self.tileList[iTile].NormalizeNormals()
         toc = time.time()
         print('CreateNormals: {}'.format(toc - tic))
@@ -222,8 +223,8 @@ class Game(ShowBase):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
                 # self.tileList[iTile].CreateNode()
-
-                self.tileList[iTile].CreateNodeExperimental()
+                self.tileList[iTile].ApplyNode()
+                #self.tileList[iTile].CreateNodeExperimental()
         toc = time.time()
         print('CreateNodeExperimental: {}'.format(toc - tic))
 
