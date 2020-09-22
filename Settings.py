@@ -19,7 +19,7 @@ class SettingsClass():
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 30
-        self.TILE_CENTER_WIDTH = 0.5
+        self.TILE_CENTER_WIDTH = 0.05
         self.TILE_TEXTURE_RESOLUTION = 128
         self.ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]],
                                            dtype=int)

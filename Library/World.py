@@ -5,19 +5,19 @@ import Library.Noise as Noise
 class WorldClass():
     def __init__(self, discrete = False):
 
-        self.elevation = self.CreateMap(minValue = 0,
+        self.elevationFloat = self.CreateMap(minValue = 0,
                                         maxValue = self.mainProgram.settings.ELEVATION_LEVELS-1,
                                         persistance = 0.5,
                                         initialOctavesToSkip = 2,
-                                        discreteSteps=self.mainProgram.settings.DISCRETE_ELEVATION,
-                                        applyDistributionFilter = True,
+                                        applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        #discreteSteps = self.mainProgram.settings.DISCRETE_ELEVATION
 
         self.soilFertility = self.CreateMap(minValue = 0,
                                             maxValue = self.mainProgram.settings.SOIL_FERTILITY_LEVELS-1,
                                             persistance = 1.2,
                                             initialOctavesToSkip = 3,
-                                            discreteSteps = self.mainProgram.settings.DISCRETE_SOIL_FERTILITY_LEVELS,
                                             applyDistributionFilter = True,
                                             distributionSteps = self.mainProgram.settings.SOIL_FERTILITY_DISTRIBUTION)
 
@@ -25,12 +25,26 @@ class WorldClass():
                                                   maxValue = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS-1,
                                                   persistance = 1,
                                                   initialOctavesToSkip = 3,
-                                                  discreteSteps=self.mainProgram.settings.DISCRETE_TOPOGRAPHY_ROUGHNESS_LEVELS,
                                                   applyDistributionFilter = True,
                                                   distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
 
         self.soilFertility[self.elevation<=1] = -1
         self.topographyRoughness[self.elevation <= 1] = -1
+
+
+        # Makes the water shallow along all coasts.
+        for row in np.linspace(1, self.mainProgram.settings.N_ROWS-2, self.mainProgram.settings.N_ROWS-2):
+            for colon in range(self.mainProgram.settings.N_COLONS):
+                if self.elevation[int(row), colon] == 0:
+
+                    adjTiles = np.zeros((8, 2), dtype=int)
+                    adjTiles[:, 0] = int(row) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
+                    adjTiles[:, 1] = np.mod(int(colon) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1],
+                                                 self.mainProgram.settings.N_COLONS)
+                    for adjTile in adjTiles:
+                        if self.elevation[adjTile[0], adjTile[1]] > 1:
+                            self.elevation[int(row), colon] = 1
+                            break
 
         #self.waterAbundance =
 
@@ -40,7 +54,6 @@ class WorldClass():
                   persistance = 1,
                   initialOctavesToSkip = 0,
                   applyDistributionFilter = False,
-                  discreteSteps = False,
                   distributionSteps = None):
         '''
         Generates a perlin noise which are scaled according to input values. The noise is then filtered (if the correct
@@ -64,8 +77,9 @@ class WorldClass():
         if applyDistributionFilter:
             perlinMap = self.ApplyDistributionFilter(perlinMap, distributionSteps)
         else:
-            if discreteSteps:
-                perlinMap = np.round(perlinMap)
+            pass
+            #if discreteSteps:
+            #    perlinMap = np.round(perlinMap)
 
         return perlinMap
 

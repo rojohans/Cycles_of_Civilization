@@ -302,15 +302,14 @@ class TileClass(Entity):
                     keyFound = True
                     # Load an existing topography
                     self.topographyBase = value.copy()
-                    print('topography retrieved from dictionary')
+                    #print('topography retrieved from dictionary')
                     break
             #keyFound = False
             if keyFound == False:
                 # Crate a new topography
-                #self.topographyTop = self.CreateTopography(topographyCode=topographyCode)
                 self.topographyBase = self.CreateBaseTopography()
                 self.baseTopographyDictionary[baseTopographyCode] = self.topographyBase.copy()
-                print('topography calculated from scratch')
+                #print('topography calculated from scratch')
 
         if self.pandaProgram.world.topographyRoughness[self.row, self.colon] >=0:
             self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
@@ -318,7 +317,6 @@ class TileClass(Entity):
             self.topographyTop = self.terrainTopography[
                 'topography_roughness_0']
 
-        #tileElevation = self.pandaProgram.settings.ELEVATION_SCALE*self.elevation*np.ones((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
         self.topography = self.elevation + self.topographyBase + self.topographyTop
 
     def CreateBaseTopographyCode(self):
@@ -1110,14 +1108,14 @@ class TileClass(Entity):
                     keyFound = True
                     # Load an existing topography
                     self.normals = value.copy()
-                    print('normals retrieved from dictionary')
+                    #print('normals retrieved from dictionary')
                     break
             #keyFound = False
             if keyFound == False:
                 # Crate a new topography
                 self.normals = self.CreateNormals()
                 self.normalsDictionary[normalsCode] = self.normals.copy()
-                print('normals calculated from scratch')
+                #print('normals calculated from scratch')
 
     def CreateNormalsCode(self):
         if self.row > 0 and self.row < self.N_ROWS - 1:
