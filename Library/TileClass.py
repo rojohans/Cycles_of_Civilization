@@ -1140,9 +1140,9 @@ class TileClass(Entity):
                 normalsCode += str(value)
             normalsCode += '*'
             # Roughness part of code
+            normalsCode += str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])
             for i, value in enumerate(adjacentRoughnessValues):
-                if i > 0:
-                    normalsCode += ':'
+                normalsCode += ':'
                 normalsCode += str(value)
             return normalsCode
         else:

@@ -14,8 +14,8 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 128
-        self.N_COLONS = 128
+        self.N_ROWS = 16
+        self.N_COLONS = 16
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 30

@@ -223,8 +223,8 @@ class Game(ShowBase):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
                 # self.tileList[iTile].CreateNode()
-                self.tileList[iTile].ApplyNode()
-                #self.tileList[iTile].CreateNodeExperimental()
+                #self.tileList[iTile].ApplyNode()
+                self.tileList[iTile].CreateNodeExperimental()
         toc = time.time()
         print('CreateNodeExperimental: {}'.format(toc - tic))
 
