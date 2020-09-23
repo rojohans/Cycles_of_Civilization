@@ -179,6 +179,11 @@ class Game(ShowBase):
         toc = time.time()
         print('object creation time: {}'.format(toc - tic))
 
+        from scipy import interpolate
+        self.elevationInterpolator = interpolate.interp2d(range(self.settings.N_ROWS),
+                                                          range(self.settings.N_COLONS),
+                                                          self.world.elevation, kind='cubic', fill_value=0)
+
         tic = time.time()
         # Creates the tile models.
         for row in range(self.settings.N_ROWS):
@@ -250,6 +255,7 @@ class Game(ShowBase):
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
+                #self.tileList[iTile].CreateTextureArrayDebug()
                 self.tileList[iTile].CreateTextureArray()
                 self.tileList[iTile].AddSlopeTexture()
         toc = time.time()

@@ -289,9 +289,7 @@ class TileClass(Entity):
         The topography_roughness value is -1 where there is water. So at that place the flat topography will be used.
         :return:
         '''
-
         baseTopographyCode = self.CreateBaseTopographyCode()
-
 
         if baseTopographyCode == None:
             self.topographyBase = self.CreateBaseTopography()
@@ -304,10 +302,10 @@ class TileClass(Entity):
                     self.topographyBase = value.copy()
                     #print('topography retrieved from dictionary')
                     break
-            #keyFound = False
+            keyFound = False
             if keyFound == False:
                 # Crate a new topography
-                self.topographyBase = self.CreateBaseTopography()
+                self.topographyBase = self.CreateBaseTopography(isPlateau=False)
                 self.baseTopographyDictionary[baseTopographyCode] = self.topographyBase.copy()
                 #print('topography calculated from scratch')
 
@@ -317,7 +315,9 @@ class TileClass(Entity):
             self.topographyTop = self.terrainTopography[
                 'topography_roughness_0']
 
-        self.topography = self.elevation + self.topographyBase + self.topographyTop
+        #self.topography = self.elevation + self.topographyBase + self.topographyTop
+        #self.topography = self.elevation + self.topographyBase
+        self.topography = self.topographyBase + self.topographyTop
 
     def CreateBaseTopographyCode(self):
         if self.row > 0 and self.row < self.N_ROWS - 1:
@@ -372,619 +372,626 @@ class TileClass(Entity):
             self.topographyTop = np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION))
             self.topography = np.zeros((self.MODEL_RESOLUTION, self.MODEL_RESOLUTION))
 
-    def CreateBaseTopography(self):
-        tileSlopeWidth = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
-        if self.row > 0 and self.row < self.N_ROWS - 1:
-            tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
-
-            adjacentCross = np.zeros((8, 2), dtype=int)
-            adjacentCross[:, 0] = int(self.row) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
-            adjacentCross[:, 1] = np.mod(int(self.colon) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
-            adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
-
-            adjacentZValues -= tileElevation
-
-            # Indices of the vertices and triangles
-            # 12 --- 15 ------ 8 --- 11
-            #  :\  12 : 11  /  : 9  / :
-            #  :  \   :   /    :  /   :
-            #  : 13 \ : /  10  :/  8  :
-            # 13 -- 14,19 --- 9,18 --- 10
-            #  :\  14 :  16 /  :\  7  :
-            #  :  \   :   /    :  \   :
-            #  : 15 \ : /  17  : 6  \ :
-            #  0 --- 3,16 --- 4,17 ---- 7
-            #  : 0  / :  2  /  : \ 5  :
-            #  :   /  :   /    :   \  :
-            #  : /  1 : /   3  : 4  \ :
-            #  1 ---- 2 ------ 5 ---- 6
-            #
-
-            p0 = np.array([self.colon, self.row + tileSlopeWidth, tileElevation + adjacentZValues[0] / 2])
-            p1 = np.array([self.colon, self.row,
-                           tileElevation + (adjacentZValues[0] + adjacentZValues[1] + adjacentZValues[2]) / 4])
-            p2 = np.array([self.colon + tileSlopeWidth, self.row, tileElevation + adjacentZValues[2] / 2])
-            p3 = np.array([self.colon + tileSlopeWidth, self.row + tileSlopeWidth, tileElevation])
-
-            p4 = np.array([self.colon + self.pandaProgram.settings.TILE_CENTER_WIDTH + tileSlopeWidth, self.row + tileSlopeWidth, tileElevation])
-            p5 = np.array(
-                [self.colon + self.pandaProgram.settings.TILE_CENTER_WIDTH + tileSlopeWidth, self.row, tileElevation + adjacentZValues[2] / 2])
-            p6 = np.array([self.colon + 1, self.row,
-                           tileElevation + (adjacentZValues[2] + adjacentZValues[3] + adjacentZValues[4]) / 4])
-            p7 = np.array([self.colon + 1, self.row + tileSlopeWidth, tileElevation + adjacentZValues[4] / 2])
-
-            p8 = np.array(
-                [self.colon + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, self.row + 1,
-                 tileElevation + adjacentZValues[6] / 2])
-            p9 = np.array(
-                [self.colon + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH,
-                 tileElevation])
-            p10 = np.array(
-                [self.colon + 1, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH,
-                 tileElevation + adjacentZValues[4] / 2])
-            p11 = np.array([self.colon + 1, self.row + 1,
-                            tileElevation + (adjacentZValues[4] + adjacentZValues[5] + adjacentZValues[6]) / 4])
-
-            p12 = np.array([self.colon, self.row + 1,
-                            tileElevation + (adjacentZValues[6] + adjacentZValues[7] + adjacentZValues[0]) / 4])
-            p13 = np.array(
-                [self.colon, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, tileElevation + adjacentZValues[0] / 2])
-            p14 = np.array([self.colon + tileSlopeWidth, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, tileElevation])
-            p15 = np.array([self.colon + tileSlopeWidth, self.row + 1, tileElevation + adjacentZValues[6] / 2])
-
-
-            # Indices of the vertices and triangles
-
-            #  7 ----- 6 ----- 5
-            #  :       :       :
-            #  :       :       :
-            #  :       :       :
-            #  0 -----   ----- 4
-            #  :       :       :
-            #  :       :       :
-            #  :       :       :
-            #  1 ----- 2 ----- 3
-            #
-
-            P0 = np.array([0, 0.5, tileElevation + adjacentZValues[0] / 2])
-            P1 = np.array([0, 0,tileElevation + (adjacentZValues[0] + adjacentZValues[1] + adjacentZValues[2]) / 4])
-            P2 = np.array([0.5, 0, tileElevation + adjacentZValues[2] / 2])
-            P3 = np.array([1, 0,tileElevation + (adjacentZValues[2] + adjacentZValues[3] + adjacentZValues[4]) / 4])
-            P4 = np.array([1, 0.5,tileElevation + adjacentZValues[4] / 2])
-            P5 = np.array([1, 1,tileElevation + (adjacentZValues[4] + adjacentZValues[5] + adjacentZValues[6]) / 4])
-            P6 = np.array([0.5, 1,tileElevation + adjacentZValues[6] / 2])
-            P7 = np.array([0, 1,tileElevation + (adjacentZValues[6] + adjacentZValues[7] + adjacentZValues[0]) / 4])
-
-            tileSideWith = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
-
-
-            baseTopography =  np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
-
-            def InterpolationScaling(value, mode = 'sin', minRange = None, maxRange = None, x = None, y = None):
-                if mode == 'sin':
-                    return np.sin(value * np.pi / 2)
-                elif mode == 'cos':
-                    return 1-np.cos(value * np.pi / 2)
-                elif mode == 'special':
-                    # The value parameter should probably be: value = 1-value
-                    if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
-                        return 1
-                    else:
-                        return np.cos((value-self.pandaProgram.settings.TILE_CENTER_WIDTH)/(1-self.pandaProgram.settings.TILE_CENTER_WIDTH)*np.pi/2)
-                elif mode == 'special_circular':
-
-
-                    range = maxRange - minRange
-                    value = minRange + range * value
-
-                    #np.cos((minRange - self.pandaProgram.TILE_CENTER_WIDTH) / (
-                    #            maxRange - self.pandaProgram.TILE_CENTER_WIDTH) * np.pi / 2)
-
-                    if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
-                        return 1
-                    else:
-
-                        #value -= self.pandaProgram.TILE_CENTER_WIDTH
-                        #maxRange -= self.pandaProgram.TILE_CENTER_WIDTH
-                        #d = 5
-                        #return (1+d*maxRange)/(maxRange**2)*value**2 + (d-2*(1+d*maxRange)/maxRange)*value+1
-                        if minRange == maxRange:
-                            return 0
-                        else:
-                            return np.cos((value-self.pandaProgram.settings.TILE_CENTER_WIDTH)/(maxRange-self.pandaProgram.settings.TILE_CENTER_WIDTH)*np.pi/2)
-
-                elif mode == 'squircle':
-                    if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
-                        return 1
-                    else:
-                        if value == 0:
-                            return 1
-                        else:
-                            print(value)
-                            value = value-self.pandaProgram.TILE_CENTER_WIDTH
-
-                            squircleRadius =  + np.max([x, y])
-
-                            #squircleRadius = self.pandaProgram.TILE_CENTER_WIDTH + (1-self.pandaProgram.TILE_CENTER_WIDTH)*np.sin(value/(np.sqrt(2)-self.pandaProgram.TILE_CENTER_WIDTH)*np.pi/2)
-                            squircleRadius = self.pandaProgram.TILE_CENTER_WIDTH + (1 - self.pandaProgram.TILE_CENTER_WIDTH) \
-                                             * value/(np.sqrt(2)-self.pandaProgram.TILE_CENTER_WIDTH)
-                            print('r = ', squircleRadius)
-                            print('x = ', x)
-                            print('y = ', y)
-
-                            #print('x**2 + y**2 - value**2 = ', np.max([x**2 + y**2 - value**2, 0]))
-                            return 1-squircleRadius/(0.00001+x*y)*np.sqrt(np.max([x**2 + y**2 - squircleRadius**2, 0]))
-
-            # normal
-            # special
-            # special_circular
-            # special_circular_2
-            # special_circular_3
-            #interpolationMode = 'special_circular_3'
-            interpolationMode = 'special'
-
-            # Creates the vertices.
-            for y in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
-                for x in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
-
-                    if interpolationMode == 'special':
-                        if x <= 0.5 and y <= 0.5:
-                            # Bottom left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            topPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P0[2])
-                            bottomPart = (InterpolationScaling(xLocal, 'special') * P2[2] + (1 - InterpolationScaling(xLocal,'special')) * P1[2])
-                            z = InterpolationScaling(yLocal, 'special') * topPart + (1-InterpolationScaling(yLocal, 'special')) * bottomPart
-                            # 0  self
-                            # 1   2
-                        elif x > 0.5 and y <= 0.5:
-                            # Bottom right
-                            xLocal = (x-0.5)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            topPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P4[2])
-                            bottomPart = (InterpolationScaling(xLocal, 'special') * P2[2] + (1 - InterpolationScaling(xLocal,'special')) * P3[2])
-                            z = InterpolationScaling(yLocal, 'special') * topPart + (1-InterpolationScaling(yLocal, 'special')) * bottomPart
-                            # self   4
-                            #  2     3
-                        elif x <= 0.5 and y > 0.5:
-                            # Top left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (y-0.5)/0.5
-
-                            bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P0[2])
-                            topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (1 - InterpolationScaling(xLocal,'special')) * P7[2])
-                            z = InterpolationScaling(yLocal, 'special') * bottomPart + (1-InterpolationScaling(yLocal, 'special')) * topPart
-                            # 7    6
-                            # 0   self
-                        else:
-                            # Top right
-                            xLocal = (x - 0.5) / 0.5
-                            yLocal = (y - 0.5) / 0.5
-
-                            bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (
-                                        1 - InterpolationScaling(xLocal, 'special')) * P4[2])
-                            topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (
-                                        1 - InterpolationScaling(xLocal, 'special')) * P5[2])
-                            z = InterpolationScaling(yLocal, 'special') * bottomPart + (
-                                        1 - InterpolationScaling(yLocal, 'special')) * topPart
-                            #  6     5
-                            # self   4
-                    elif interpolationMode == 'special_circular_2':
-                        if x <= 0.5 and y <= 0.5:
-                            # Bottom left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal / np.max([xLocal, yLocal])
-
-
-                            if xLocal > yLocal:
-                                #top
-                                interpolationValueBorder = InterpolationScaling(yLarge, 'special')
-                                borderValue = P0[2]*interpolationValueBorder + P1[2]*(1-interpolationValueBorder)
-                            else:
-                                #bottom
-                                interpolationValueBorder = InterpolationScaling(xLarge, 'special')
-                                borderValue = P2[2]*interpolationValueBorder + P1[2]*(1-interpolationValueBorder)
-
-                            '''
-                            interpolationValueBorder = InterpolationScaling(yLarge, 'special')
-                            borderValueY = P0[2] * interpolationValueBorder + P1[2] * (1 - interpolationValueBorder)
-                            interpolationValueBorder = InterpolationScaling(xLarge, 'special')
-                            borderValue = P2[2] * interpolationValueBorder + borderValueY * (1 - interpolationValueBorder)
-                            '''
-
-                            #diagInterpolation = np.sqrt(InterpolationScaling(yLocal, 'special')**2 + InterpolationScaling(xLocal, 'special')**2)/np.sqrt(2)
-                            #diagInterpolation = InterpolationScaling(yLocal, 'special') ** 2 * InterpolationScaling(xLocal,'special') ** 2
-
-                            diagInterpolation = InterpolationScaling(np.sqrt(xLocal ** 2 + yLocal ** 2),
-                                                                     'squircle',
-                                                                     np.sqrt(xLarge ** 2 + yLarge ** 2),
-                                                                     xLocal,
-                                                                     yLocal)
-                            #diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
-                            #diagInterpolation = InterpolationScaling(np.sqrt(xLocal ** 2 + yLocal ** 2)/np.sqrt(xLarge ** 2 + yLarge ** 2),'special')
-                            z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
-
-                            print('diagInterpolation = ', diagInterpolation)
-                            print('   ')
-                            # 0  self
-                            # 1   2
-                        elif x > 0.5 and y <= 0.5:
-                            # Bottom right
-                            xLocal = (x-0.5)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal / np.max([xLocal, yLocal])
-
-                            if xLocal > yLocal:
-                                #top
-                                interpolationValueBorder = InterpolationScaling(yLarge, 'special')
-                                borderValue = P4[2]*interpolationValueBorder + P3[2]*(1-interpolationValueBorder)
-                            else:
-                                #bottom
-                                interpolationValueBorder = InterpolationScaling(xLarge, 'special')
-                                borderValue = P2[2]*interpolationValueBorder + P3[2]*(1-interpolationValueBorder)
-
-                            diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
-                            z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
-
-                            # self   4
-                            #  2     3
-                        elif x <= 0.5 and y > 0.5:
-                            # Top left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (y-0.5)/0.5
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal / np.max([xLocal, yLocal])
-
-                            if xLocal > yLocal:
-                                #top
-                                interpolationValueBorder = InterpolationScaling(yLarge, 'special')
-                                borderValue = P0[2]*interpolationValueBorder + P7[2]*(1-interpolationValueBorder)
-                            else:
-                                #bottom
-                                interpolationValueBorder = InterpolationScaling(xLarge, 'special')
-                                borderValue = P6[2]*interpolationValueBorder + P7[2]*(1-interpolationValueBorder)
-
-                            diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
-                            z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
-                            # 7    6
-                            # 0   self
-                        else:
-                            # Top right
-                            xLocal = (x - 0.5) / 0.5
-                            yLocal = (y - 0.5) / 0.5
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal / np.max([xLocal, yLocal])
-
-                            if xLocal > yLocal:
-                                #top
-                                interpolationValueBorder = InterpolationScaling(yLarge, 'special')
-                                borderValue = P4[2]*interpolationValueBorder + P5[2]*(1-interpolationValueBorder)
-                            else:
-                                #bottom
-                                interpolationValueBorder = InterpolationScaling(xLarge, 'special')
-                                borderValue = P6[2]*interpolationValueBorder + P5[2]*(1-interpolationValueBorder)
-
-                            diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
-                            z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
-                            #  6     5
-                            # self   4
-                    elif interpolationMode == 'special_circular':
-                        if x <= 0.5 and y <= 0.5:
-                            # Bottom left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            corners = [[0.5, 0.5, self.elevation], P0, P2, P1]
-                            distances = []
-                            weights = []
-                            for i, corner in enumerate(corners):
-                                distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
-                                weights.append(1/(0.000001+distances[-1]))
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal/np.max([xLocal, yLocal])
-                            interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
-
-
-
-                            weights[0] *= interpolationValue
-                            weights[1] *= (1 - interpolationValue)
-                            weights[2] *= (1 - interpolationValue)
-                            weights[3] *= (1 - interpolationValue)
-                            totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
-
-                            z = 0
-                            for i in range(4):
-                                z += weights[i] * corners[i][2]
-                            z /= totalWeights
-                            # 0  self
-                            # 1   2
-                        elif x > 0.5 and y <= 0.5:
-                            # Bottom right
-                            xLocal = (x-0.5)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            corners = [[0.5, 0.5, self.elevation], P4, P2, P3]
-                            distances = []
-                            weights = []
-                            for i, corner in enumerate(corners):
-                                distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
-                                weights.append(1/(0.000001+distances[-1]))
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal/np.max([xLocal, yLocal])
-                            interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
-
-                            weights[0] *= interpolationValue
-                            weights[1] *= (1 - interpolationValue)
-                            weights[2] *= (1 - interpolationValue)
-                            weights[3] *= (1 - interpolationValue)
-                            totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
-
-                            z = 0
-                            for i in range(4):
-                                z += weights[i] * corners[i][2]
-                            z /= totalWeights
-                            # self   4
-                            #  2     3
-                        elif x <= 0.5 and y > 0.5:
-                            # Top left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (y-0.5)/0.5
-
-                            corners = [[0.5, 0.5, self.elevation], P0, P6, P7]
-                            distances = []
-                            weights = []
-                            for i, corner in enumerate(corners):
-                                distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
-                                weights.append(1/(0.000001+distances[-1]))
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal/np.max([xLocal, yLocal])
-                            interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
-
-                            weights[0] *= interpolationValue
-                            weights[1] *= (1 - interpolationValue)
-                            weights[2] *= (1 - interpolationValue)
-                            weights[3] *= (1 - interpolationValue)
-                            totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
-
-                            z = 0
-                            for i in range(4):
-                                z += weights[i] * corners[i][2]
-                            z /= totalWeights
-                            # 7    6
-                            # 0   self
-                        else:
-                            # Top right
-                            xLocal = (x - 0.5) / 0.5
-                            yLocal = (y - 0.5) / 0.5
-
-                            corners = [[0.5, 0.5, self.elevation], P4, P6, P5]
-                            distances = []
-                            weights = []
-                            for i, corner in enumerate(corners):
-                                distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
-                                weights.append(1/(0.000001+distances[-1]))
-
-                            xLarge = xLocal/np.max([xLocal, yLocal])
-                            yLarge = yLocal/np.max([xLocal, yLocal])
-                            interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
-
-                            weights[0] *= interpolationValue
-                            weights[1] *= (1 - interpolationValue)
-                            weights[2] *= (1 - interpolationValue)
-                            weights[3] *= (1 - interpolationValue)
-                            totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
-
-                            z = 0
-                            for i in range(4):
-                                z += weights[i] * corners[i][2]
-                            z /= totalWeights
-                            #  6     5
-                            # self   4
-
-                    elif interpolationMode == 'special_circular_3':
-                        if x <= 0.5 and y <= 0.5:
-                            # Bottom left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            tmpMax = np.max((xLocal, yLocal))
-                            XLocal = xLocal / tmpMax
-                            YLocal = yLocal / tmpMax
-                            diagInterpolationValue = InterpolationScaling(np.sqrt(xLocal ** 2 + yLocal ** 2),
-                                                                          'special_circular', minRange=0,
-                                                                          maxRange=np.sqrt(
-                                                                              XLocal ** 2 + YLocal ** 2))
-
-                            if P2[2] == self.elevation:
-                                xInterpolationValueTop = InterpolationScaling(xLocal, 'special_circular', minRange=0,
-                                                                           maxRange=1)
-                                xInterpolationValueBottom = InterpolationScaling(xLocal, 'special_circular', minRange=0,
-                                                                           maxRange=1)
-                                xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=0, maxRange=1)
-                            else:
-                                xInterpolationValueTop = InterpolationScaling(xLocal, 'special_circular', minRange=0,
-                                                                           maxRange=1)
-                                #xInterpolationValueBottom = InterpolationScaling(xLocal, 'special_circular', minRange=0,
-                                #                                                 maxRange=1)
-                                xInterpolationValueBottom = InterpolationScaling(xLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH,
-                                                                           maxRange=1)
-
-                                #xInterpolationValue = diagInterpolationValue * XLocal / (XLocal + YLocal)
-                                if np.sqrt(xLocal**2 + yLocal**2)>self.pandaProgram.TILE_CENTER_WIDTH:
-                                    xInterpolationValue = diagInterpolationValue
-                                else:
-                                    xInterpolationValue = diagInterpolationValue
-                                #if yLocal < self.pandaProgram.TILE_CENTER_WIDTH:
-                                #    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(yLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))), maxRange=1)
-                                #else:
-                                #    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular',minRange=np.min((yLocal,self.pandaProgram.TILE_CENTER_WIDTH)),maxRange=1)
-
-
-                            if P0[2] == self.elevation:
-                                yInterpolationValueRight = InterpolationScaling(yLocal, 'special_circular', minRange=0,
-                                                                           maxRange=1)
-                                yInterpolationValueLeft = InterpolationScaling(yLocal, 'special_circular', minRange=0,
-                                                                           maxRange=1)
-                                yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
-                            else:
-                                yInterpolationValueRight = InterpolationScaling(yLocal, 'special_circular', minRange=0,
-                                                                           maxRange=1)
-                                yInterpolationValueLeft = InterpolationScaling(yLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH,
-                                                                           maxRange=1)
-                                #yInterpolationValue = diagInterpolationValue * YLocal / (XLocal + YLocal)
-                                yInterpolationValue = diagInterpolationValue
-                                #if xLocal < self.pandaProgram.TILE_CENTER_WIDTH:
-                                #    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(xLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))),maxRange=1)
-                                #else:
-                                #    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=np.min((xLocal, self.pandaProgram.TILE_CENTER_WIDTH)), maxRange=1)
-
-                            topPart = xInterpolationValueTop * self.elevation + (1 - xInterpolationValueTop) * P0[2]
-                            bottomPart = xInterpolationValueBottom * P2[2] + (1 - xInterpolationValueBottom) * P1[2]
-                            rightPart = yInterpolationValueRight * self.elevation + (1 - yInterpolationValueRight) * P2[2]
-                            leftPart = yInterpolationValueLeft * P0[2] + (1 - yInterpolationValueLeft) * P1[2]
-
-
-
-                            z1 = yInterpolationValue * topPart + (1 - yInterpolationValue) * bottomPart
-                            z2 = xInterpolationValue * rightPart + (1-xInterpolationValue) * leftPart
-                            #z = (z1 + z2) / 2
-                            z = z1
-                            # 0  self
-                            # 1   2
-                        elif x > 0.5 and y <= 0.5:
-                            # Bottom right
-                            xLocal = (x-0.5)/0.5
-                            yLocal = (0.5-y)/0.5
-
-                            '''
-                            if P2[2] == self.elevation:
-                                xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=0, maxRange=1)
-                            else:
-                                if yLocal < self.pandaProgram.TILE_CENTER_WIDTH:
-                                    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(yLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))), maxRange=1)
-                                else:
-                                    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=np.min((yLocal, self.pandaProgram.TILE_CENTER_WIDTH)), maxRange=1)
-
-                            if P4[2] == self.elevation:
-                                yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
-                            else:
-                                if yLocal < self.pandaProgram.TILE_CENTER_WIDTH:
-                                    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(xLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))), maxRange=1)
-                                else:
-                                    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=np.min((xLocal, self.pandaProgram.TILE_CENTER_WIDTH)), maxRange=1)
-
-                            topPart = xInterpolationValue * self.elevation + (1 - xInterpolationValue) * P4[2]
-                            bottomPart = xInterpolationValue * P2[2] + (1 - xInterpolationValue) * P3[2]
-                            z =  yInterpolationValue * topPart + (1-yInterpolationValue) * bottomPart
-                            '''
-
-                            topPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P4[2])
-                            bottomPart = (InterpolationScaling(xLocal, 'special') * P2[2] + (1 - InterpolationScaling(xLocal,'special')) * P3[2])
-                            yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
-                            z = yInterpolationValue * topPart + (1-yInterpolationValue) * bottomPart
-                            # self   4
-                            #  2     3
-                        elif x <= 0.5 and y > 0.5:
-                            # Top left
-                            xLocal = (0.5-x)/0.5
-                            yLocal = (y-0.5)/0.5
-
-                            bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P0[2])
-                            topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (1 - InterpolationScaling(xLocal,'special')) * P7[2])
-                            yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
-                            z = yInterpolationValue * bottomPart + (1-yInterpolationValue) * topPart
-                            # 7    6
-                            # 0   self
-                        else:
-                            # Top right
-                            xLocal = (x - 0.5) / 0.5
-                            yLocal = (y - 0.5) / 0.5
-
-                            bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (
-                                        1 - InterpolationScaling(xLocal, 'special')) * P4[2])
-                            topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (
-                                        1 - InterpolationScaling(xLocal, 'special')) * P5[2])
-                            yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
-                            z = yInterpolationValue * bottomPart + (1 - yInterpolationValue) * topPart
-                            #  6     5
-                            # self   4
-
-
-                    elif interpolationMode == 'normal':
-                        if x <= tileSideWith and y <= tileSideWith:
-                            # Bottom left corner
-                            xLocal = x / tileSideWith
-                            yLocal = y / tileSideWith
-                            z = (1 - InterpolationScaling(xLocal)) * (InterpolationScaling(yLocal) * p0[2] + (1 - InterpolationScaling(yLocal)) * p1[2]) + InterpolationScaling(xLocal) * (
-                                        InterpolationScaling(yLocal) * p3[2] + (1 - InterpolationScaling(yLocal)) * p2[2])
-                        elif x >= self.TILE_CENTER_WIDTH + tileSideWith and y <= tileSideWith:
-                            # Bottom right corner
-                            xLocal = (x - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
-                            yLocal = y / tileSideWith
-                            z = (1 - InterpolationScaling(xLocal, 'cos')) * (InterpolationScaling(yLocal) * p4[2] + (1 - InterpolationScaling(yLocal)) * p5[2]) + InterpolationScaling(xLocal, 'cos') * (
-                                        InterpolationScaling(yLocal) * p7[2] + (1 - InterpolationScaling(yLocal)) * p6[2])
-                        elif x >= self.TILE_CENTER_WIDTH + tileSideWith and y >= self.TILE_CENTER_WIDTH + tileSideWith:
-                            # Top right corner
-                            xLocal = (x - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
-                            yLocal = (y - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
-                            z = (1 - InterpolationScaling(xLocal, 'cos')) * (InterpolationScaling(yLocal, 'cos') * p8[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p9[2]) + InterpolationScaling(xLocal, 'cos') * (
-                                        InterpolationScaling(yLocal, 'cos') * p11[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p10[2])
-                        elif x <= tileSideWith and y >= self.TILE_CENTER_WIDTH + tileSideWith:
-                            # Top left corner
-                            xLocal = x / tileSideWith
-                            yLocal = (y - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
-                            z = (1 - InterpolationScaling(xLocal)) * (InterpolationScaling(yLocal, 'cos') * p12[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p13[2]) + InterpolationScaling(xLocal) * (
-                                        InterpolationScaling(yLocal, 'cos') * p15[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p14[2])
-                        elif x <= tileSideWith and y >= tileSideWith and y <= self.TILE_CENTER_WIDTH + tileSideWith:
-                            # Left side
-                            xLocal = x / tileSideWith
-                            yLocal = (y - tileSideWith) / tileSideWith
-                            z = (1 - InterpolationScaling(xLocal)) * (yLocal * p0[2] + (1 - yLocal) * p13[2]) + InterpolationScaling(xLocal) * (
-                                        yLocal * p14[2] + (1 - yLocal) * p3[2])
-                        elif x >= tileSideWith and x <= self.TILE_CENTER_WIDTH + tileSideWith and y <= tileSideWith:
-                            # Bottom side
-                            xLocal = (x - tileSideWith) / tileSideWith
-                            yLocal = y / tileSideWith
-                            z = (1 - xLocal) * (InterpolationScaling(yLocal) * p3[2] + (1 - InterpolationScaling(yLocal)) * p2[2]) + xLocal * (
-                                        InterpolationScaling(yLocal) * p4[2] + (1 - InterpolationScaling(yLocal)) * p5[2])
-                        elif x >= self.TILE_CENTER_WIDTH + tileSideWith and y >= tileSideWith and y <= self.TILE_CENTER_WIDTH + tileSideWith:
-                            # Right side
-                            xLocal = (x - tileSideWith - self.TILE_CENTER_WIDTH) / tileSideWith
-                            yLocal = (y - tileSideWith) / tileSideWith
-                            z = (1 - InterpolationScaling(xLocal, mode = 'cos')) * (yLocal * p4[2] + (1 - yLocal) * p9[2]) + InterpolationScaling(xLocal, mode = 'cos') * (
-                                        yLocal * p10[2] + (1 - yLocal) * p7[2])
-                        elif x >= tileSideWith and x <= self.TILE_CENTER_WIDTH + tileSideWith and y >= self.TILE_CENTER_WIDTH + tileSideWith:
-                            # Top side
-                            xLocal = (x - tileSideWith) / tileSideWith
-                            yLocal = (y - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
-                            z = (1 - xLocal) * (InterpolationScaling(yLocal, 'cos') * p15[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p14[2]) + xLocal * (
-                                        InterpolationScaling(yLocal, 'cos') * p8[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p9[2])
-                        else:
-                            # center
-                            z = self.elevation
-
-                    #a = self.topography[int(np.round((1 - y) * (self.MODEL_RESOLUTION - 1))),
-                    #                    int(np.round(x * (self.MODEL_RESOLUTION - 1)))]
-                    #baseTopography[int(np.round((1 - y) * (self.MODEL_RESOLUTION - 1))), int(np.round(x * (self.MODEL_RESOLUTION - 1)))] = z
-                    baseTopography[int(np.round((1-y) * (self.pandaProgram.settings.MODEL_RESOLUTION - 1))),
-                                   int(np.round((x) * (self.pandaProgram.settings.MODEL_RESOLUTION - 1)))] = z
+    def CreateBaseTopography(self, isPlateau = True):
+        if isPlateau == False:
+            interpolatedTopography = self.pandaProgram.elevationInterpolator(np.linspace(self.colon-0.5, self.colon+0.5, self.pandaProgram.settings.MODEL_RESOLUTION),
+                                                                             np.linspace(self.row-0.5, self.row+0.5, self.pandaProgram.settings.MODEL_RESOLUTION))
+            return np.flip(interpolatedTopography, 0)
 
         else:
-            baseTopography = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
-        baseTopography = baseTopography - self.elevation
-        return baseTopography
+            tileSlopeWidth = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
+            if self.row > 0 and self.row < self.N_ROWS - 1:
+                tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
+
+                adjacentCross = np.zeros((8, 2), dtype=int)
+                adjacentCross[:, 0] = int(self.row) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
+                adjacentCross[:, 1] = np.mod(int(self.colon) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1], self.N_COLONS)
+                adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
+
+                adjacentZValues -= self.elevation
+
+
+                # Indices of the vertices and triangles
+                # 12 --- 15 ------ 8 --- 11
+                #  :\  12 : 11  /  : 9  / :
+                #  :  \   :   /    :  /   :
+                #  : 13 \ : /  10  :/  8  :
+                # 13 -- 14,19 --- 9,18 --- 10
+                #  :\  14 :  16 /  :\  7  :
+                #  :  \   :   /    :  \   :
+                #  : 15 \ : /  17  : 6  \ :
+                #  0 --- 3,16 --- 4,17 ---- 7
+                #  : 0  / :  2  /  : \ 5  :
+                #  :   /  :   /    :   \  :
+                #  : /  1 : /   3  : 4  \ :
+                #  1 ---- 2 ------ 5 ---- 6
+                #
+
+                p0 = np.array([self.colon, self.row + tileSlopeWidth, tileElevation + adjacentZValues[0] / 2])
+                p1 = np.array([self.colon, self.row,
+                               tileElevation + (adjacentZValues[0] + adjacentZValues[1] + adjacentZValues[2]) / 4])
+                p2 = np.array([self.colon + tileSlopeWidth, self.row, tileElevation + adjacentZValues[2] / 2])
+                p3 = np.array([self.colon + tileSlopeWidth, self.row + tileSlopeWidth, tileElevation])
+
+                p4 = np.array([self.colon + self.pandaProgram.settings.TILE_CENTER_WIDTH + tileSlopeWidth, self.row + tileSlopeWidth, tileElevation])
+                p5 = np.array(
+                    [self.colon + self.pandaProgram.settings.TILE_CENTER_WIDTH + tileSlopeWidth, self.row, tileElevation + adjacentZValues[2] / 2])
+                p6 = np.array([self.colon + 1, self.row,
+                               tileElevation + (adjacentZValues[2] + adjacentZValues[3] + adjacentZValues[4]) / 4])
+                p7 = np.array([self.colon + 1, self.row + tileSlopeWidth, tileElevation + adjacentZValues[4] / 2])
+
+                p8 = np.array(
+                    [self.colon + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, self.row + 1,
+                     tileElevation + adjacentZValues[6] / 2])
+                p9 = np.array(
+                    [self.colon + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH,
+                     tileElevation])
+                p10 = np.array(
+                    [self.colon + 1, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH,
+                     tileElevation + adjacentZValues[4] / 2])
+                p11 = np.array([self.colon + 1, self.row + 1,
+                                tileElevation + (adjacentZValues[4] + adjacentZValues[5] + adjacentZValues[6]) / 4])
+
+                p12 = np.array([self.colon, self.row + 1,
+                                tileElevation + (adjacentZValues[6] + adjacentZValues[7] + adjacentZValues[0]) / 4])
+                p13 = np.array(
+                    [self.colon, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, tileElevation + adjacentZValues[0] / 2])
+                p14 = np.array([self.colon + tileSlopeWidth, self.row + tileSlopeWidth + self.pandaProgram.settings.TILE_CENTER_WIDTH, tileElevation])
+                p15 = np.array([self.colon + tileSlopeWidth, self.row + 1, tileElevation + adjacentZValues[6] / 2])
+
+
+                # Indices of the vertices and triangles
+
+                #  7 ----- 6 ----- 5
+                #  :       :       :
+                #  :       :       :
+                #  :       :       :
+                #  0 -----   ----- 4
+                #  :       :       :
+                #  :       :       :
+                #  :       :       :
+                #  1 ----- 2 ----- 3
+                #
+
+                P0 = np.array([0, 0.5, tileElevation + adjacentZValues[0] / 2])
+                P1 = np.array([0, 0,tileElevation + (adjacentZValues[0] + adjacentZValues[1] + adjacentZValues[2]) / 4])
+                P2 = np.array([0.5, 0, tileElevation + adjacentZValues[2] / 2])
+                P3 = np.array([1, 0,tileElevation + (adjacentZValues[2] + adjacentZValues[3] + adjacentZValues[4]) / 4])
+                P4 = np.array([1, 0.5,tileElevation + adjacentZValues[4] / 2])
+                P5 = np.array([1, 1,tileElevation + (adjacentZValues[4] + adjacentZValues[5] + adjacentZValues[6]) / 4])
+                P6 = np.array([0.5, 1,tileElevation + adjacentZValues[6] / 2])
+                P7 = np.array([0, 1,tileElevation + (adjacentZValues[6] + adjacentZValues[7] + adjacentZValues[0]) / 4])
+
+                tileSideWith = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
+
+
+                baseTopography =  np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
+
+                def InterpolationScaling(value, mode = 'sin', minRange = None, maxRange = None, x = None, y = None):
+                    if mode == 'sin':
+                        return np.sin(value * np.pi / 2)
+                    elif mode == 'cos':
+                        return 1-np.cos(value * np.pi / 2)
+                    elif mode == 'special':
+                        # The value parameter should probably be: value = 1-value
+                        if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
+                            return 1
+                        else:
+                            return np.cos((value-self.pandaProgram.settings.TILE_CENTER_WIDTH)/(1-self.pandaProgram.settings.TILE_CENTER_WIDTH)*np.pi/2)
+                    elif mode == 'special_circular':
+
+
+                        range = maxRange - minRange
+                        value = minRange + range * value
+
+                        #np.cos((minRange - self.pandaProgram.TILE_CENTER_WIDTH) / (
+                        #            maxRange - self.pandaProgram.TILE_CENTER_WIDTH) * np.pi / 2)
+
+                        if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
+                            return 1
+                        else:
+
+                            #value -= self.pandaProgram.TILE_CENTER_WIDTH
+                            #maxRange -= self.pandaProgram.TILE_CENTER_WIDTH
+                            #d = 5
+                            #return (1+d*maxRange)/(maxRange**2)*value**2 + (d-2*(1+d*maxRange)/maxRange)*value+1
+                            if minRange == maxRange:
+                                return 0
+                            else:
+                                return np.cos((value-self.pandaProgram.settings.TILE_CENTER_WIDTH)/(maxRange-self.pandaProgram.settings.TILE_CENTER_WIDTH)*np.pi/2)
+
+                    elif mode == 'squircle':
+                        if value < self.pandaProgram.settings.TILE_CENTER_WIDTH:
+                            return 1
+                        else:
+                            if value == 0:
+                                return 1
+                            else:
+                                print(value)
+                                value = value-self.pandaProgram.TILE_CENTER_WIDTH
+
+                                squircleRadius =  + np.max([x, y])
+
+                                #squircleRadius = self.pandaProgram.TILE_CENTER_WIDTH + (1-self.pandaProgram.TILE_CENTER_WIDTH)*np.sin(value/(np.sqrt(2)-self.pandaProgram.TILE_CENTER_WIDTH)*np.pi/2)
+                                squircleRadius = self.pandaProgram.TILE_CENTER_WIDTH + (1 - self.pandaProgram.TILE_CENTER_WIDTH) \
+                                                 * value/(np.sqrt(2)-self.pandaProgram.TILE_CENTER_WIDTH)
+                                print('r = ', squircleRadius)
+                                print('x = ', x)
+                                print('y = ', y)
+
+                                #print('x**2 + y**2 - value**2 = ', np.max([x**2 + y**2 - value**2, 0]))
+                                return 1-squircleRadius/(0.00001+x*y)*np.sqrt(np.max([x**2 + y**2 - squircleRadius**2, 0]))
+
+                # normal
+                # special
+                # special_circular
+                # special_circular_2
+                # special_circular_3
+                #interpolationMode = 'special_circular_3'
+                interpolationMode = 'special'
+
+                # Creates the vertices.
+                for y in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
+                    for x in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
+
+                        if interpolationMode == 'special':
+                            if x <= 0.5 and y <= 0.5:
+                                # Bottom left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                topPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P0[2])
+                                bottomPart = (InterpolationScaling(xLocal, 'special') * P2[2] + (1 - InterpolationScaling(xLocal,'special')) * P1[2])
+                                z = InterpolationScaling(yLocal, 'special') * topPart + (1-InterpolationScaling(yLocal, 'special')) * bottomPart
+                                # 0  self
+                                # 1   2
+                            elif x > 0.5 and y <= 0.5:
+                                # Bottom right
+                                xLocal = (x-0.5)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                topPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P4[2])
+                                bottomPart = (InterpolationScaling(xLocal, 'special') * P2[2] + (1 - InterpolationScaling(xLocal,'special')) * P3[2])
+                                z = InterpolationScaling(yLocal, 'special') * topPart + (1-InterpolationScaling(yLocal, 'special')) * bottomPart
+                                # self   4
+                                #  2     3
+                            elif x <= 0.5 and y > 0.5:
+                                # Top left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (y-0.5)/0.5
+
+                                bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P0[2])
+                                topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (1 - InterpolationScaling(xLocal,'special')) * P7[2])
+                                z = InterpolationScaling(yLocal, 'special') * bottomPart + (1-InterpolationScaling(yLocal, 'special')) * topPart
+                                # 7    6
+                                # 0   self
+                            else:
+                                # Top right
+                                xLocal = (x - 0.5) / 0.5
+                                yLocal = (y - 0.5) / 0.5
+
+                                bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (
+                                            1 - InterpolationScaling(xLocal, 'special')) * P4[2])
+                                topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (
+                                            1 - InterpolationScaling(xLocal, 'special')) * P5[2])
+                                z = InterpolationScaling(yLocal, 'special') * bottomPart + (
+                                            1 - InterpolationScaling(yLocal, 'special')) * topPart
+                                #  6     5
+                                # self   4
+                        elif interpolationMode == 'special_circular_2':
+                            if x <= 0.5 and y <= 0.5:
+                                # Bottom left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal / np.max([xLocal, yLocal])
+
+
+                                if xLocal > yLocal:
+                                    #top
+                                    interpolationValueBorder = InterpolationScaling(yLarge, 'special')
+                                    borderValue = P0[2]*interpolationValueBorder + P1[2]*(1-interpolationValueBorder)
+                                else:
+                                    #bottom
+                                    interpolationValueBorder = InterpolationScaling(xLarge, 'special')
+                                    borderValue = P2[2]*interpolationValueBorder + P1[2]*(1-interpolationValueBorder)
+
+                                '''
+                                interpolationValueBorder = InterpolationScaling(yLarge, 'special')
+                                borderValueY = P0[2] * interpolationValueBorder + P1[2] * (1 - interpolationValueBorder)
+                                interpolationValueBorder = InterpolationScaling(xLarge, 'special')
+                                borderValue = P2[2] * interpolationValueBorder + borderValueY * (1 - interpolationValueBorder)
+                                '''
+
+                                #diagInterpolation = np.sqrt(InterpolationScaling(yLocal, 'special')**2 + InterpolationScaling(xLocal, 'special')**2)/np.sqrt(2)
+                                #diagInterpolation = InterpolationScaling(yLocal, 'special') ** 2 * InterpolationScaling(xLocal,'special') ** 2
+
+                                diagInterpolation = InterpolationScaling(np.sqrt(xLocal ** 2 + yLocal ** 2),
+                                                                         'squircle',
+                                                                         np.sqrt(xLarge ** 2 + yLarge ** 2),
+                                                                         xLocal,
+                                                                         yLocal)
+                                #diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
+                                #diagInterpolation = InterpolationScaling(np.sqrt(xLocal ** 2 + yLocal ** 2)/np.sqrt(xLarge ** 2 + yLarge ** 2),'special')
+                                z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
+
+                                print('diagInterpolation = ', diagInterpolation)
+                                print('   ')
+                                # 0  self
+                                # 1   2
+                            elif x > 0.5 and y <= 0.5:
+                                # Bottom right
+                                xLocal = (x-0.5)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal / np.max([xLocal, yLocal])
+
+                                if xLocal > yLocal:
+                                    #top
+                                    interpolationValueBorder = InterpolationScaling(yLarge, 'special')
+                                    borderValue = P4[2]*interpolationValueBorder + P3[2]*(1-interpolationValueBorder)
+                                else:
+                                    #bottom
+                                    interpolationValueBorder = InterpolationScaling(xLarge, 'special')
+                                    borderValue = P2[2]*interpolationValueBorder + P3[2]*(1-interpolationValueBorder)
+
+                                diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
+                                z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
+
+                                # self   4
+                                #  2     3
+                            elif x <= 0.5 and y > 0.5:
+                                # Top left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (y-0.5)/0.5
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal / np.max([xLocal, yLocal])
+
+                                if xLocal > yLocal:
+                                    #top
+                                    interpolationValueBorder = InterpolationScaling(yLarge, 'special')
+                                    borderValue = P0[2]*interpolationValueBorder + P7[2]*(1-interpolationValueBorder)
+                                else:
+                                    #bottom
+                                    interpolationValueBorder = InterpolationScaling(xLarge, 'special')
+                                    borderValue = P6[2]*interpolationValueBorder + P7[2]*(1-interpolationValueBorder)
+
+                                diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
+                                z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
+                                # 7    6
+                                # 0   self
+                            else:
+                                # Top right
+                                xLocal = (x - 0.5) / 0.5
+                                yLocal = (y - 0.5) / 0.5
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal / np.max([xLocal, yLocal])
+
+                                if xLocal > yLocal:
+                                    #top
+                                    interpolationValueBorder = InterpolationScaling(yLarge, 'special')
+                                    borderValue = P4[2]*interpolationValueBorder + P5[2]*(1-interpolationValueBorder)
+                                else:
+                                    #bottom
+                                    interpolationValueBorder = InterpolationScaling(xLarge, 'special')
+                                    borderValue = P6[2]*interpolationValueBorder + P5[2]*(1-interpolationValueBorder)
+
+                                diagInterpolation = InterpolationScaling(np.sqrt(xLocal**2+yLocal**2), 'special_circular', np.sqrt(xLarge**2+yLarge**2))
+                                z = self.elevation * diagInterpolation + (1-diagInterpolation)*borderValue
+                                #  6     5
+                                # self   4
+                        elif interpolationMode == 'special_circular':
+                            if x <= 0.5 and y <= 0.5:
+                                # Bottom left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                corners = [[0.5, 0.5, self.elevation], P0, P2, P1]
+                                distances = []
+                                weights = []
+                                for i, corner in enumerate(corners):
+                                    distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
+                                    weights.append(1/(0.000001+distances[-1]))
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal/np.max([xLocal, yLocal])
+                                interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
+
+
+
+                                weights[0] *= interpolationValue
+                                weights[1] *= (1 - interpolationValue)
+                                weights[2] *= (1 - interpolationValue)
+                                weights[3] *= (1 - interpolationValue)
+                                totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
+
+                                z = 0
+                                for i in range(4):
+                                    z += weights[i] * corners[i][2]
+                                z /= totalWeights
+                                # 0  self
+                                # 1   2
+                            elif x > 0.5 and y <= 0.5:
+                                # Bottom right
+                                xLocal = (x-0.5)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                corners = [[0.5, 0.5, self.elevation], P4, P2, P3]
+                                distances = []
+                                weights = []
+                                for i, corner in enumerate(corners):
+                                    distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
+                                    weights.append(1/(0.000001+distances[-1]))
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal/np.max([xLocal, yLocal])
+                                interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
+
+                                weights[0] *= interpolationValue
+                                weights[1] *= (1 - interpolationValue)
+                                weights[2] *= (1 - interpolationValue)
+                                weights[3] *= (1 - interpolationValue)
+                                totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
+
+                                z = 0
+                                for i in range(4):
+                                    z += weights[i] * corners[i][2]
+                                z /= totalWeights
+                                # self   4
+                                #  2     3
+                            elif x <= 0.5 and y > 0.5:
+                                # Top left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (y-0.5)/0.5
+
+                                corners = [[0.5, 0.5, self.elevation], P0, P6, P7]
+                                distances = []
+                                weights = []
+                                for i, corner in enumerate(corners):
+                                    distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
+                                    weights.append(1/(0.000001+distances[-1]))
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal/np.max([xLocal, yLocal])
+                                interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
+
+                                weights[0] *= interpolationValue
+                                weights[1] *= (1 - interpolationValue)
+                                weights[2] *= (1 - interpolationValue)
+                                weights[3] *= (1 - interpolationValue)
+                                totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
+
+                                z = 0
+                                for i in range(4):
+                                    z += weights[i] * corners[i][2]
+                                z /= totalWeights
+                                # 7    6
+                                # 0   self
+                            else:
+                                # Top right
+                                xLocal = (x - 0.5) / 0.5
+                                yLocal = (y - 0.5) / 0.5
+
+                                corners = [[0.5, 0.5, self.elevation], P4, P6, P5]
+                                distances = []
+                                weights = []
+                                for i, corner in enumerate(corners):
+                                    distances.append(np.sqrt((corner[0] - x)**2 + (corner[1] - y)**2))
+                                    weights.append(1/(0.000001+distances[-1]))
+
+                                xLarge = xLocal/np.max([xLocal, yLocal])
+                                yLarge = yLocal/np.max([xLocal, yLocal])
+                                interpolationValue = InterpolationScaling(2*distances[0], 'special_circular', np.sqrt(xLarge**2 + yLarge**2))
+
+                                weights[0] *= interpolationValue
+                                weights[1] *= (1 - interpolationValue)
+                                weights[2] *= (1 - interpolationValue)
+                                weights[3] *= (1 - interpolationValue)
+                                totalWeights = weights[0] + weights[1] + weights[2] + weights[3]
+
+                                z = 0
+                                for i in range(4):
+                                    z += weights[i] * corners[i][2]
+                                z /= totalWeights
+                                #  6     5
+                                # self   4
+
+                        elif interpolationMode == 'special_circular_3':
+                            if x <= 0.5 and y <= 0.5:
+                                # Bottom left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                tmpMax = np.max((xLocal, yLocal))
+                                XLocal = xLocal / tmpMax
+                                YLocal = yLocal / tmpMax
+                                diagInterpolationValue = InterpolationScaling(np.sqrt(xLocal ** 2 + yLocal ** 2),
+                                                                              'special_circular', minRange=0,
+                                                                              maxRange=np.sqrt(
+                                                                                  XLocal ** 2 + YLocal ** 2))
+
+                                if P2[2] == self.elevation:
+                                    xInterpolationValueTop = InterpolationScaling(xLocal, 'special_circular', minRange=0,
+                                                                               maxRange=1)
+                                    xInterpolationValueBottom = InterpolationScaling(xLocal, 'special_circular', minRange=0,
+                                                                               maxRange=1)
+                                    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=0, maxRange=1)
+                                else:
+                                    xInterpolationValueTop = InterpolationScaling(xLocal, 'special_circular', minRange=0,
+                                                                               maxRange=1)
+                                    #xInterpolationValueBottom = InterpolationScaling(xLocal, 'special_circular', minRange=0,
+                                    #                                                 maxRange=1)
+                                    xInterpolationValueBottom = InterpolationScaling(xLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH,
+                                                                               maxRange=1)
+
+                                    #xInterpolationValue = diagInterpolationValue * XLocal / (XLocal + YLocal)
+                                    if np.sqrt(xLocal**2 + yLocal**2)>self.pandaProgram.TILE_CENTER_WIDTH:
+                                        xInterpolationValue = diagInterpolationValue
+                                    else:
+                                        xInterpolationValue = diagInterpolationValue
+                                    #if yLocal < self.pandaProgram.TILE_CENTER_WIDTH:
+                                    #    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(yLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))), maxRange=1)
+                                    #else:
+                                    #    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular',minRange=np.min((yLocal,self.pandaProgram.TILE_CENTER_WIDTH)),maxRange=1)
+
+
+                                if P0[2] == self.elevation:
+                                    yInterpolationValueRight = InterpolationScaling(yLocal, 'special_circular', minRange=0,
+                                                                               maxRange=1)
+                                    yInterpolationValueLeft = InterpolationScaling(yLocal, 'special_circular', minRange=0,
+                                                                               maxRange=1)
+                                    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
+                                else:
+                                    yInterpolationValueRight = InterpolationScaling(yLocal, 'special_circular', minRange=0,
+                                                                               maxRange=1)
+                                    yInterpolationValueLeft = InterpolationScaling(yLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH,
+                                                                               maxRange=1)
+                                    #yInterpolationValue = diagInterpolationValue * YLocal / (XLocal + YLocal)
+                                    yInterpolationValue = diagInterpolationValue
+                                    #if xLocal < self.pandaProgram.TILE_CENTER_WIDTH:
+                                    #    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(xLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))),maxRange=1)
+                                    #else:
+                                    #    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=np.min((xLocal, self.pandaProgram.TILE_CENTER_WIDTH)), maxRange=1)
+
+                                topPart = xInterpolationValueTop * self.elevation + (1 - xInterpolationValueTop) * P0[2]
+                                bottomPart = xInterpolationValueBottom * P2[2] + (1 - xInterpolationValueBottom) * P1[2]
+                                rightPart = yInterpolationValueRight * self.elevation + (1 - yInterpolationValueRight) * P2[2]
+                                leftPart = yInterpolationValueLeft * P0[2] + (1 - yInterpolationValueLeft) * P1[2]
+
+
+
+                                z1 = yInterpolationValue * topPart + (1 - yInterpolationValue) * bottomPart
+                                z2 = xInterpolationValue * rightPart + (1-xInterpolationValue) * leftPart
+                                #z = (z1 + z2) / 2
+                                z = z1
+                                # 0  self
+                                # 1   2
+                            elif x > 0.5 and y <= 0.5:
+                                # Bottom right
+                                xLocal = (x-0.5)/0.5
+                                yLocal = (0.5-y)/0.5
+
+                                '''
+                                if P2[2] == self.elevation:
+                                    xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=0, maxRange=1)
+                                else:
+                                    if yLocal < self.pandaProgram.TILE_CENTER_WIDTH:
+                                        xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(yLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))), maxRange=1)
+                                    else:
+                                        xInterpolationValue = InterpolationScaling(xLocal, 'special_circular', minRange=np.min((yLocal, self.pandaProgram.TILE_CENTER_WIDTH)), maxRange=1)
+    
+                                if P4[2] == self.elevation:
+                                    yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
+                                else:
+                                    if yLocal < self.pandaProgram.TILE_CENTER_WIDTH:
+                                        yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=self.pandaProgram.TILE_CENTER_WIDTH*(1-np.cos(xLocal*np.pi/(2*self.pandaProgram.TILE_CENTER_WIDTH))), maxRange=1)
+                                    else:
+                                        yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=np.min((xLocal, self.pandaProgram.TILE_CENTER_WIDTH)), maxRange=1)
+    
+                                topPart = xInterpolationValue * self.elevation + (1 - xInterpolationValue) * P4[2]
+                                bottomPart = xInterpolationValue * P2[2] + (1 - xInterpolationValue) * P3[2]
+                                z =  yInterpolationValue * topPart + (1-yInterpolationValue) * bottomPart
+                                '''
+
+                                topPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P4[2])
+                                bottomPart = (InterpolationScaling(xLocal, 'special') * P2[2] + (1 - InterpolationScaling(xLocal,'special')) * P3[2])
+                                yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
+                                z = yInterpolationValue * topPart + (1-yInterpolationValue) * bottomPart
+                                # self   4
+                                #  2     3
+                            elif x <= 0.5 and y > 0.5:
+                                # Top left
+                                xLocal = (0.5-x)/0.5
+                                yLocal = (y-0.5)/0.5
+
+                                bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (1 - InterpolationScaling(xLocal, 'special')) * P0[2])
+                                topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (1 - InterpolationScaling(xLocal,'special')) * P7[2])
+                                yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
+                                z = yInterpolationValue * bottomPart + (1-yInterpolationValue) * topPart
+                                # 7    6
+                                # 0   self
+                            else:
+                                # Top right
+                                xLocal = (x - 0.5) / 0.5
+                                yLocal = (y - 0.5) / 0.5
+
+                                bottomPart = (InterpolationScaling(xLocal, 'special') * self.elevation + (
+                                            1 - InterpolationScaling(xLocal, 'special')) * P4[2])
+                                topPart = (InterpolationScaling(xLocal, 'special') * P6[2] + (
+                                            1 - InterpolationScaling(xLocal, 'special')) * P5[2])
+                                yInterpolationValue = InterpolationScaling(yLocal, 'special_circular', minRange=0, maxRange=1)
+                                z = yInterpolationValue * bottomPart + (1 - yInterpolationValue) * topPart
+                                #  6     5
+                                # self   4
+
+
+                        elif interpolationMode == 'normal':
+                            if x <= tileSideWith and y <= tileSideWith:
+                                # Bottom left corner
+                                xLocal = x / tileSideWith
+                                yLocal = y / tileSideWith
+                                z = (1 - InterpolationScaling(xLocal)) * (InterpolationScaling(yLocal) * p0[2] + (1 - InterpolationScaling(yLocal)) * p1[2]) + InterpolationScaling(xLocal) * (
+                                            InterpolationScaling(yLocal) * p3[2] + (1 - InterpolationScaling(yLocal)) * p2[2])
+                            elif x >= self.TILE_CENTER_WIDTH + tileSideWith and y <= tileSideWith:
+                                # Bottom right corner
+                                xLocal = (x - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
+                                yLocal = y / tileSideWith
+                                z = (1 - InterpolationScaling(xLocal, 'cos')) * (InterpolationScaling(yLocal) * p4[2] + (1 - InterpolationScaling(yLocal)) * p5[2]) + InterpolationScaling(xLocal, 'cos') * (
+                                            InterpolationScaling(yLocal) * p7[2] + (1 - InterpolationScaling(yLocal)) * p6[2])
+                            elif x >= self.TILE_CENTER_WIDTH + tileSideWith and y >= self.TILE_CENTER_WIDTH + tileSideWith:
+                                # Top right corner
+                                xLocal = (x - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
+                                yLocal = (y - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
+                                z = (1 - InterpolationScaling(xLocal, 'cos')) * (InterpolationScaling(yLocal, 'cos') * p8[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p9[2]) + InterpolationScaling(xLocal, 'cos') * (
+                                            InterpolationScaling(yLocal, 'cos') * p11[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p10[2])
+                            elif x <= tileSideWith and y >= self.TILE_CENTER_WIDTH + tileSideWith:
+                                # Top left corner
+                                xLocal = x / tileSideWith
+                                yLocal = (y - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
+                                z = (1 - InterpolationScaling(xLocal)) * (InterpolationScaling(yLocal, 'cos') * p12[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p13[2]) + InterpolationScaling(xLocal) * (
+                                            InterpolationScaling(yLocal, 'cos') * p15[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p14[2])
+                            elif x <= tileSideWith and y >= tileSideWith and y <= self.TILE_CENTER_WIDTH + tileSideWith:
+                                # Left side
+                                xLocal = x / tileSideWith
+                                yLocal = (y - tileSideWith) / tileSideWith
+                                z = (1 - InterpolationScaling(xLocal)) * (yLocal * p0[2] + (1 - yLocal) * p13[2]) + InterpolationScaling(xLocal) * (
+                                            yLocal * p14[2] + (1 - yLocal) * p3[2])
+                            elif x >= tileSideWith and x <= self.TILE_CENTER_WIDTH + tileSideWith and y <= tileSideWith:
+                                # Bottom side
+                                xLocal = (x - tileSideWith) / tileSideWith
+                                yLocal = y / tileSideWith
+                                z = (1 - xLocal) * (InterpolationScaling(yLocal) * p3[2] + (1 - InterpolationScaling(yLocal)) * p2[2]) + xLocal * (
+                                            InterpolationScaling(yLocal) * p4[2] + (1 - InterpolationScaling(yLocal)) * p5[2])
+                            elif x >= self.TILE_CENTER_WIDTH + tileSideWith and y >= tileSideWith and y <= self.TILE_CENTER_WIDTH + tileSideWith:
+                                # Right side
+                                xLocal = (x - tileSideWith - self.TILE_CENTER_WIDTH) / tileSideWith
+                                yLocal = (y - tileSideWith) / tileSideWith
+                                z = (1 - InterpolationScaling(xLocal, mode = 'cos')) * (yLocal * p4[2] + (1 - yLocal) * p9[2]) + InterpolationScaling(xLocal, mode = 'cos') * (
+                                            yLocal * p10[2] + (1 - yLocal) * p7[2])
+                            elif x >= tileSideWith and x <= self.TILE_CENTER_WIDTH + tileSideWith and y >= self.TILE_CENTER_WIDTH + tileSideWith:
+                                # Top side
+                                xLocal = (x - tileSideWith) / tileSideWith
+                                yLocal = (y - self.TILE_CENTER_WIDTH - tileSideWith) / tileSideWith
+                                z = (1 - xLocal) * (InterpolationScaling(yLocal, 'cos') * p15[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p14[2]) + xLocal * (
+                                            InterpolationScaling(yLocal, 'cos') * p8[2] + (1 - InterpolationScaling(yLocal, 'cos')) * p9[2])
+                            else:
+                                # center
+                                z = self.elevation
+
+                        #a = self.topography[int(np.round((1 - y) * (self.MODEL_RESOLUTION - 1))),
+                        #                    int(np.round(x * (self.MODEL_RESOLUTION - 1)))]
+                        #baseTopography[int(np.round((1 - y) * (self.MODEL_RESOLUTION - 1))), int(np.round(x * (self.MODEL_RESOLUTION - 1)))] = z
+                        baseTopography[int(np.round((1-y) * (self.pandaProgram.settings.MODEL_RESOLUTION - 1))),
+                                       int(np.round((x) * (self.pandaProgram.settings.MODEL_RESOLUTION - 1)))] = z
+
+            else:
+                baseTopography = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
+            baseTopography = baseTopography - self.elevation
+            return baseTopography
 
     def CreateTopography(self, topographyCode):
 
@@ -1384,6 +1391,9 @@ class TileClass(Entity):
 
         self.node.setTexture(tex)
         self.textureArray = None
+
+    def CreateTextureArrayDebug(self):
+        self.textureArray = self.terrainTextures['grid_debug'].copy()
 
     def CreateWater(self, isOcean = False):
         self.isWater = True
@@ -2093,7 +2103,8 @@ class TileClass(Entity):
                                'rock':image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png"),
                                'water':image.imread(Root_Directory.Path() + "/Data/Tile_Data/water.png"),
                                'deep_water_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/deep_water_terrain.png"),
-                               'shallow_water_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/shallow_water_terrain.png")}
+                               'shallow_water_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/shallow_water_terrain.png"),
+                               'grid_debug':image.imread(Root_Directory.Path() + "/Data/Tile_Data/grid_debug.png")}
 
         #cls.terrainTextures = {'grass':image.imread("panda3d-master/samples/chessboard/models/grass_4_symmetrical.jpg"),
         #                       'desert':image.imread("panda3d-master/samples/chessboard/models/desert_1_symmetrical.jpg"),

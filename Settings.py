@@ -23,8 +23,10 @@ class SettingsClass():
         self.TILE_TEXTURE_RESOLUTION = 128
         self.ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]],
                                            dtype=int)
+        self.ADJACENT_TILES_TEMPLATE_BIG = np.array([[-1, 1], [0, 1], [1, 1], [-1, 0], [0, 0], [1, 0], [-1, -1], [0, -1], [1, -1]],
+                                           dtype=int)
 
-        self.ROCK_TEXTURE_SLOPE_THRESHOLD = 0.2
+        self.ROCK_TEXTURE_SLOPE_THRESHOLD = 0.3
         self.ROCK_TEXTURE_RADIUS = round(self.TILE_TEXTURE_RESOLUTION / (self.MODEL_RESOLUTION*1.2))
         self.ROCK_TEXTURE_CIRCLE = []
         for row in np.linspace(-self.ROCK_TEXTURE_RADIUS, self.ROCK_TEXTURE_RADIUS, self.ROCK_TEXTURE_RADIUS * 2 + 1):
@@ -72,7 +74,7 @@ class SettingsClass():
 
         self.TOPOGRAPHY_ROUGHNESS_LEVELS = 3
         self.DISCRETE_TOPOGRAPHY_ROUGHNESS_LEVELS = False
-        self.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION = [0.6, 0.3, 0.1]
+        self.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION = [0.3, 0.5, 0.2]
         #type  :  flat    hilly    mountanious
         #yield :
         self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),       # white
