@@ -83,6 +83,10 @@ class SettingsClass():
         self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
                                                                      (0.25, 0.2, 0.1)])
 
+        self.TEMPERATURE_PERLIN_RANGE = [-1, 1]
+        self.TEMPERATURE_MIN_VALUE = -30
+        self.TEMPERATURE_MAX_VALUE = 30
+
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08
         self.RELATIVE_SELECTION_FRAME_WIDTH = 0.5

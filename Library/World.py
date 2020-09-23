@@ -28,6 +28,13 @@ class WorldClass():
                                                   applyDistributionFilter = True,
                                                   distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
 
+        self.temperature = self.CreateMap(minValue = 0,
+                                                  maxValue = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS-1,
+                                                  persistance = 1,
+                                                  initialOctavesToSkip = 3,
+                                                  applyDistributionFilter = True,
+                                                  distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
+
         self.soilFertility[self.elevation<=1] = -1
         self.topographyRoughness[self.elevation <= 1] = -1
 
