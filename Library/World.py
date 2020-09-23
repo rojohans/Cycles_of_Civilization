@@ -28,12 +28,9 @@ class WorldClass():
                                                   applyDistributionFilter = True,
                                                   distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
 
-        self.temperature = self.CreateMap(minValue = 0,
-                                                  maxValue = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS-1,
-                                                  persistance = 1,
-                                                  initialOctavesToSkip = 3,
-                                                  applyDistributionFilter = True,
-                                                  distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
+
+        self.temperature = self.CreateTemperatureMap()
+
 
         self.soilFertility[self.elevation<=1] = -1
         self.topographyRoughness[self.elevation <= 1] = -1
@@ -133,6 +130,29 @@ class WorldClass():
         map = map.astype(int)
 
         return map
+
+    def CreateTemperatureMap(self):
+        temperaturePerlin = self.CreateMap(minValue = self.mainProgram.settings.TEMPERATURE_MIN_VALUE,
+                                           maxValue = self.mainProgram.settings.TEMPERATURE_MAX_VALUE,
+                                           persistance = 1,
+                                           initialOctavesToSkip = 3)
+        temperatureElevation = self.mainProgram.settings.TEMPERATURE_MIN_VALUE*\
+                               (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**2
+        temperatureLatitude = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
+        for row in range(self.mainProgram.settings.N_ROWS):
+            for colon in range(self.mainProgram.settings.N_COLONS):
+                temperatureLatitude[row, colon] = np.cos(np.pi*(row-(self.mainProgram.settings.N_ROWS-1)/2)/(self.mainProgram.settings.N_ROWS-1))
+        temperatureLatitude = (self.mainProgram.settings.TEMPERATURE_MAX_VALUE -
+                               self.mainProgram.settings.TEMPERATURE_MIN_VALUE) *\
+                              temperatureLatitude + self.mainProgram.settings.TEMPERATURE_MIN_VALUE
+
+        temperatureTotalWeights = self.mainProgram.settings.TEMPERATURE_PERLIN_WEIGHT+\
+                                  self.mainProgram.settings.TEMPERATURE_LATITUDE_WEIGHT
+        temperatureMap = (temperaturePerlin*self.mainProgram.settings.TEMPERATURE_PERLIN_WEIGHT+\
+                          temperatureLatitude*self.mainProgram.settings.TEMPERATURE_LATITUDE_WEIGHT)/\
+                          temperatureTotalWeights + \
+                          temperatureElevation*self.mainProgram.settings.TEMPERATURE_ELEVATION_WEIGHT
+        return temperatureMap
 
     @classmethod
     def VisualizeMaps(cls, maps):

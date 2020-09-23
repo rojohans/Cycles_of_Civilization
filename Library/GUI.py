@@ -418,6 +418,16 @@ class MinimapSelectionFrame(CustomFrame):
                                                       value=['roughness'],
                                                       indicatorValue=0,
                                                       command=self.minimap.UpdateMinimap)
+        self.buttons['temperature'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_temperature.png',
+                                                             GUIDataDirectoryPath + 'minimap_selection_temperature_pressed.png', None),
+                                                      scale=self.buttonScale,
+                                                      pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                                      relief=None,
+                                                      parent=base.a2dBottomLeft,
+                                                      variable=self.minimap.minimapFilter,
+                                                      value=['temperature'],
+                                                      indicatorValue=0,
+                                                      command=self.minimap.UpdateMinimap)
 
         # Links the radio buttons together.
         buttons = []
@@ -460,6 +470,7 @@ class Minimap():
         self.minimapFilterUpToDate['fertility'] = False
         self.minimapFilterUpToDate['roughness'] = False
         self.minimapFilterUpToDate['elevation'] = False
+        self.minimapFilterUpToDate['temperature'] = False
 
         self.minimap = DirectButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
                                            self.GUIDataDirectoryPath + "remove_feature_pressed.png",
@@ -504,16 +515,31 @@ class Minimap():
             colourRamp = self.mainProgram.settings.ELEVATION_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.ELEVATION_MINIMAP_COLOURS_BOUNDS
             numberOfValues = self.mainProgram.settings.ELEVATION_LEVELS
+            colourSteps = np.linspace(0, self.mainProgram.settings.ELEVATION_LEVELS-1,
+                                      self.mainProgram.settings.ELEVATION_LEVELS)
         elif type == 'fertility':
             baseMap = self.mainProgram.world.soilFertility
             colourRamp = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS
             numberOfValues = self.mainProgram.settings.SOIL_FERTILITY_LEVELS
+            colourSteps = np.linspace(0, self.mainProgram.settings.SOIL_FERTILITY_LEVELS - 1,
+                                      self.mainProgram.settings.SOIL_FERTILITY_LEVELS)
         elif type == 'roughness':
             baseMap = self.mainProgram.world.topographyRoughness
             colourRamp = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS
             numberOfValues = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS
+            colourSteps = np.linspace(0, self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS - 1,
+                                      self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS)
+        elif type == 'temperature':
+            baseMap = self.mainProgram.world.temperature
+            colourRamp = self.mainProgram.settings.TEMPERATURE_MINIMAP_COLOURS
+            colourBounds = self.mainProgram.settings.TEMPERATURE_MINIMAP_COLOURS_BOUNDS
+            #numberOfValues = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS
+            colourSteps = np.linspace(self.mainProgram.settings.TEMPERATURE_MIN_VALUE,
+                                      self.mainProgram.settings.TEMPERATURE_MAX_VALUE,
+                                      np.size(colourRamp, 0))
+
 
         interpolatedMap = self.GetInterpolatedMap(baseMap = baseMap)
 
@@ -521,8 +547,7 @@ class Minimap():
         #EncodeColours()
 
         imageArray = np.zeros((self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1], 3))
-
-        interpolatorRed = interpolate.interp1d(range(numberOfValues),
+        interpolatorRed = interpolate.interp1d(colourSteps,
                                  colourRamp[:, 0],
                                  bounds_error=False,
                                  fill_value=(colourBounds[0, 0],
@@ -530,7 +555,7 @@ class Minimap():
         redMap = interpolatorRed(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
         redMap = np.reshape(redMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
 
-        interpolatorGreen = interpolate.interp1d(range(numberOfValues),
+        interpolatorGreen = interpolate.interp1d(colourSteps,
                                  colourRamp[:, 1],
                                  bounds_error=False,
                                  fill_value=(colourBounds[0, 1],
@@ -538,7 +563,7 @@ class Minimap():
         greenMap = interpolatorGreen(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
         greenMap = np.reshape(greenMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0], self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
 
-        interpolatorBlue = interpolate.interp1d(range(numberOfValues),
+        interpolatorBlue = interpolate.interp1d(colourSteps,
                                  colourRamp[:, 2],
                                  bounds_error=False,
                                  fill_value=(colourBounds[0, 2],

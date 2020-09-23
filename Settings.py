@@ -14,8 +14,8 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 16
-        self.N_COLONS = 16
+        self.N_ROWS = 64
+        self.N_COLONS = 64
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 30
@@ -83,9 +83,22 @@ class SettingsClass():
         self.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS = np.array([(0.0, 0.0, 0.0),
                                                                      (0.25, 0.2, 0.1)])
 
-        self.TEMPERATURE_PERLIN_RANGE = [-1, 1]
-        self.TEMPERATURE_MIN_VALUE = -30
+        self.TEMPERATURE_MIN_VALUE = -20
         self.TEMPERATURE_MAX_VALUE = 30
+        self.TEMPERATURE_PERLIN_WEIGHT = 0.5
+        self.TEMPERATURE_ELEVATION_WEIGHT = 1
+        self.TEMPERATURE_LATITUDE_WEIGHT = 3
+        self.TEMPERATURE_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),
+                                                     (0.8, 0.1, 0.8),
+                                                     (0.5, 0.1, 0.65),
+                                                     (0.2, 0.1, 0.5),
+                                                     (0.1, 0.4, 0.8),
+                                                     (0.1, 0.7, 0.1),
+                                                     (0.8, 0.8, 0.1),
+                                                     (0.7, 0.2, 0.1),
+                                                     (0.6, 0.1, 0.0)])
+        self.TEMPERATURE_MINIMAP_COLOURS_BOUNDS = np.array([(1.0, 1.0, 1.0),
+                                                            (0.6, 0.1, 0.0)])
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08
