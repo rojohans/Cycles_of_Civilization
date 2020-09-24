@@ -98,6 +98,8 @@ class TileClass(Entity):
 
         tileSlopeWidth = (1 - self.pandaProgram.settings.TILE_CENTER_WIDTH) / 2
         if self.row > 0 and self.row < self.N_ROWS - 1:
+
+            '''
             tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
 
             adjacentCross = np.zeros((8, 2), dtype=int)
@@ -106,6 +108,7 @@ class TileClass(Entity):
             adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
 
             adjacentZValues -= tileElevation
+            '''
 
             # v3n3t2 : vertices3, normals3, textureCoordinates2
             vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
@@ -134,6 +137,21 @@ class TileClass(Entity):
 
             points = []
 
+            xList = np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION)
+            yList = np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION)
+            # Creates the vertices.
+            topography = np.flip(self.topography, 0)
+            for modelRow in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+                for modelColon in range(self.pandaProgram.settings.MODEL_RESOLUTION):
+
+                    z = topography[modelRow, modelColon]
+                    y = yList[modelRow]
+                    x = xList[modelColon]
+
+                    points.append(np.array((self.colon+x, self.row+y, z)))
+                    pos_writer.add_data3(self.colon + x, self.row + y, z)
+                    tex_writer.addData2f(x, y)
+            '''
             # Creates the vertices.
             for y in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
                 for x in np.linspace(0, 1, self.pandaProgram.settings.MODEL_RESOLUTION):
@@ -151,6 +169,7 @@ class TileClass(Entity):
                     points.append(np.array((self.colon+x, self.row+y, z)))
                     pos_writer.add_data3(self.colon + x, self.row + y, z)
                     tex_writer.addData2f(x, y)
+            '''
 
             tri = p3d.GeomTriangles(p3d.Geom.UH_static)
 
@@ -164,35 +183,6 @@ class TileClass(Entity):
             # Assigns a normal to each vertex.
             for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
                 for x in range(self.pandaProgram.settings.MODEL_RESOLUTION):
-                    '''
-                    i = x + y * self.MODEL_RESOLUTION
-                    #print(x)
-                    #print(y)
-                    #print(i)
-                    #print('   ')
-                    if x == 0:
-                        diffx = points[i + 1] - points[i]
-                    elif x == self.MODEL_RESOLUTION-1:
-                        #diffx = points[i + 1] - points[i - 1]
-                        diffx = points[i] - points[i - 1]
-                    else:
-                        diffx = points[i + 1] - points[i - 1]
-
-                    if y == 0:
-                        diffy = points[i + self.MODEL_RESOLUTION] - points[i]
-                    elif y == self.MODEL_RESOLUTION-1:
-                        #diffy = points[i + self.MODEL_RESOLUTION] - points[i - self.MODEL_RESOLUTION]
-                        diffy = points[i] - points[i - self.MODEL_RESOLUTION]
-                    else:
-                        #diffy = points[i] - points[i - self.MODEL_RESOLUTION]
-                        diffy = points[i + self.MODEL_RESOLUTION] - points[i - self.MODEL_RESOLUTION]
-                    #diffx /= np.sqrt(diffx[0]**2 + diffx[1]**2 + diffx[2]**2)
-                    #diffy /= np.sqrt(diffy[0]**2 + diffy[1]**2 + diffy[2]**2)
-
-                    normal_writer.add_data3(p3d.Vec3(diffx[1]*diffy[2] - diffx[2]*diffy[1],
-                                                     diffx[2]*diffy[0] - diffx[0]*diffy[2],
-                                                     diffx[0]*diffy[1] - diffx[1]*diffy[0]))
-                    '''
                     normal_writer.add_data3(p3d.Vec3(self.normals[y, x, 0], self.normals[y, x, 1], self.normals[y, x, 2]))
 
             geom = p3d.Geom(vertex_data)

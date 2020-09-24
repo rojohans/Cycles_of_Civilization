@@ -224,12 +224,27 @@ class Game(ShowBase):
         print('Normalize normals: {}'.format(toc - tic))
 
         tic = time.time()
+        '''
+        import cProfile, pstats, io
+        from pstats import SortKey
+        pr = cProfile.Profile()
+        pr.enable()
+        '''
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
                 iTile = colon + row * self.settings.N_COLONS
                 # self.tileList[iTile].CreateNode()
                 #self.tileList[iTile].ApplyNode()
                 self.tileList[iTile].CreateNodeExperimental()
+        '''
+        pr.disable()
+        s = io.StringIO()
+        sortby = SortKey.CUMULATIVE
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        quit()
+        '''
         toc = time.time()
         print('CreateNodeExperimental: {}'.format(toc - tic))
 

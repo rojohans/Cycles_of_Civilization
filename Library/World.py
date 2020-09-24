@@ -32,6 +32,9 @@ class WorldClass():
         self.temperature = self.CreateTemperatureMap()
 
 
+        #self.waterAbundance = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
+
+
         self.soilFertility[self.elevation<=1] = -1
         self.topographyRoughness[self.elevation <= 1] = -1
 
