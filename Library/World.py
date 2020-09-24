@@ -12,7 +12,6 @@ class WorldClass():
                                         applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
-        #discreteSteps = self.mainProgram.settings.DISCRETE_ELEVATION
 
         self.soilFertility = self.CreateMap(minValue = 0,
                                             maxValue = self.mainProgram.settings.SOIL_FERTILITY_LEVELS-1,
@@ -28,12 +27,11 @@ class WorldClass():
                                                   applyDistributionFilter = True,
                                                   distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
 
-
         self.temperature = self.CreateTemperatureMap()
 
+        self.moisture = self.CreateMoistureMap()
 
-        #self.waterAbundance = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
-
+        #self.soilDepth =
 
         self.soilFertility[self.elevation<=1] = -1
         self.topographyRoughness[self.elevation <= 1] = -1
@@ -135,12 +133,18 @@ class WorldClass():
         return map
 
     def CreateTemperatureMap(self):
+        '''
+        Generates a temperature map from three layers. 1) Perlin noise
+                                                       2) Latitude
+                                                       3) Elevation
+        :return:
+        '''
         temperaturePerlin = self.CreateMap(minValue = self.mainProgram.settings.TEMPERATURE_MIN_VALUE,
                                            maxValue = self.mainProgram.settings.TEMPERATURE_MAX_VALUE,
-                                           persistance = 1,
+                                           persistance = 0.5,
                                            initialOctavesToSkip = 3)
         temperatureElevation = self.mainProgram.settings.TEMPERATURE_MIN_VALUE*\
-                               (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**2
+                               (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**3
         temperatureLatitude = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
         for row in range(self.mainProgram.settings.N_ROWS):
             for colon in range(self.mainProgram.settings.N_COLONS):
@@ -156,6 +160,64 @@ class WorldClass():
                           temperatureTotalWeights + \
                           temperatureElevation*self.mainProgram.settings.TEMPERATURE_ELEVATION_WEIGHT
         return temperatureMap
+
+    def CreateMoistureMap(self):
+        moisturePerlin = self.CreateMap(minValue = 0,
+                                        maxValue = 1,
+                                        persistance = 0.5,
+                                        initialOctavesToSkip = 3)
+
+        moistureFromOcean = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
+        oceanCoordinates = []
+        for row in range(self.mainProgram.settings.N_ROWS):
+            for colon in range(self.mainProgram.settings.N_COLONS+2):
+                if colon == 0:
+                    colonWrapped = self.mainProgram.settings.N_COLONS-1
+                elif colon == self.mainProgram.settings.N_COLONS+1:
+                    colonWrapped = 0
+                else:
+                    colonWrapped = colon-1
+                if self.elevation[row, colonWrapped] <= 1:
+                    oceanCoordinates.append((row, colon))
+
+        import scipy.spatial
+        tree = scipy.spatial.KDTree(oceanCoordinates)
+
+        for row in range(self.mainProgram.settings.N_ROWS):
+            for colon in range(self.mainProgram.settings.N_COLONS):
+                if self.elevation[row, colon] > 1:
+                    p = tree.query((row, colon-1))
+
+                    if p[0] < self.mainProgram.settings.MOISTURE_OCEAN_RANGE:
+                        moistureFromOcean[row, colon] = (np.cos(np.pi*(p[0]-1)/self.mainProgram.settings.MOISTURE_OCEAN_RANGE)+1)/2
+                    else:
+                        moistureFromOcean[row, colon] = 0
+
+        moistureLatitude = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
+        for row in range(self.mainProgram.settings.N_ROWS):
+            for colon in range(self.mainProgram.settings.N_COLONS):
+                moistureLatitude[row, colon] = (1+np.cos(6*np.pi*(row-(self.mainProgram.settings.N_ROWS-1)/2)/(self.mainProgram.settings.N_ROWS-1)))/2
+
+        moistureElevation = self.mainProgram.settings.MOISTURE_ELEVATION_WEIGHT*\
+                            (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**3
+
+        moistureTotalWeights = self.mainProgram.settings.MOISTURE_PERLIN_WEIGHT + \
+                               self.mainProgram.settings.MOISTURE_OCEAN_WEIGHT + \
+                               self.mainProgram.settings.MOISTURE_LATITUDE_WEIGHT
+
+        moistureMap = (moisturePerlin*self.mainProgram.settings.MOISTURE_PERLIN_WEIGHT +
+                       moistureFromOcean*self.mainProgram.settings.MOISTURE_OCEAN_WEIGHT +
+                       moistureLatitude*self.mainProgram.settings.MOISTURE_LATITUDE_WEIGHT)/moistureTotalWeights-\
+                      moistureElevation
+
+        moistureMap[moistureMap<0] = 0
+        moistureMap[moistureMap>1] = 1
+        moistureMap[self.elevation<=1] = 2
+
+        #self.VisualizeMaps([self.elevation, moistureFromOcean, moistureMap])
+        #quit()
+
+        return moistureMap
 
     @classmethod
     def VisualizeMaps(cls, maps):

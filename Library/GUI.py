@@ -428,6 +428,16 @@ class MinimapSelectionFrame(CustomFrame):
                                                       value=['temperature'],
                                                       indicatorValue=0,
                                                       command=self.minimap.UpdateMinimap)
+        self.buttons['moisture'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_moisture.png',
+                                                             GUIDataDirectoryPath + 'minimap_selection_moisture_pressed.png', None),
+                                                      scale=self.buttonScale,
+                                                      pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                                      relief=None,
+                                                      parent=base.a2dBottomLeft,
+                                                      variable=self.minimap.minimapFilter,
+                                                      value=['moisture'],
+                                                      indicatorValue=0,
+                                                      command=self.minimap.UpdateMinimap)
 
         # Links the radio buttons together.
         buttons = []
@@ -471,6 +481,7 @@ class Minimap():
         self.minimapFilterUpToDate['roughness'] = False
         self.minimapFilterUpToDate['elevation'] = False
         self.minimapFilterUpToDate['temperature'] = False
+        self.minimapFilterUpToDate['moisture'] = False
 
         self.minimap = DirectButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
                                            self.GUIDataDirectoryPath + "remove_feature_pressed.png",
@@ -514,31 +525,30 @@ class Minimap():
             baseMap = self.mainProgram.world.elevation
             colourRamp = self.mainProgram.settings.ELEVATION_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.ELEVATION_MINIMAP_COLOURS_BOUNDS
-            numberOfValues = self.mainProgram.settings.ELEVATION_LEVELS
             colourSteps = np.linspace(0, self.mainProgram.settings.ELEVATION_LEVELS-1,
                                       self.mainProgram.settings.ELEVATION_LEVELS)
         elif type == 'fertility':
             baseMap = self.mainProgram.world.soilFertility
             colourRamp = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS
-            numberOfValues = self.mainProgram.settings.SOIL_FERTILITY_LEVELS
             colourSteps = np.linspace(0, self.mainProgram.settings.SOIL_FERTILITY_LEVELS - 1,
                                       self.mainProgram.settings.SOIL_FERTILITY_LEVELS)
         elif type == 'roughness':
             baseMap = self.mainProgram.world.topographyRoughness
             colourRamp = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS
-            numberOfValues = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS
             colourSteps = np.linspace(0, self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS - 1,
                                       self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS)
         elif type == 'temperature':
             baseMap = self.mainProgram.world.temperature
             colourRamp = self.mainProgram.settings.TEMPERATURE_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.TEMPERATURE_MINIMAP_COLOURS_BOUNDS
-            #numberOfValues = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS
-            colourSteps = np.linspace(self.mainProgram.settings.TEMPERATURE_MIN_VALUE,
-                                      self.mainProgram.settings.TEMPERATURE_MAX_VALUE,
-                                      np.size(colourRamp, 0))
+            colourSteps = [-40, -30, -20, -10, 2, 13, 20, 30]
+        elif type == 'moisture':
+            baseMap = self.mainProgram.world.moisture
+            colourRamp = self.mainProgram.settings.MOISTURE_MINIMAP_COLOURS
+            colourBounds = self.mainProgram.settings.MOISTURE_MINIMAP_COLOURS_BOUNDS
+            colourSteps = np.linspace(0, 1, np.size(self.mainProgram.settings.MOISTURE_MINIMAP_COLOURS, 0))
 
 
         interpolatedMap = self.GetInterpolatedMap(baseMap = baseMap)
@@ -550,6 +560,7 @@ class Minimap():
         interpolatorRed = interpolate.interp1d(colourSteps,
                                  colourRamp[:, 0],
                                  bounds_error=False,
+                                               kind='linear',
                                  fill_value=(colourBounds[0, 0],
                                              colourBounds[1, 0]))
         redMap = interpolatorRed(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
@@ -558,6 +569,7 @@ class Minimap():
         interpolatorGreen = interpolate.interp1d(colourSteps,
                                  colourRamp[:, 1],
                                  bounds_error=False,
+                                                 kind='linear',
                                  fill_value=(colourBounds[0, 1],
                                              colourBounds[1, 1]))
         greenMap = interpolatorGreen(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
@@ -566,6 +578,7 @@ class Minimap():
         interpolatorBlue = interpolate.interp1d(colourSteps,
                                  colourRamp[:, 2],
                                  bounds_error=False,
+                                                kind='linear',
                                  fill_value=(colourBounds[0, 2],
                                              colourBounds[1, 2]))
         blueMap = interpolatorBlue(np.reshape(interpolatedMap, (self.mainProgram.settings.MINIMAP_RESOLUTION[0] * self.mainProgram.settings.MINIMAP_RESOLUTION[1], 1)))
@@ -590,7 +603,7 @@ class Minimap():
         yGap = (1-self.mainProgram.settings.N_ROWS/maxMapSize)/2
         interpolator = interpolate.interp2d(np.linspace(xGap, 1-xGap, self.mainProgram.settings.N_COLONS),
                                             np.linspace(yGap, 1-yGap, self.mainProgram.settings.N_ROWS),
-                                            np.flip(baseMap, 0), kind='linear', fill_value=-1)
+                                            np.flip(baseMap, 0), kind='linear', fill_value=-10000)
 
         return interpolator(np.linspace(0, 1, self.mainProgram.settings.MINIMAP_RESOLUTION[0]), np.linspace(0, 1, self.mainProgram.settings.MINIMAP_RESOLUTION[1]))
 

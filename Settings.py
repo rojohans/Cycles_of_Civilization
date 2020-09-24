@@ -15,11 +15,11 @@ class SettingsClass():
         FEATURE_RENDER_MAX_SPEED :
         '''
         self.N_ROWS = 16
-        self.N_COLONS = 16
+        self.N_COLONS = 32
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 30
-        self.TILE_CENTER_WIDTH = 0.05
+        self.TILE_CENTER_WIDTH = 0.5
         self.TILE_TEXTURE_RESOLUTION = 128
         self.ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]],
                                            dtype=int)
@@ -47,7 +47,7 @@ class SettingsClass():
         self.ELEVATION_LEVELS = 9
         self.DISCRETE_ELEVATION = False
         #self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.135, 0.065, 0.04, 0.01]
-        self.ELEVATION_DISTRIBUTION = [0.325, 0.125, 0.15, 0.135, 0.1, 0.075, 0.05, 0.03, 0.01]
+        self.ELEVATION_DISTRIBUTION = [0.325, 0.125, 0.18, 0.155, 0.11, 0.06, 0.03, 0.01, 0.005]
         self.ELEVATION_MINIMAP_COLOURS = np.array([(0.1, 0.1, 0.3),
                                                    (0.1, 0.3, 0.7),
                                                    (0.15, 0.5, 0.05),
@@ -86,19 +86,31 @@ class SettingsClass():
         self.TEMPERATURE_MIN_VALUE = -20
         self.TEMPERATURE_MAX_VALUE = 30
         self.TEMPERATURE_PERLIN_WEIGHT = 0.5
-        self.TEMPERATURE_ELEVATION_WEIGHT = 1
+        self.TEMPERATURE_ELEVATION_WEIGHT = 1.25
         self.TEMPERATURE_LATITUDE_WEIGHT = 3
-        self.TEMPERATURE_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),
-                                                     (0.8, 0.1, 0.8),
-                                                     (0.5, 0.1, 0.65),
-                                                     (0.2, 0.1, 0.5),
-                                                     (0.1, 0.4, 0.8),
-                                                     (0.1, 0.7, 0.1),
-                                                     (0.8, 0.8, 0.1),
-                                                     (0.7, 0.2, 0.1),
-                                                     (0.6, 0.1, 0.0)])
-        self.TEMPERATURE_MINIMAP_COLOURS_BOUNDS = np.array([(1.0, 1.0, 1.0),
-                                                            (0.6, 0.1, 0.0)])
+        self.TEMPERATURE_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),  #-40
+                                                     (0.8, 0.1, 0.8),  #-30
+                                                     (0.1, 0.0, 0.4),  #-20
+                                                     (0.1, 0.2, 0.6),  #-10
+                                                     (0.1, 0.8, 1.0),  #2
+                                                     (1.0, 1.0, 0.1),  #13
+                                                     (0.7, 0.5, 0.0),  #20
+                                                     (0.3, 0.0, 0.0)]) #30
+        self.TEMPERATURE_MINIMAP_COLOURS_BOUNDS = np.array([(0, 0, 0),
+                                                            (0.3, 0.0, 0.0)])
+
+        # The range in which ocean increases moisture
+        self.MOISTURE_OCEAN_RANGE = self.N_COLONS/7
+        self.MOISTURE_PERLIN_WEIGHT = 1.5
+        self.MOISTURE_OCEAN_WEIGHT = 0.5
+        self.MOISTURE_ELEVATION_WEIGHT = 0.5
+        self.MOISTURE_LATITUDE_WEIGHT = 2
+        self.MOISTURE_MINIMAP_COLOURS = np.array([(0.4, 0.3, 0.1),
+                                                  (0.7, 0.7, 0.3),
+                                                  (0.2, 0.5, 0.7),
+                                                  (0.1, 0.1, 0.4)])
+        self.MOISTURE_MINIMAP_COLOURS_BOUNDS = np.array([(0, 0, 0),
+                                                         (0.1, 0.1, 0.4)])
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08

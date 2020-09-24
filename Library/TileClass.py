@@ -1152,6 +1152,10 @@ class TileClass(Entity):
 
         normals = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION, 3))
 
+        diffXArray = np.zeros(((self.pandaProgram.settings.MODEL_RESOLUTION - 2) ** 2, 3))
+        diffYArray = np.zeros(((self.pandaProgram.settings.MODEL_RESOLUTION - 2) ** 2, 3))
+        i = 0
+
         for y in range(self.pandaProgram.settings.MODEL_RESOLUTION):
             for x in range(self.pandaProgram.settings.MODEL_RESOLUTION):
                 if x !=0 and x != self.pandaProgram.settings.MODEL_RESOLUTION-1 and y != 0 and y != self.pandaProgram.settings.MODEL_RESOLUTION-1:
@@ -1159,6 +1163,9 @@ class TileClass(Entity):
                     diffy = np.array((0, 2 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),
                                       self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 2, x] - self.topography[
                                           self.pandaProgram.settings.MODEL_RESOLUTION - y, x]))
+                    diffXArray[i, :] = diffx
+                    diffYArray[i, :] = diffy
+                    i += 1
                 else:
                     if x == 0:
                         diffx = np.array((1 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1), 0,
@@ -1176,11 +1183,18 @@ class TileClass(Entity):
                         diffy = np.array((0, 1 / (self.pandaProgram.settings.MODEL_RESOLUTION - 1),
                                           self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y - 1, x] -
                                           self.topography[self.pandaProgram.settings.MODEL_RESOLUTION - y, x]))
+                    normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
+                              diffx[2] * diffy[0] - diffx[0] * diffy[2],
+                              diffx[0] * diffy[1] - diffx[1] * diffy[0]]
+                    normals[y, x] = normal
 
-                normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
-                          diffx[2] * diffy[0] - diffx[0] * diffy[2],
-                          diffx[0] * diffy[1] - diffx[1] * diffy[0]]
-                normals[y, x] = normal
+        centerNormals = np.cross(diffXArray, diffYArray)
+        centerNormals = np.reshape(centerNormals, (self.pandaProgram.settings.MODEL_RESOLUTION-2,
+                                                   self.pandaProgram.settings.MODEL_RESOLUTION-2,
+                                                   3))
+
+        normals[1:-1, 1:-1] = centerNormals
+
         return normals
 
     def NormalizeNormals(self):
