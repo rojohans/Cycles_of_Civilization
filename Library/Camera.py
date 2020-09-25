@@ -160,7 +160,8 @@ class CameraClass():
                 elif self.mainProgram.tilesToRender.count(iTile) == 1:
                     pass
                 else:
-                    self.mainProgram.tilesToRender.append(iTile)
+                    #self.mainProgram.tilesToRender.append(iTile)
+                    self.mainProgram.tilesToRender.insert(0, iTile)
 
     def GetRenderCircle(self):
         '''

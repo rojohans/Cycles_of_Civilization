@@ -9,7 +9,11 @@ import Library.Camera as Camera
 import Library.World as World
 import Library.Pathfinding as Pathfinding
 import Library.Animation as Animation
+import Library.Vegetation as Vegetation
+
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
+import Data.Templates.Vegetation_Templates as Vegetation_Templates
+
 import Settings
 import Root_Directory
 
@@ -47,6 +51,33 @@ class Game(ShowBase):
 
         World.WorldClass.Initialize(mainProgram = self)
         self.world = World.WorldClass()
+
+
+
+
+        self.plants = Vegetation.Plant.Initialize(mainProgram=self)
+
+        Vegetation_Templates.NormalGrass.InitializeFitnessInterpolators()
+        Vegetation_Templates.Jungle.InitializeFitnessInterpolators()
+        Vegetation_Templates.SpruceForest.InitializeFitnessInterpolators()
+        Vegetation_Templates.PineForest.InitializeFitnessInterpolators()
+        Vegetation_Templates.BroadleafForest.InitializeFitnessInterpolators()
+
+        Vegetation.Plant.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.Jungle, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.PineForest, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+
+        NSteps = 100
+        for iStep in range(NSteps):
+            for plantRow in self.plants:
+                for plant in plantRow:
+                    if plant:
+                        plant.Step()
+
+
+
 
         self.selected_tile_ID = None
         self.selected_unit_ID = None
@@ -126,6 +157,13 @@ class Game(ShowBase):
                     if self.tileList[iTile].isWater:
                         pass
                     else:
+                        if self.plants[row][colon]:
+                            if self.plants[row][colon].featureTemplate:
+                                self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                            type=self.plants[row][colon].featureTemplate,
+                                                                                            numberOfcomponents=int(np.ceil(self.plants[row][colon].fitness*20))))
+                                self.tileList[iTile].features[0].node.removeNode()
+                        '''
                         r = np.random.rand()
                         a = False
                         if r < 0.2:
@@ -144,22 +182,8 @@ class Game(ShowBase):
                                                                                         type='temperate_forest',
                                                                                         numberOfcomponents=20))
                             self.tileList[iTile].features[0].node.removeNode()
-                            '''
-                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                        type='town',
-                                                                                        numberOfcomponents=20,
-                                                                                        distributionType='grid',
-                                                                                        distributionValue=7,
-                                                                                        gridAlignedHPR=True
-                                                                                        ))
-                            self.tileList[iTile].features[0].node.removeNode()
-                        elif r < 0.45:
-                            self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
-                                                                                        type='farm',
-                                                                                        numberOfcomponents=1,
-                                                                                        distributionType='random'))
-                            self.tileList[iTile].features[0].node.removeNode()
-                            '''
+                        '''
+
 
     def SetupTiles(self):
         self.tileList = []
@@ -299,7 +323,10 @@ class Game(ShowBase):
         self.tileMarker.set_hpr(0, 90, 0)
         self.tileMarker.set_scale((0.5, 1, 0.5))
 
+        tic = time.time()
         TileClass.TileClass.SaveDictionariesToFile()
+        toc = time.time()
+        print('Save dictionaries to file: {}'.format(toc - tic))
 
     def SetupUnits(self):
         self.units = {}

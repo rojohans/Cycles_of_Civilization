@@ -307,7 +307,7 @@ class TileClass(Entity):
 
         #self.topography = self.elevation + self.topographyBase + self.topographyTop
         #self.topography = self.elevation + self.topographyBase
-        self.topography = self.topographyBase + self.topographyTop
+        self.topography = self.topographyBase# + self.topographyTop
 
     def CreateBaseTopographyCode(self):
         if self.row > 0 and self.row < self.N_ROWS - 1:

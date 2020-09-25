@@ -15,19 +15,38 @@ class Main():
 
         self.plants = Vegetation.Plant.Initialize(mainProgram=self)
 
-        g = Vegetation_Templates.NormalGrass(0, 0)
+        Vegetation_Templates.NormalGrass.InitializeFitnessInterpolators()
+        Vegetation_Templates.Jungle.InitializeFitnessInterpolators()
+        Vegetation_Templates.SpruceForest.InitializeFitnessInterpolators()
+        Vegetation_Templates.PineForest.InitializeFitnessInterpolators()
+        Vegetation_Templates.BroadleafForest.InitializeFitnessInterpolators()
 
+        #Vegetation.Plant.SeedWorld(1000, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        #Vegetation.Plant.SeedWorld(100, Vegetation_Templates.Jungle, minFitness=0.2)
+        #Vegetation.Plant.SeedWorld(200, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        #Vegetation.Plant.SeedWorld(100, Vegetation_Templates.PineForest, minFitness=0.2)
+        #Vegetation.Plant.SeedWorld(200, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.Jungle, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.PineForest, minFitness=0.2)
+        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
 
+        NSteps = 100
 
-        #print(self.plants)
-        #print(np.shape(self.plants))
-        #print(self.plants[4][8])
+        forestImage = Vegetation.Plant.GetImage()
+        vegetationImageObject = plt.imshow(forestImage)
+        for iStep in range(NSteps):
+            for plantRow in self.plants:
+                for plant in plantRow:
+                    if plant:
+                        plant.Step()
+            forestImage = Vegetation.Plant.GetImage()
+            vegetationImageObject.set_array(forestImage)
+            plt.pause(0.0001)
 
-        import scipy.interpolate as interpolate
+        self.world.VisualizeMaps([self.world.elevation, self.world.temperature, self.world.moisture])
 
-        x = np.linspace(0, 8, 70)
-        y = g.elevationFitnessInterpolator(x)
-        plt.plot(x, y)
         plt.show()
 
 

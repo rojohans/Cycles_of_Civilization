@@ -18,7 +18,7 @@ class SettingsClass():
         self.N_COLONS = 128
         self.HORIZONTAL_WRAP_BUFFER = 20
 
-        self.MODEL_RESOLUTION = 30
+        self.MODEL_RESOLUTION = 8
         self.TILE_CENTER_WIDTH = 0.5
         self.TILE_TEXTURE_RESOLUTION = 128
         self.ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]],
@@ -103,7 +103,7 @@ class SettingsClass():
         self.MOISTURE_OCEAN_RANGE = self.N_COLONS/7
         self.MOISTURE_PERLIN_WEIGHT = 1.5
         self.MOISTURE_OCEAN_WEIGHT = 0.5
-        self.MOISTURE_ELEVATION_WEIGHT = 0.5
+        self.MOISTURE_ELEVATION_WEIGHT = 0.2
         self.MOISTURE_LATITUDE_WEIGHT = 2
         self.MOISTURE_MINIMAP_COLOURS = np.array([(0.4, 0.3, 0.1),
                                                   (0.7, 0.7, 0.3),
@@ -111,6 +111,10 @@ class SettingsClass():
                                                   (0.1, 0.1, 0.4)])
         self.MOISTURE_MINIMAP_COLOURS_BOUNDS = np.array([(0, 0, 0),
                                                          (0.1, 0.1, 0.4)])
+
+        # ================= VEGETATION ============================================================================
+        self.VEGETATION_INTERPOLATION_RESOLUTION = 50
+
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08

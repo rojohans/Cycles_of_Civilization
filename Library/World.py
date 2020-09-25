@@ -162,6 +162,13 @@ class WorldClass():
         return temperatureMap
 
     def CreateMoistureMap(self):
+        '''
+        Generates a moisture map from 4 layers. 1) Perlin noise
+                                                2) Latitude (based on Hadley cells)
+                                                3) Elevation
+                                                4) Distance from ocean
+        :return:
+        '''
         moisturePerlin = self.CreateMap(minValue = 0,
                                         maxValue = 1,
                                         persistance = 0.5,
@@ -199,7 +206,7 @@ class WorldClass():
                 moistureLatitude[row, colon] = (1+np.cos(6*np.pi*(row-(self.mainProgram.settings.N_ROWS-1)/2)/(self.mainProgram.settings.N_ROWS-1)))/2
 
         moistureElevation = self.mainProgram.settings.MOISTURE_ELEVATION_WEIGHT*\
-                            (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**3
+                            (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**4
 
         moistureTotalWeights = self.mainProgram.settings.MOISTURE_PERLIN_WEIGHT + \
                                self.mainProgram.settings.MOISTURE_OCEAN_WEIGHT + \
