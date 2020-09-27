@@ -9,7 +9,7 @@ import Library.Camera as Camera
 import Library.World as World
 import Library.Pathfinding as Pathfinding
 import Library.Animation as Animation
-import Library.Vegetation as Vegetation
+import Library.Ecosystem as Vegetation
 
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 import Data.Templates.Vegetation_Templates as Vegetation_Templates
@@ -55,7 +55,7 @@ class Game(ShowBase):
 
 
 
-        self.plants = Vegetation.Plant.Initialize(mainProgram=self)
+        self.plants = Vegetation.Organism.Initialize(mainProgram=self)
 
         Vegetation_Templates.NormalGrass.InitializeFitnessInterpolators()
         Vegetation_Templates.Jungle.InitializeFitnessInterpolators()
@@ -63,11 +63,11 @@ class Game(ShowBase):
         Vegetation_Templates.PineForest.InitializeFitnessInterpolators()
         Vegetation_Templates.BroadleafForest.InitializeFitnessInterpolators()
 
-        Vegetation.Plant.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
-        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.Jungle, minFitness=0.2)
-        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
-        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.PineForest, minFitness=0.2)
-        Vegetation.Plant.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+        Vegetation.Organism.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        Vegetation.Organism.SeedWorld(20, Vegetation_Templates.Jungle, minFitness=0.2)
+        Vegetation.Organism.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        Vegetation.Organism.SeedWorld(50, Vegetation_Templates.PineForest, minFitness=0.2)
+        Vegetation.Organism.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
 
         NSteps = 100
         for iStep in range(NSteps):

@@ -14,8 +14,8 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 64
-        self.N_COLONS = 128
+        self.N_ROWS = 128
+        self.N_COLONS = 256
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 8
@@ -43,7 +43,7 @@ class SettingsClass():
 
         # ================ WORLD GENERATION ============================================================================
         self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
-        self.ELEVATION_SCALE = 0.3
+        self.ELEVATION_SCALE = 0.6
         self.ELEVATION_LEVELS = 9
         self.DISCRETE_ELEVATION = False
         #self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.135, 0.065, 0.04, 0.01]
@@ -112,9 +112,10 @@ class SettingsClass():
         self.MOISTURE_MINIMAP_COLOURS_BOUNDS = np.array([(0, 0, 0),
                                                          (0.1, 0.1, 0.4)])
 
-        # ================= VEGETATION ============================================================================
+        # ================= ECOSYSTEM ============================================================================
         self.VEGETATION_INTERPOLATION_RESOLUTION = 50
-
+        self.VEGETATION_OUTCOMPETE_PARAMETER = 10
+        self.ANIMAL_OUTCOMPETE_PARAMETER = 0
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08
