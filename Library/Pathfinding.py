@@ -174,9 +174,9 @@ class MapGraph():
         featureCostModifier = 0 + (len(tile1.features) + len(tile2.features))/2
         cost += featureCostModifier
 
-        roughnessCostModifier = 0 +(cls.mainProgram.world.topographyRoughness[tile1.row, tile1.colon] +
-                                    cls.mainProgram.world.topographyRoughness[tile2.row, tile2.colon])/2
-        cost += roughnessCostModifier
+        #roughnessCostModifier = 0 +(cls.mainProgram.world.topographyRoughness[tile1.row, tile1.colon] +
+        #                            cls.mainProgram.world.topographyRoughness[tile2.row, tile2.colon])/2
+        #cost += roughnessCostModifier
 
         if tile1.isWater or tile2.isWater:
             cost += 100000000

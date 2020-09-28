@@ -59,7 +59,7 @@ class SpruceForest(Vegetation.Forest):
                          growthRate=0.05,
                          lifeLength=50,
                          fitness = fitness,
-                         colour = [0, 0.25, 0.15],
+                         colour = [0, 0.25, 0.2],
                          featureTemplate='spruce_forest')
     @classmethod
     def CreateFitnessScales(cls):

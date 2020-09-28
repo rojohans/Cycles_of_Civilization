@@ -11,8 +11,12 @@ class Main():
     def __init__(self):
         self.settings = Settings.SettingsClass()
 
+        import time
+        tic = time.time()
         World.WorldClass.Initialize(mainProgram = self)
         self.world = World.WorldClass()
+        toc = time.time()
+        print('World creation time: ', toc-tic)
 
         self.plants = Ecosystem.Vegetation.Initialize(mainProgram=self)
         self.animals = Ecosystem.Animal.Initialize(mainProgram=self)

@@ -14,13 +14,14 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 128
-        self.N_COLONS = 256
+        self.N_ROWS = 16
+        self.N_COLONS = 32
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 8
         self.TILE_CENTER_WIDTH = 0.5
         self.TILE_TEXTURE_RESOLUTION = 128
+        self.ADJACENT_TILES_TEMPLATE_CROSS = np.array([[0, -1], [-1, 0], [0, 1], [1, 0]], dtype=int)
         self.ADJACENT_TILES_TEMPLATE = np.array([[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]],
                                            dtype=int)
         self.ADJACENT_TILES_TEMPLATE_BIG = np.array([[-1, 1], [0, 1], [1, 1], [-1, 0], [0, 0], [1, 0], [-1, -1], [0, -1], [1, -1]],
@@ -46,8 +47,16 @@ class SettingsClass():
         self.ELEVATION_SCALE = 0.6
         self.ELEVATION_LEVELS = 9
         self.DISCRETE_ELEVATION = False
-        #self.ELEVATION_DISTRIBUTION = [0.35, 0.15, 0.25, 0.135, 0.065, 0.04, 0.01]
-        self.ELEVATION_DISTRIBUTION = [0.325, 0.125, 0.18, 0.155, 0.11, 0.06, 0.03, 0.01, 0.005]
+        #self.ELEVATION_DISTRIBUTION = [0.325, 0.125, 0.18, 0.155, 0.11, 0.06, 0.03, 0.01, 0.005]
+        self.ELEVATION_DISTRIBUTION = np.array([(0, 0),
+                                                (1, 0.325),
+                                                (2, 0.125),
+                                                (3, 0.18),
+                                                (4, 0.155),
+                                                (5, 0.11),
+                                                (6, 0.065),
+                                                (7, 0.03),
+                                                (8, 0.01)])
         self.ELEVATION_MINIMAP_COLOURS = np.array([(0.1, 0.1, 0.3),
                                                    (0.1, 0.3, 0.7),
                                                    (0.15, 0.5, 0.05),

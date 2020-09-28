@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import interpolate
 
 import Library.Noise as Noise
 
@@ -12,7 +13,11 @@ class WorldClass():
                                         applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        self.elevationInterpolator = interpolate.interp2d(range(self.mainProgram.settings.N_COLONS),
+                                                          range(self.mainProgram.settings.N_ROWS),
+                                                          self.elevation, kind='cubic', fill_value=0)
 
+        '''
         self.soilFertility = self.CreateMap(minValue = 0,
                                             maxValue = self.mainProgram.settings.SOIL_FERTILITY_LEVELS-1,
                                             persistance = 1.2,
@@ -26,16 +31,21 @@ class WorldClass():
                                                   initialOctavesToSkip = 3,
                                                   applyDistributionFilter = True,
                                                   distributionSteps = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_DISTRIBUTION)
-
+        self.soilFertility[self.elevation<=1] = -1
+        self.topographyRoughness[self.elevation <= 1] = -1
+        '''
         self.temperature = self.CreateTemperatureMap()
 
         self.moisture = self.CreateMoistureMap()
 
         #self.soilDepth =
 
-        self.soilFertility[self.elevation<=1] = -1
-        self.topographyRoughness[self.elevation <= 1] = -1
+        #self.slope = self.CreateSlopeMap()
 
+
+
+        #self.VisualizeMaps([self.elevation, self.temperature, self.moisture, self.slope])
+        #quit()
 
         # Makes the water shallow along all coasts.
         for row in np.linspace(1, self.mainProgram.settings.N_ROWS-2, self.mainProgram.settings.N_ROWS-2):
@@ -102,7 +112,7 @@ class WorldClass():
                                                            initialOctavesToSkip=initialOctavesToSkip)
         return z
 
-    def ApplyDistributionFilter(self, map, distribution):
+    def ApplyDistributionFilter(self, map, distribution, discrete = False):
         '''
         Changes the map values to correspond with the distribution values in the input. If distribution = [0.6, 0.3, 0.1]
         60% of the map values will be 0, 30% 1 and 10% 2.
@@ -113,14 +123,27 @@ class WorldClass():
         numberOfTiles = self.mainProgram.settings.N_ROWS * self.mainProgram.settings.N_COLONS
         probabilityTemplate = np.ones((numberOfTiles, 1))
         tmpCount = 0
-        for i in range(len(distribution)):
-            p = distribution[i]
-            levelSize = int(np.ceil(p * numberOfTiles))
-            probabilityTemplate[tmpCount:tmpCount + levelSize] = i
-            tmpCount += levelSize
-        map = np.reshape(map, (numberOfTiles, 1))
-        map -= len(distribution) + 1000
+        # Calculate probabilityTemplate
+        if discrete:
+            for i in range(len(distribution)):
+                p = distribution[i]
+                levelSize = int(np.ceil(p * numberOfTiles))
+                probabilityTemplate[tmpCount:tmpCount + levelSize] = i
+                tmpCount += levelSize
+        else:
+            distributionCumulative = distribution.copy()
+            for i in range(np.size(distribution, 0)):
+                if i > 0:
+                    distributionCumulative[i, 1] = distributionCumulative[i-1, 1] + distribution[i, 1]
 
+            interpolator = interpolate.interp1d(x=distributionCumulative[:, 1],
+                                                y=distributionCumulative[:, 0],
+                                                kind='cubic')
+            probabilityTemplate = interpolator(np.linspace(0, 1, numberOfTiles))
+
+        # Alter map
+        map = np.reshape(map, (numberOfTiles, 1))
+        map -= len(distribution) + 100000
         for i in range(numberOfTiles):
             minValue = np.min(map)
             tmpIndex = np.where(map == minValue)[0]
@@ -128,7 +151,9 @@ class WorldClass():
             map[tmpIndex] = probabilityTemplate[i]
 
         map = np.reshape(map, (self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
-        map = map.astype(int)
+
+        if discrete:
+            map = map.astype(int)
 
         return map
 
@@ -220,11 +245,37 @@ class WorldClass():
         moistureMap[moistureMap<0] = 0
         moistureMap[moistureMap>1] = 1
         moistureMap[self.elevation<=1] = 2
-
-        #self.VisualizeMaps([self.elevation, moistureFromOcean, moistureMap])
-        #quit()
-
         return moistureMap
+
+    def CreateSlopeMap(self):
+        slopeMap = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
+
+        for row in range(self.mainProgram.settings.N_ROWS):
+            for colon in range(self.mainProgram.settings.N_COLONS):
+                adjacentTiles = np.zeros((4, 2))
+                adjacentCross = 0.1 * self.mainProgram.settings.ADJACENT_TILES_TEMPLATE_CROSS.copy()
+                adjacentTiles[:, 0] = row + adjacentCross[:, 0]
+                adjacentTiles[:, 1] = np.mod(colon + adjacentCross[:, 1], self.mainProgram.settings.N_COLONS)
+                print(row)
+                print(colon)
+                print(adjacentCross)
+                print(adjacentTiles)
+                quit()
+
+                tileElevation = self.elevation[row, colon]
+                nTiles = 0
+                slope = 0
+                for [adjacentRow, adjacentColon] in adjacentTiles:
+                    if adjacentRow >= 0 and adjacentRow < self.mainProgram.settings.N_ROWS:
+                        slope += np.abs(self.elevation[adjacentRow, adjacentColon]-tileElevation)
+                        nTiles += 1
+                slope /= nTiles
+                slopeMap[row, colon] = slope
+        return slopeMap
+
+
+
+
 
     @classmethod
     def VisualizeMaps(cls, maps):

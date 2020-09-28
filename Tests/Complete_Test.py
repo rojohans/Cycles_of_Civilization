@@ -49,12 +49,14 @@ class Game(ShowBase):
         self.cameraObject = Camera.CameraClass()
         self.cameraObject.cameraUpdateFunctions.append(self.cameraObject.UpdateFeatureRender)
 
+        tic = time.time()
         World.WorldClass.Initialize(mainProgram = self)
         self.world = World.WorldClass()
+        toc = time.time()
+        print('World creation time: ', format(toc-tic))
 
 
-
-
+        tic = time.time()
         self.plants = Vegetation.Organism.Initialize(mainProgram=self)
 
         Vegetation_Templates.NormalGrass.InitializeFitnessInterpolators()
@@ -63,6 +65,7 @@ class Game(ShowBase):
         Vegetation_Templates.PineForest.InitializeFitnessInterpolators()
         Vegetation_Templates.BroadleafForest.InitializeFitnessInterpolators()
 
+        '''
         Vegetation.Organism.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
         Vegetation.Organism.SeedWorld(20, Vegetation_Templates.Jungle, minFitness=0.2)
         Vegetation.Organism.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
@@ -75,6 +78,9 @@ class Game(ShowBase):
                 for plant in plantRow:
                     if plant:
                         plant.Step()
+        '''
+        toc = time.time()
+        print('Ecosystem simulation: ', format(toc-tic))
 
 
 
@@ -204,9 +210,16 @@ class Game(ShowBase):
         print('object creation time: {}'.format(toc - tic))
 
         from scipy import interpolate
-        self.elevationInterpolator = interpolate.interp2d(range(self.settings.N_COLONS),
-                                                          range(self.settings.N_ROWS),
-                                                          self.world.elevation, kind='cubic', fill_value=0)
+        extentedElevation = np.concatenate((np.reshape(self.world.elevation[:, -1], (self.settings.N_ROWS, 1)),
+                                            self.world.elevation,
+                                            self.world.elevation[:, 0:1]),
+                                           axis = 1)
+        print(np.shape(extentedElevation))
+        print(np.linspace(-1, self.settings.N_COLONS, self.settings.N_COLONS + 2))
+        print(np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS))
+        self.elevationInterpolator = interpolate.interp2d(np.linspace(-1, self.settings.N_COLONS, self.settings.N_COLONS+2),
+                                                          np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS),
+                                                          extentedElevation, kind='cubic', fill_value=0)
 
         tic = time.time()
         # Creates the tile models.

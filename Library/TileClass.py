@@ -299,11 +299,13 @@ class TileClass(Entity):
                 self.baseTopographyDictionary[baseTopographyCode] = self.topographyBase.copy()
                 #print('topography calculated from scratch')
 
+        '''
         if self.pandaProgram.world.topographyRoughness[self.row, self.colon] >=0:
             self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
         else:
             self.topographyTop = self.terrainTopography[
                 'topography_roughness_0']
+        '''
 
         #self.topography = self.elevation + self.topographyBase + self.topographyTop
         #self.topography = self.elevation + self.topographyBase
@@ -1094,54 +1096,10 @@ class TileClass(Entity):
                 self.tileList[topRighti].topography = topRightTopography
 
     def ApplyNormals(self):
-        normalsCode = self.CreateNormalsCode()
 
-        if normalsCode == None:
-            self.normals = self.CreateNormals()
-        else:
-            keyFound = False
-            for key, value in self.normalsDictionary.items():
-                if key == normalsCode:
-                    keyFound = True
-                    # Load an existing topography
-                    self.normals = value.copy()
-                    #print('normals retrieved from dictionary')
-                    break
-            #keyFound = False
-            if keyFound == False:
-                # Crate a new topography
-                self.normals = self.CreateNormals()
-                self.normalsDictionary[normalsCode] = self.normals.copy()
-                #print('normals calculated from scratch')
 
-    def CreateNormalsCode(self):
-        if self.row > 0 and self.row < self.N_ROWS - 1:
-            tileElevation = self.pandaProgram.world.elevation[self.row, self.colon]
-
-            adjacentCross = np.zeros((8, 2), dtype=int)
-            adjacentCross[:, 0] = int(self.row) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
-            adjacentCross[:, 1] = np.mod(int(self.colon) + self.pandaProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1],
-                                         self.N_COLONS)
-            adjacentZValues = self.pandaProgram.world.elevation[adjacentCross[:, 0], adjacentCross[:, 1]]
-            adjacentRoughnessValues = self.pandaProgram.world.topographyRoughness[adjacentCross[:, 0], adjacentCross[:, 1]]
-
-            adjacentZValues -= tileElevation
-            normalsCode = ''
-
-            # Elevation part of code
-            for i, value in enumerate(adjacentZValues):
-                if i > 0:
-                    normalsCode += ':'
-                normalsCode += str(value)
-            normalsCode += '*'
-            # Roughness part of code
-            normalsCode += str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])
-            for i, value in enumerate(adjacentRoughnessValues):
-                normalsCode += ':'
-                normalsCode += str(value)
-            return normalsCode
-        else:
-            return None
+        # Crate a new topography
+        self.normals = self.CreateNormals()
 
     def CreateNormals(self):
         '''
@@ -1630,8 +1588,9 @@ class TileClass(Entity):
 
     def CreateTextureArray(self):
         if self.isWater == False:
-            soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
-            self.textureArray = self.terrainTextures['soil_fertility_' + str(soilFertility)].copy()
+            #soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
+            #self.textureArray = self.terrainTextures['soil_fertility_' + str(soilFertility)].copy()
+            self.textureArray = self.terrainTextures['soil_fertility_2'].copy()
         else:
             if self.elevation == 0:
                 self.textureArray = self.terrainTextures['deep_water_terrain'].copy()
