@@ -210,14 +210,11 @@ class Game(ShowBase):
         print('object creation time: {}'.format(toc - tic))
 
         from scipy import interpolate
-        extentedElevation = np.concatenate((np.reshape(self.world.elevation[:, -1], (self.settings.N_ROWS, 1)),
+        extentedElevation = np.concatenate((self.world.elevation,
                                             self.world.elevation,
-                                            self.world.elevation[:, 0:1]),
-                                           axis = 1)
-        print(np.shape(extentedElevation))
-        print(np.linspace(-1, self.settings.N_COLONS, self.settings.N_COLONS + 2))
-        print(np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS))
-        self.elevationInterpolator = interpolate.interp2d(np.linspace(-1, self.settings.N_COLONS, self.settings.N_COLONS+2),
+                                            self.world.elevation),
+                                           axis=1)
+        self.elevationInterpolator = interpolate.interp2d(np.linspace(-self.settings.N_COLONS, 2*self.settings.N_COLONS-1, 3*self.settings.N_COLONS),
                                                           np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS),
                                                           extentedElevation, kind='cubic', fill_value=0)
 

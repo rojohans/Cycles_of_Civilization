@@ -13,9 +13,11 @@ class WorldClass():
                                         applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
-        self.elevationInterpolator = interpolate.interp2d(range(self.mainProgram.settings.N_COLONS),
-                                                          range(self.mainProgram.settings.N_ROWS),
-                                                          self.elevation, kind='cubic', fill_value=0)
+        extentedElevation = np.concatenate((self.world.elevation, self.world.elevation, self.world.elevation), axis=1)
+        self.elevationInterpolator = interpolate.interp2d(
+            np.linspace(-self.settings.N_COLONS, 2 * self.settings.N_COLONS - 1, 3 * self.settings.N_COLONS),
+            np.linspace(0, self.settings.N_ROWS - 1, self.settings.N_ROWS),
+            extentedElevation, kind='cubic', fill_value=0)
 
         '''
         self.soilFertility = self.CreateMap(minValue = 0,
@@ -250,12 +252,17 @@ class WorldClass():
     def CreateSlopeMap(self):
         slopeMap = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
 
+
+
         for row in range(self.mainProgram.settings.N_ROWS):
             for colon in range(self.mainProgram.settings.N_COLONS):
                 adjacentTiles = np.zeros((4, 2))
                 adjacentCross = 0.1 * self.mainProgram.settings.ADJACENT_TILES_TEMPLATE_CROSS.copy()
                 adjacentTiles[:, 0] = row + adjacentCross[:, 0]
                 adjacentTiles[:, 1] = np.mod(colon + adjacentCross[:, 1], self.mainProgram.settings.N_COLONS)
+
+                self.elevationInterpolator
+
                 print(row)
                 print(colon)
                 print(adjacentCross)
