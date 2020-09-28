@@ -144,7 +144,7 @@ class WorldClass():
                                            persistance = 0.5,
                                            initialOctavesToSkip = 3)
         temperatureElevation = self.mainProgram.settings.TEMPERATURE_MIN_VALUE*\
-                               (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**3
+                               (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**2
         temperatureLatitude = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
         for row in range(self.mainProgram.settings.N_ROWS):
             for colon in range(self.mainProgram.settings.N_COLONS):

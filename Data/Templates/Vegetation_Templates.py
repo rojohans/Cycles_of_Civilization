@@ -17,7 +17,7 @@ class NormalGrass(Vegetation.Grass):
     def CreateFitnessScales(cls):
         maxZ = cls.mainProgram.settings.ELEVATION_LEVELS
         cls.elevationFitnessScale = np.array([[0, 1], [0.4*maxZ, 1], [0.6*maxZ, 0.8], [0.85*maxZ, 0], [maxZ, 0]])
-        cls.temperatureFitnessScale = np.array([[-50, 0], [-15, 0], [0, 0.5], [10, 0.8], [20, 1], [30, 0.9]])
+        cls.temperatureFitnessScale = np.array([[-50, 0], [-12, 0], [0, 0.5], [10, 0.8], [20, 1], [30, 0.9]])
         cls.moistureFitnessScale = np.array([[0, 0], [0.1, 0], [0.2, 0.5], [0.5, 0.8], [1, 1]])
 
 class NormalForest(Vegetation.Forest):
@@ -65,7 +65,7 @@ class SpruceForest(Vegetation.Forest):
     def CreateFitnessScales(cls):
         maxZ = cls.mainProgram.settings.ELEVATION_LEVELS
         cls.elevationFitnessScale = np.array([[0, 1], [0.5*maxZ, 1], [0.6*maxZ, 0.8], [0.75*maxZ, 0], [maxZ, 0]])
-        cls.temperatureFitnessScale = np.array([[-50, 0], [-8, 0], [0, 0.7], [5, 1.0], [20, 0.4], [30, 0]])
+        cls.temperatureFitnessScale = np.array([[-50, 0], [-8, 0], [0, 0.7], [5, 1.0], [20, 0.2], [30, 0]])
         cls.moistureFitnessScale = np.array([[0, 0], [0.2, 0], [0.4, 0.5], [0.6, 0.7], [1, 1]])
 
 class PineForest(Vegetation.Forest):
@@ -99,6 +99,6 @@ class BroadleafForest(Vegetation.Forest):
     def CreateFitnessScales(cls):
         maxZ = cls.mainProgram.settings.ELEVATION_LEVELS
         cls.elevationFitnessScale = np.array([[0, 1], [0.5*maxZ, 1], [0.6*maxZ, 0.8], [0.75*maxZ, 0], [maxZ, 0]])
-        cls.temperatureFitnessScale = np.array([[-50, 0], [0, 0], [0.5, 0.5], [10, 1], [15, 0.8], [30, 0.5]])
+        cls.temperatureFitnessScale = np.array([[-50, 0], [0, 0], [0.5, 0.2], [10, 1], [15, 0.8], [30, 0.5]])
         cls.moistureFitnessScale = np.array([[0, 0], [0.3, 0], [0.4, 0.2], [0.6, 0.7], [0.8, 1], [1, 1]])
 

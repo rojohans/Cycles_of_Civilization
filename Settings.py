@@ -86,7 +86,7 @@ class SettingsClass():
         self.TEMPERATURE_MIN_VALUE = -20
         self.TEMPERATURE_MAX_VALUE = 30
         self.TEMPERATURE_PERLIN_WEIGHT = 0.5
-        self.TEMPERATURE_ELEVATION_WEIGHT = 1.25
+        self.TEMPERATURE_ELEVATION_WEIGHT = 1
         self.TEMPERATURE_LATITUDE_WEIGHT = 3
         self.TEMPERATURE_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),  #-40
                                                      (0.8, 0.1, 0.8),  #-30
@@ -115,7 +115,7 @@ class SettingsClass():
         # ================= ECOSYSTEM ============================================================================
         self.VEGETATION_INTERPOLATION_RESOLUTION = 50
         self.VEGETATION_OUTCOMPETE_PARAMETER = 10
-        self.ANIMAL_OUTCOMPETE_PARAMETER = 0
+        self.ANIMAL_OUTCOMPETE_PARAMETER = 1
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08

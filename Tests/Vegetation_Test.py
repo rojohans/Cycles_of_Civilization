@@ -25,6 +25,7 @@ class Main():
 
         #Animal_Templates.NormalBrowser.InitializeFitnessInterpolators()
         Animal_Templates.Boar.InitializeFitnessInterpolators()
+        Animal_Templates.Turkey.InitializeFitnessInterpolators()
         Animal_Templates.Deer.InitializeFitnessInterpolators()
         Animal_Templates.Caribou.InitializeFitnessInterpolators()
         Animal_Templates.Bison.InitializeFitnessInterpolators()
@@ -43,11 +44,16 @@ class Main():
                     if plant:
                         plant.Step()
 
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Boar, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(30, Animal_Templates.Boar, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(20, Animal_Templates.Turkey, minFitness=0.2)
         Ecosystem.Animal.SeedWorld(50, Animal_Templates.Deer, minFitness=0.2)
         Ecosystem.Animal.SeedWorld(50, Animal_Templates.Caribou, minFitness=0.2)
         Ecosystem.Animal.SeedWorld(50, Animal_Templates.Bison, minFitness=0.2)
         Ecosystem.Animal.SeedWorld(50, Animal_Templates.Horse, minFitness=0.2)
+
+
+        #migrate, predator, slope
+
 
         NSteps = 100
 
