@@ -13,11 +13,17 @@ class WorldClass():
                                         applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
-        extentedElevation = np.concatenate((self.elevation, self.elevation, self.elevation), axis=1)
-        self.elevationInterpolator = interpolate.interp2d(
-            np.linspace(-self.mainProgram.settings.N_COLONS, 2 * self.mainProgram.settings.N_COLONS - 1, 3 * self.mainProgram.settings.N_COLONS),
-            np.linspace(0, self.mainProgram.settings.N_ROWS - 1, self.mainProgram.settings.N_ROWS),
-            extentedElevation, kind='cubic', fill_value=0)
+        extentedElevation = np.concatenate((self.elevation[:, self.mainProgram.settings.N_COLONS-2:self.mainProgram.settings.N_COLONS],
+                                            self.elevation,
+                                            self.elevation[:, 0:2]),
+                                           axis=1)
+        extentedElevation = np.concatenate((extentedElevation[0:1, :],
+                                            extentedElevation,
+                                            extentedElevation[self.mainProgram.settings.N_ROWS - 1:self.mainProgram.settings.N_ROWS, :]),
+                                           axis=0)
+        self.elevationInterpolator = interpolate.interp2d(np.linspace(-2, self.mainProgram.settings.N_COLONS-1+2, self.mainProgram.settings.N_COLONS+4),
+                                                          np.linspace(-1, self.mainProgram.settings.N_ROWS-1 + 1, self.mainProgram.settings.N_ROWS+2),
+                                                          extentedElevation, kind='cubic', fill_value=0)
 
         '''
         self.soilFertility = self.CreateMap(minValue = 0,
@@ -42,12 +48,9 @@ class WorldClass():
 
         #self.soilDepth =
 
-        #self.slope = self.CreateSlopeMap()
+        self.slope = self.CreateSlopeMap()
 
 
-
-        #self.VisualizeMaps([self.elevation, self.temperature, self.moisture, self.slope])
-        #quit()
 
         # Makes the water shallow along all coasts.
         for row in np.linspace(1, self.mainProgram.settings.N_ROWS-2, self.mainProgram.settings.N_ROWS-2):
@@ -259,30 +262,20 @@ class WorldClass():
                 adjacentTiles = np.zeros((4, 2))
                 adjacentCross = 0.1 * self.mainProgram.settings.ADJACENT_TILES_TEMPLATE_CROSS.copy()
                 adjacentTiles[:, 0] = row + adjacentCross[:, 0]
-                adjacentTiles[:, 1] = np.mod(colon + adjacentCross[:, 1], self.mainProgram.settings.N_COLONS)
+                adjacentTiles[:, 1] = colon + adjacentCross[:, 1]
 
-                self.elevationInterpolator
+                crossElevation = self.elevationInterpolator([colon-0.1, colon, colon+0.1], [row-0.1, row, row+0.1])
 
-                print(row)
-                print(colon)
-                print(adjacentCross)
-                print(adjacentTiles)
-                quit()
+                diffx = np.array([0.2, 0, crossElevation[1, 2]-crossElevation[1, 0]])
+                diffy = np.array([0, 0.2, crossElevation[2, 1]-crossElevation[0, 1]])
+                normal = [diffx[1] * diffy[2] - diffx[2] * diffy[1],
+                          diffx[2] * diffy[0] - diffx[0] * diffy[2],
+                          diffx[0] * diffy[1] - diffx[1] * diffy[0]]
+                normal /= np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
 
-                tileElevation = self.elevation[row, colon]
-                nTiles = 0
-                slope = 0
-                for [adjacentRow, adjacentColon] in adjacentTiles:
-                    if adjacentRow >= 0 and adjacentRow < self.mainProgram.settings.N_ROWS:
-                        slope += np.abs(self.elevation[adjacentRow, adjacentColon]-tileElevation)
-                        nTiles += 1
-                slope /= nTiles
-                slopeMap[row, colon] = slope
+                #slopeMap[row, colon] = 1 - normal[2]
+                slopeMap[row, colon] = 2*np.arccos(normal[2]/1)/np.pi
         return slopeMap
-
-
-
-
 
     @classmethod
     def VisualizeMaps(cls, maps):

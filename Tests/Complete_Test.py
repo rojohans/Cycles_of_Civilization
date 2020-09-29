@@ -97,7 +97,7 @@ class Game(ShowBase):
 
         # migrate, predator, slope
 
-        NSteps = 100
+        NSteps = 1
 
         forestImage = Ecosystem.Vegetation.GetImage()
         animalImage = Ecosystem.Vegetation.GetImage()
@@ -210,7 +210,7 @@ class Game(ShowBase):
                             if self.animals[row][colon].featureTemplate:
                                 self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
                                                                                             type=self.animals[row][colon].featureTemplate,
-                                                                                            numberOfcomponents=int(np.ceil(self.animals[row][colon].fitness*25)),
+                                                                                            numberOfcomponents=int(np.ceil(self.animals[row][colon].fitness*20)),
                                                                                             parentNode = self.wildlifeRoot))
                                 #self.tileList[iTile].features[0].node.removeNode()
                         for feature in self.tileList[iTile].features:
@@ -257,11 +257,11 @@ class Game(ShowBase):
         print('object creation time: {}'.format(toc - tic))
 
         from scipy import interpolate
-        extentedElevation = np.concatenate((self.world.elevation,
+        extentedElevation = np.concatenate((self.world.elevation[:, self.settings.N_COLONS-2:self.settings.N_COLONS],
                                             self.world.elevation,
-                                            self.world.elevation),
+                                            self.world.elevation[:, 0:2]),
                                            axis=1)
-        self.elevationInterpolator = interpolate.interp2d(np.linspace(-self.settings.N_COLONS, 2*self.settings.N_COLONS-1, 3*self.settings.N_COLONS),
+        self.elevationInterpolator = interpolate.interp2d(np.linspace(-2, self.settings.N_COLONS-1+2, self.settings.N_COLONS+4),
                                                           np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS),
                                                           extentedElevation, kind='cubic', fill_value=0)
 
