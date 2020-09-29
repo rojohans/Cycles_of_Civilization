@@ -9,10 +9,11 @@ import Library.Camera as Camera
 import Library.World as World
 import Library.Pathfinding as Pathfinding
 import Library.Animation as Animation
-import Library.Ecosystem as Vegetation
+import Library.Ecosystem as Ecosystem
 
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 import Data.Templates.Vegetation_Templates as Vegetation_Templates
+import Data.Templates.Animal_Templates as Animal_Templates
 
 import Settings
 import Root_Directory
@@ -39,6 +40,7 @@ class Game(ShowBase):
         # --------------------------------------------------------------------------------------------------------------
         # --------------------------------------------------------------------------------------------------------------
         self.featureRoot = render.attachNewNode("featureRoot")
+        self.wildlifeRoot = render.attachNewNode("wildlifeRoot")
         self.collidableRoot = render.attachNewNode('collidableRoot')
         self.tileRoot = self.collidableRoot.attachNewNode("squareRoot")
         self.unitRoot = self.collidableRoot.attachNewNode('unitRoot')
@@ -57,7 +59,8 @@ class Game(ShowBase):
 
 
         tic = time.time()
-        self.plants = Vegetation.Organism.Initialize(mainProgram=self)
+        self.plants = Ecosystem.Vegetation.Initialize(mainProgram=self)
+        self.animals = Ecosystem.Animal.Initialize(mainProgram=self)
 
         Vegetation_Templates.NormalGrass.InitializeFitnessInterpolators()
         Vegetation_Templates.Jungle.InitializeFitnessInterpolators()
@@ -65,20 +68,50 @@ class Game(ShowBase):
         Vegetation_Templates.PineForest.InitializeFitnessInterpolators()
         Vegetation_Templates.BroadleafForest.InitializeFitnessInterpolators()
 
-        '''
-        Vegetation.Organism.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
-        Vegetation.Organism.SeedWorld(20, Vegetation_Templates.Jungle, minFitness=0.2)
-        Vegetation.Organism.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
-        Vegetation.Organism.SeedWorld(50, Vegetation_Templates.PineForest, minFitness=0.2)
-        Vegetation.Organism.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+        # Animal_Templates.NormalBrowser.InitializeFitnessInterpolators()
+        Animal_Templates.Boar.InitializeFitnessInterpolators()
+        Animal_Templates.Turkey.InitializeFitnessInterpolators()
+        Animal_Templates.Deer.InitializeFitnessInterpolators()
+        Animal_Templates.Caribou.InitializeFitnessInterpolators()
+        Animal_Templates.Bison.InitializeFitnessInterpolators()
+        Animal_Templates.Horse.InitializeFitnessInterpolators()
 
-        NSteps = 100
-        for iStep in range(NSteps):
+        Ecosystem.Vegetation.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(20, Vegetation_Templates.Jungle, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(40, Vegetation_Templates.PineForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+
+        for iStep in range(5):
             for plantRow in self.plants:
                 for plant in plantRow:
                     if plant:
                         plant.Step()
-        '''
+
+        Ecosystem.Animal.SeedWorld(30, Animal_Templates.Boar, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(20, Animal_Templates.Turkey, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Deer, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Caribou, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Bison, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Horse, minFitness=0.2)
+
+        # migrate, predator, slope
+
+        NSteps = 100
+
+        forestImage = Ecosystem.Vegetation.GetImage()
+        animalImage = Ecosystem.Vegetation.GetImage()
+
+        for iStep in range(NSteps):
+            for animalRow in self.animals:
+                for animal in animalRow:
+                    if animal:
+                        animal.Step()
+            for plantRow in self.plants:
+                for plant in plantRow:
+                    if plant:
+                        plant.Step()
+
         toc = time.time()
         print('Ecosystem simulation: ', format(toc-tic))
 
@@ -91,7 +124,10 @@ class Game(ShowBase):
 
         self.SetupTiles()
 
+        tic = time.time()
         self.SetupFeatures(empty = False)
+        toc = time.time()
+        print('Setup features: ', toc-tic)
         self.GUIObject.tileFrame.ConstructionMenuFunction = TileClass.FeatureClass.ConstructionMenuFunction
         self.GUIObject.tileFrame.RemoveFeatureFunction = TileClass.FeatureClass.RemoveFeatureFunction
         self.GUIObject.minimap.minimapFilter[0] = 'elevation'
@@ -167,8 +203,19 @@ class Game(ShowBase):
                             if self.plants[row][colon].featureTemplate:
                                 self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
                                                                                             type=self.plants[row][colon].featureTemplate,
-                                                                                            numberOfcomponents=int(np.ceil(self.plants[row][colon].fitness*20))))
-                                self.tileList[iTile].features[0].node.removeNode()
+                                                                                            numberOfcomponents=int(np.ceil(self.plants[row][colon].fitness*20)),
+                                                                                            parentNode = self.featureRoot))
+                                #self.tileList[iTile].features[0].node.removeNode()
+                        if self.animals[row][colon]:
+                            if self.animals[row][colon].featureTemplate:
+                                self.tileList[iTile].features.append(TileClass.FeatureClass(parentTile=self.tileList[iTile],
+                                                                                            type=self.animals[row][colon].featureTemplate,
+                                                                                            numberOfcomponents=int(np.ceil(self.animals[row][colon].fitness*25)),
+                                                                                            parentNode = self.wildlifeRoot))
+                                #self.tileList[iTile].features[0].node.removeNode()
+                        for feature in self.tileList[iTile].features:
+                            feature.node.removeNode()
+
                         '''
                         r = np.random.rand()
                         a = False
@@ -284,10 +331,10 @@ class Game(ShowBase):
 
         for row in range(self.settings.N_ROWS):
             for colon in range(self.settings.N_COLONS):
-                if self.world.elevation[row, colon] <= 1:
+                if self.world.elevation[row, colon] <= self.settings.OCEAN_HEIGHT:
                     iTile = colon + row * self.settings.N_COLONS
-                    isOcean = self.world.elevation[row, colon] <= 1
-                    self.tileList[iTile].CreateWater(isOcean = isOcean)
+                    #isOcean = self.world.elevation[row, colon] <= 1
+                    self.tileList[iTile].CreateWater(isOcean = True)
 
         tic = time.time()
         for row in range(self.settings.N_ROWS):

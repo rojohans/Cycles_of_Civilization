@@ -227,7 +227,7 @@ class TileClass(Entity):
 
     def CreateWaterNode(self):
         if self.isOcean:
-            waterLevel = 1 + self.pandaProgram.settings.WATER_HEIGHT
+            waterLevel = self.pandaProgram.settings.OCEAN_HEIGHT
         else:
             waterLevel = self.elevation + self.pandaProgram.settings.WATER_HEIGHT
 
@@ -2105,7 +2105,8 @@ class FeatureClass(Entity):
                  numberOfcomponents = 1,
                  distributionType = 'random',
                  distributionValue = 2,
-                 gridAlignedHPR = False):
+                 gridAlignedHPR = False,
+                 parentNode = None):
         '''
 
         :param parentTile:
@@ -2139,6 +2140,8 @@ class FeatureClass(Entity):
         self.hprValues = None
         self.scaleValues = []
         self.templateIndices = []
+
+        self.parentNode = parentNode
 
 
         self.CreateComponentData()
@@ -2232,7 +2235,10 @@ class FeatureClass(Entity):
         Creates the nodes of the feature. The nodes are flattened using flattenStrong() to improve performance.
         :return:
         '''
-        self.node = self.pandaProgram.featureRoot.attachNewNode('featureNode')
+        if self.parentNode:
+            self.node = self.parentNode.attachNewNode('featureNode')
+        else:
+            self.node = self.parentNode.render.attachNewNode('featureNode')
         nodes = [self.node.attachNewNode('single_feature') for i in range(self.numberOfComponents)]
         for iNode, node in enumerate(nodes):
 

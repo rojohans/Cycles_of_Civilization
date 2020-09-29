@@ -14,8 +14,8 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 16
-        self.N_COLONS = 32
+        self.N_ROWS = 128
+        self.N_COLONS = 256
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 8
@@ -44,6 +44,7 @@ class SettingsClass():
 
         # ================ WORLD GENERATION ============================================================================
         self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
+        self.OCEAN_HEIGHT = 2.5
         self.ELEVATION_SCALE = 0.6
         self.ELEVATION_LEVELS = 9
         self.DISCRETE_ELEVATION = False

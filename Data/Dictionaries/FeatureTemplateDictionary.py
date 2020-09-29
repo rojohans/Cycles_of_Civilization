@@ -93,6 +93,12 @@ def GetFeatureTemplateDictionary():
         weights = [1, 2],
         scaleRange = [[0.8, 1.2], [0.8, 1.1]])
 
+    featureTemplateDictionary['boar_herd'] = FeatureProperties(
+        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/boar_1.bam")],
+        weights = [1],
+        scaleRange = [[0.8, 1.2]])
+
+
     featureTemplateDictionary['8_bit_test'] = FeatureProperties(
         [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/8_bit_test.bam")],
         weights = [1],

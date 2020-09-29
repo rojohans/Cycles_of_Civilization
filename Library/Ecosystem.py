@@ -280,6 +280,7 @@ class Animal(Organism):
                  colour = [1, 0, 0],
                  density = 0,
                  fitness = None,
+                 featureTemplate = None,
                  vegetationDestruction = 0.5):
         super().__init__(row,
                          colon,
@@ -289,6 +290,7 @@ class Animal(Organism):
                          colour=colour,
                          density=density,
                          fitness=fitness,
+                         featureTemplate=featureTemplate,
                          outcompeteParameter=self.mainProgram.settings.ANIMAL_OUTCOMPETE_PARAMETER)
         self.vegetationDestruction = vegetationDestruction
     def Step(self):
@@ -405,6 +407,7 @@ class Grazer(Animal):
                  colour = [1, 0, 0],
                  density = 0,
                  fitness = None,
+                 featureTemplate=None,
                  vegetationDestruction = 0.9):
         super().__init__(row,
                          colon,
@@ -414,6 +417,7 @@ class Grazer(Animal):
                          colour=colour,
                          density=density,
                          fitness=fitness,
+                         featureTemplate=featureTemplate,
                          vegetationDestruction=vegetationDestruction)
     @classmethod
     def CalculateFitness(cls, row, colon):
@@ -451,6 +455,7 @@ class Browser(Animal):
                  colour = [0, 0, 1],
                  density = 0,
                  fitness = None,
+                 featureTemplate=None,
                  vegetationDestruction = 0):
         super().__init__(row,
                          colon,
@@ -460,6 +465,7 @@ class Browser(Animal):
                          colour=colour,
                          density=density,
                          fitness=fitness,
+                         featureTemplate=featureTemplate,
                          vegetationDestruction=vegetationDestruction)
     @classmethod
     def CalculateFitness(cls, row, colon):

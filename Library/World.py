@@ -13,10 +13,10 @@ class WorldClass():
                                         applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
-        extentedElevation = np.concatenate((self.world.elevation, self.world.elevation, self.world.elevation), axis=1)
+        extentedElevation = np.concatenate((self.elevation, self.elevation, self.elevation), axis=1)
         self.elevationInterpolator = interpolate.interp2d(
-            np.linspace(-self.settings.N_COLONS, 2 * self.settings.N_COLONS - 1, 3 * self.settings.N_COLONS),
-            np.linspace(0, self.settings.N_ROWS - 1, self.settings.N_ROWS),
+            np.linspace(-self.mainProgram.settings.N_COLONS, 2 * self.mainProgram.settings.N_COLONS - 1, 3 * self.mainProgram.settings.N_COLONS),
+            np.linspace(0, self.mainProgram.settings.N_ROWS - 1, self.mainProgram.settings.N_ROWS),
             extentedElevation, kind='cubic', fill_value=0)
 
         '''

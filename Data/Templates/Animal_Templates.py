@@ -51,7 +51,8 @@ class Boar(Ecosystem.Browser):
                          lifeLength=10,
                          density= density,
                          fitness=fitness,
-                         colour = [0, 0, 1])
+                         colour = [0, 0, 1],
+                         featureTemplate='boar_herd')
 
     @classmethod
     def CreateFitnessScales(cls):

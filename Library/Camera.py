@@ -41,6 +41,9 @@ class CameraClass():
 
         self.cameraUpdateFunctions = []
 
+        self.timeSinceFeatureUpdate = 0
+        self.featureUpdateInterval = 1
+
     @classmethod
     def Initialize(cls, mainProgram):
         cls.mainProgram = mainProgram
@@ -73,6 +76,8 @@ class CameraClass():
            it controls the camera movement/rotation/zoom'''
 
         dt = globalClock.get_dt()
+
+        self.timeSinceFeatureUpdate += dt
 
         if self.mainProgram.mouseWatcherNode.has_mouse():
             # let's see where the mouse cursor is now
@@ -131,8 +136,10 @@ class CameraClass():
             self.camera_node.set_pos(self.camera_node,
                                      self.camera_right_vector * 0.01 * self.camera_move_speed * dt / 0.03)
 
-        for cameraUpdateFunction in self.cameraUpdateFunctions:
-            cameraUpdateFunction()
+        if self.timeSinceFeatureUpdate > self.featureUpdateInterval:
+            for cameraUpdateFunction in self.cameraUpdateFunctions:
+                cameraUpdateFunction()
+            self.timeSinceFeatureUpdate -= self.featureUpdateInterval
 
         # When the camera traverses over the edge (west or east) it wraps around to the other side.
         cameraPosition = self.camera_node.get_pos()
