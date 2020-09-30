@@ -47,7 +47,8 @@ class Boar(Ecosystem.Browser):
     def __init__(self, row, colon, density = 0,fitness = None):
         super().__init__(row,
                          colon,
-                         reproductionRate=0.4,
+                         reproductionRate=0.5,
+                         growthRate=0.2,
                          lifeLength=10,
                          density= density,
                          fitness=fitness,
@@ -66,7 +67,8 @@ class Turkey(Ecosystem.Browser):
     def __init__(self, row, colon, density = 0,fitness = None):
         super().__init__(row,
                          colon,
-                         reproductionRate=0.4,
+                         reproductionRate=0.5,
+                         growthRate=0.2,
                          lifeLength=10,
                          density= density,
                          fitness=fitness,
@@ -84,7 +86,8 @@ class Deer(Ecosystem.Browser):
     def __init__(self, row, colon, density = 0,fitness = None):
         super().__init__(row,
                          colon,
-                         reproductionRate=0.4,
+                         reproductionRate=0.5,
+                         growthRate=0.2,
                          lifeLength=10,
                          density= density,
                          fitness=fitness,
@@ -155,6 +158,27 @@ class Horse(Ecosystem.Grazer):
         cls.moistureFitnessScale = np.array([[0, 0], [0.1, 0], [0.2, 0.5], [0.5, 0.8], [1, 1]])
         cls.biomassFitnessScale = np.array([[0, 0], [0.4, 1], [1, 1]])
 
+#-------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------
+class Wolf(Ecosystem.Predator):
+    def __init__(self, row, colon, density = 0, fitness = None):
+        super().__init__(row,
+                         colon,
+                         reproductionRate=0.3,
+                         growthRate=0.1,
+                         vegetationDestruction=0.1,
+                         lifeLength=10,
+                         density=density,
+                         fitness=fitness,
+                         colour = [1, 0, 0])
+
+    @classmethod
+    def CreateFitnessScales(cls):
+        maxZ = cls.mainProgram.settings.ELEVATION_LEVELS
+        cls.elevationFitnessScale = np.array([[0, 1], [0.4*maxZ, 1], [0.6*maxZ, 0.8], [0.85*maxZ, 0], [maxZ, 0]])
+        cls.temperatureFitnessScale = np.array([[-50, 0], [5, 0.0], [10, 0.6], [20, 1], [30, 0.8]])
+        cls.moistureFitnessScale = np.array([[0, 0], [0.1, 0], [0.2, 0.5], [0.5, 0.8], [1, 1]])
+        cls.foodFitnessScale = np.array([[0, 0], [0.2, 0], [0.6, 1], [1, 1]])
 
 # --Grazers--
 # Bison
@@ -167,6 +191,11 @@ class Horse(Ecosystem.Grazer):
 # Turkey
 # Goat
 # Deer
+
+# --Predators--
+# Wolf
+
+
 
 
 

@@ -10,7 +10,7 @@ class Organism():
                  lifeLength = 20,
                  height = 1,
                  colour = [0, 1, 0],
-                 density = 0,
+                 density = 0.0,
                  fitness = None,
                  featureTemplate = None,
                  outcompeteParameter = 0):
@@ -58,35 +58,37 @@ class Organism():
 
     def Reproduce(self):
         r = np.random.rand()
-        if r < self.reproductionRate*self.fitness:
+        if r < self.reproductionRate*self.fitness*8:
             adjacentTiles = np.zeros((8, 2), dtype=int)
             adjacentTiles[:, 0] = int(self.row) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
             adjacentTiles[:, 1] = np.mod(int(self.colon) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1],
                                          self.mainProgram.settings.N_COLONS)
 
             for adjacentTile in adjacentTiles:
-                newRow = adjacentTile[0]
-                newColon = adjacentTile[1]
-                if newRow >=0 and \
-                        newRow < self.mainProgram.settings.N_ROWS and \
-                        self.mainProgram.world.moisture[newRow, newColon]<2:
-                    newFitness = self.CalculateFitness(newRow, newColon)
-                    if newFitness > 0:
-                        if self.organisms[newRow][newColon]:
-                            # If the new tile already contains a plant, that plant will be replaced if the height is lower
-                            # than this plant.
-                            if self.height > self.organisms[newRow][newColon].height:
-                                # Forest spreads over grass.
+                r = np.random.rand()
+                if r < self.reproductionRate * self.fitness:
+                    newRow = adjacentTile[0]
+                    newColon = adjacentTile[1]
+                    if newRow >=0 and \
+                            newRow < self.mainProgram.settings.N_ROWS and \
+                            self.mainProgram.world.moisture[newRow, newColon]<2:
+                        newFitness = self.CalculateFitness(newRow, newColon)
+                        if newFitness > 0:
+                            if self.organisms[newRow][newColon]:
+                                # If the new tile already contains a plant, that plant will be replaced if the height is lower
+                                # than this plant.
+                                if self.height > self.organisms[newRow][newColon].height:
+                                    # Forest spreads over grass.
+                                    self.organisms[newRow][newColon] = self.__class__(newRow, newColon, fitness = newFitness)
+                                elif self.height == self.organisms[newRow][newColon].height:
+                                    if self.__class__ != self.organisms[newRow][newColon].__class__:
+                                        r = np.random.rand()
+                                        if r < newFitness/(self.organisms[newRow][newColon].fitness + newFitness + self.outcompeteParameter):
+                                            # The new plant out competes the old plant.
+                                            self.organisms[newRow][newColon] = self.__class__(newRow, newColon, fitness=newFitness)
+                            else:
+                                # The tile is empty, plants spreads.
                                 self.organisms[newRow][newColon] = self.__class__(newRow, newColon, fitness = newFitness)
-                            elif self.height == self.organisms[newRow][newColon].height:
-                                if self.__class__ != self.organisms[newRow][newColon].__class__:
-                                    r = np.random.rand()
-                                    if r < newFitness/(self.organisms[newRow][newColon].fitness + newFitness + self.outcompeteParameter):
-                                        # The new plant out competes the old plant.
-                                        self.organisms[newRow][newColon] = self.__class__(newRow, newColon, fitness=newFitness)
-                        else:
-                            # The tile is empty, plants spreads.
-                            self.organisms[newRow][newColon] = self.__class__(newRow, newColon, fitness = newFitness)
 
     @classmethod
     def CalculateFitness(cls, row=None, colon=None):
@@ -166,7 +168,7 @@ class Organism():
                         seedPlaced = True
 
     @classmethod
-    def GetImage(cls):
+    def GetImage(cls, densityScaling = False):
         colourArray = np.zeros((cls.mainProgram.settings.N_ROWS, cls.mainProgram.settings.N_COLONS, 3))
 
         for row in range(cls.mainProgram.settings.N_ROWS):
@@ -174,7 +176,12 @@ class Organism():
                 if cls.mainProgram.world.moisture[row, colon] == 2:
                     colourArray[row, colon, :] = [0, 0, 0]
                 elif cls.organisms[row][colon]:
-                    colourArray[row, colon, :] = cls.organisms[row][colon].colour
+                    colour = cls.organisms[row][colon].colour
+                    if densityScaling:
+                        colour = [cls.organisms[row][colon].density * colour[0],
+                                  cls.organisms[row][colon].density * colour[1],
+                                  cls.organisms[row][colon].density * colour[2]]
+                    colourArray[row, colon, :] = colour
                 else:
                     colourArray[row, colon, :] = [1, 1, 1]
         return colourArray
@@ -188,7 +195,7 @@ class Vegetation(Organism):
                  lifeLength=10,
                  height=1,
                  colour=[0, 1, 0],
-                 density = 0,
+                 density = 0.0,
                  fitness=None,
                  featureTemplate=None,
                  grazingBiomass = 0.5,
@@ -219,7 +226,7 @@ class Grass(Vegetation):
                  height = 1,
                  colour = [0.8, 1, 0.5],
                  fitness = None,
-                 density = 0,
+                 density = 0.0,
                  featureTemplate = None,
                  grazingBiomass = 1,
                  browsingBiomass = 0.2):
@@ -249,7 +256,7 @@ class Forest(Vegetation):
                  lifeLength = 50,
                  height = 2,
                  colour = [0.2, 0.5, 0.3],
-                 density = 0,
+                 density = 0.0,
                  fitness = None,
                  featureTemplate = None,
                  grazingBiomass = 0.2,
@@ -278,7 +285,7 @@ class Animal(Organism):
                  growthRate = 0.1,
                  lifeLength = 50,
                  colour = [1, 0, 0],
-                 density = 0,
+                 density = 0.0,
                  fitness = None,
                  featureTemplate = None,
                  vegetationDestruction = 0.5):
@@ -300,17 +307,25 @@ class Animal(Organism):
 
         self.Grow()
 
-        self.Reproduce()
+        #self.Reproduce()
 
     def Eat(self):
         biomassEaten = self.vegetationDestruction*self.density
         self.mainProgram.plants[self.row][self.colon].density -= biomassEaten
-        if self.mainProgram.plants[self.row][self.colon].density < 0:
+        if self.mainProgram.plants[self.row][self.colon].density < 0.2:
             # The food has run out.
             self.mainProgram.plants[self.row][self.colon].Die()
 
             self.Migrate()
             self.Die()
+
+    def Grow(self):
+        if self.density < self.fitness:
+            densityIncrease = self.growthRate*self.fitness
+            self.density = np.min((self.density+densityIncrease, self.fitness))
+        else:
+            self.Reproduce()
+            #self.Die()
 
     def Migrate(self):
         adjacentTiles = np.zeros((8, 2), dtype=int)
@@ -320,9 +335,36 @@ class Animal(Organism):
 
         remainingDensity = self.density
         while remainingDensity > 0:
+
+
+
+            tilesToMigrateTo = []
             for adjacentTile in adjacentTiles:
                 newRow = adjacentTile[0]
                 newColon = adjacentTile[1]
+                if newRow >=0 and \
+                        newRow < self.mainProgram.settings.N_ROWS and \
+                        self.mainProgram.world.moisture[newRow, newColon]<2:
+                    if self.mainProgram.plants[newRow][newColon]:
+                        availableFood = self.mainProgram.plants[newRow][newColon].density
+                    else:
+                        availableFood = 0
+
+                    tilesToMigrateTo.append((newRow, newColon, availableFood))
+            dtype = [('row', int), ('colon', int), ('food', float)]
+            tilesToMigrateTo = np.array(tilesToMigrateTo, dtype=dtype)  # create a structured array
+
+            tilesToMigrateTo = np.sort(tilesToMigrateTo, order='food')
+            tilesToMigrateTo = np.flip(tilesToMigrateTo, axis=0)
+
+
+
+            #for adjacentTile in adjacentTiles:
+            for tile in tilesToMigrateTo:
+                newRow = tile[0]
+                newColon = tile[1]
+                #newRow = adjacentTile[0]
+                #newColon = adjacentTile[1]
                 if newRow >=0 and \
                         newRow < self.mainProgram.settings.N_ROWS and \
                         self.mainProgram.world.moisture[newRow, newColon]<2:
@@ -405,7 +447,7 @@ class Grazer(Animal):
                  growthRate = 0.1,
                  lifeLength = 50,
                  colour = [1, 0, 0],
-                 density = 0,
+                 density = 0.0,
                  fitness = None,
                  featureTemplate=None,
                  vegetationDestruction = 0.9):
@@ -453,7 +495,7 @@ class Browser(Animal):
                  growthRate = 0.1,
                  lifeLength = 50,
                  colour = [0, 0, 1],
-                 density = 0,
+                 density = 0.0,
                  fitness = None,
                  featureTemplate=None,
                  vegetationDestruction = 0):
@@ -493,3 +535,185 @@ class Browser(Animal):
 
         return elevationFitness * temperatureFitness * moistureFitness * biomassFitness
 
+class Predator(Animal):
+    def __init__(self,
+                 row,
+                 colon,
+                 reproductionRate=0.1,
+                 growthRate=0.1,
+                 lifeLength=50,
+                 colour=[1, 0, 0],
+                 density=0.0,
+                 fitness=None,
+                 featureTemplate=None,
+                 vegetationDestruction=0.2):
+        super().__init__(row,
+                         colon,
+                         reproductionRate,
+                         growthRate=growthRate,
+                         lifeLength=lifeLength,
+                         colour=colour,
+                         density=density,
+                         fitness=fitness,
+                         featureTemplate=featureTemplate,
+                         vegetationDestruction=vegetationDestruction)
+    def Eat(self):
+        if self.mainProgram.animals[self.row][self.colon]:
+            biomassEaten = self.vegetationDestruction*self.density
+            self.mainProgram.animals[self.row][self.colon].density -= biomassEaten
+            if self.mainProgram.animals[self.row][self.colon].density < 0.5:
+                # The food has run out.
+                self.mainProgram.animals[self.row][self.colon].Die()
+
+                self.Migrate()
+                self.Die()
+        else:
+            self.Migrate()
+            self.Die()
+
+    def Migrate(self):
+        adjacentTiles = np.zeros((8, 2), dtype=int)
+        adjacentTiles[:, 0] = int(self.row) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
+        adjacentTiles[:, 1] = np.mod(int(self.colon) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1],
+                                     self.mainProgram.settings.N_COLONS)
+
+        remainingDensity = self.density
+        while remainingDensity > 0:
+
+
+
+            tilesToMigrateTo = []
+            for adjacentTile in adjacentTiles:
+                newRow = adjacentTile[0]
+                newColon = adjacentTile[1]
+                if newRow >=0 and \
+                        newRow < self.mainProgram.settings.N_ROWS and \
+                        self.mainProgram.world.moisture[newRow, newColon]<2:
+                    if self.mainProgram.animals[newRow][newColon]:
+                        availableFood = self.mainProgram.animals[newRow][newColon].density
+                        tilesToMigrateTo.append((newRow, newColon, availableFood))
+
+            dtype = [('row', int), ('colon', int), ('food', float)]
+            tilesToMigrateTo = np.array(tilesToMigrateTo, dtype=dtype)  # create a structured array
+
+            tilesToMigrateTo = np.sort(tilesToMigrateTo, order='food')
+            tilesToMigrateTo = np.flip(tilesToMigrateTo, axis=0)
+
+
+
+            #for adjacentTile in adjacentTiles:
+            for tile in tilesToMigrateTo:
+                newRow = tile[0]
+                newColon = tile[1]
+                #newRow = adjacentTile[0]
+                #newColon = adjacentTile[1]
+
+                adjacentAnimal = self.organisms[newRow][newColon]
+                if adjacentAnimal:
+                    # Tile is already occupied
+                    if self.__class__ == adjacentAnimal.__class__:
+                        # Same species
+                        if adjacentAnimal.density < adjacentAnimal.fitness:
+                            newDensity = np.min((remainingDensity + adjacentAnimal.density, adjacentAnimal.fitness))
+                            addedDensity = newDensity-adjacentAnimal.density
+                            adjacentAnimal.density = newDensity
+                            remainingDensity -= addedDensity
+                    else:
+                        # Different species
+                        newFitness = self.CalculateFitness(newRow, newColon)
+                        r = np.random.rand()
+                        if r < newFitness / (self.organisms[newRow][newColon].fitness + newFitness + self.outcompeteParameter):
+                            # New species outompetes the old.
+                            newDensity = np.min((remainingDensity, newFitness))
+                            remainingDensity -= newDensity
+                            self.organisms[newRow][newColon] = self.__class__(newRow, newColon, density=newDensity,
+                                                                              fitness=newFitness)
+                else:
+                    # Tile is empty
+                    newFitness = self.CalculateFitness(newRow, newColon)
+                    if newFitness>0:
+                        newDensity = np.min((remainingDensity, newFitness))
+                        remainingDensity -= newDensity
+                        self.organisms[newRow][newColon] = self.__class__(newRow, newColon, density=newDensity, fitness=newFitness)
+                return
+            remainingDensity = 0
+
+    def Grow(self):
+        if self.density < self.fitness:
+            densityIncrease = self.growthRate*self.fitness
+            self.density = np.min((self.density+densityIncrease, self.fitness))
+            if self.mainProgram.animals[self.row][self.colon]:
+                if self.mainProgram.animals[self.row][self.colon].density < 0.5:
+                    pass
+                    self.Die()
+            else:
+                pass
+                self.Die()
+        else:
+            self.Reproduce()
+
+    @classmethod
+    def CreateFitnessScales(cls):
+        cls.elevationFitnessScale  = np.array([[0, 0], [0.2, 0.5], [0.5, 0.5], [1, 1]]),
+        cls.temperatureFitnessScale  = np.array([[0, 0], [0.2, 0.5], [0.5, 0.5], [1, 1]]),
+        cls.moistureFitnessScale  = np.array([[0, 0], [0.2, 0.5], [0.5, 0.5], [1, 1]])
+        cls.foodFitnessScale = np.array([[0, 0], [1, 1]])
+
+    @classmethod
+    def CreateFitnessInterpolators(cls):
+        cls.elevationFitnessInterpolator = interpolate.interp1d(x=cls.elevationFitnessScale[:, 0],
+                                                                 y = cls.elevationFitnessScale[:, 1],
+                                                                 kind = 'linear')
+        cls.temperatureFitnessInterpolator = interpolate.interp1d(x=cls.temperatureFitnessScale[:, 0],
+                                                                   y = cls.temperatureFitnessScale[:, 1],
+                                                                   kind = 'linear')
+        cls.moistureFitnessInterpolator = interpolate.interp1d(x=cls.moistureFitnessScale[:, 0],
+                                                                y = cls.moistureFitnessScale[:, 1],
+                                                                kind = 'linear')
+        cls.foodFitnessInterpolator = interpolate.interp1d(x=cls.foodFitnessScale[:, 0],
+                                                            y = cls.foodFitnessScale[:, 1],
+                                                            kind = 'linear')
+
+    @classmethod
+    def CreateFitnessValuesPrecomputed(cls):
+        x = np.linspace(0, 1, cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION)
+        maxZ = cls.mainProgram.settings.ELEVATION_LEVELS
+        x *= maxZ
+        cls.elevationFitnessPreComputed = cls.elevationFitnessInterpolator(x)
+
+        x = np.linspace(0, 1, cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION)
+        x *= 30 - -50
+        x += -50
+        cls.temperatureFitnessPreComputed = cls.temperatureFitnessInterpolator(x)
+
+        x = np.linspace(0, 1, cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION)
+        cls.moistureFitnessPreComputed = cls.moistureFitnessInterpolator(x)
+
+        x = np.linspace(0, 1, cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION)
+        cls.foodFitnessPreComputed = cls.foodFitnessInterpolator(x)
+
+    @classmethod
+    def CalculateFitness(cls, row, colon):
+        iElevation = np.floor(cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION*
+                              cls.mainProgram.world.elevation[row, colon]/
+                              cls.mainProgram.settings.ELEVATION_LEVELS)
+        elevationFitness = cls.elevationFitnessPreComputed[int(iElevation)]
+
+        iTemperature = np.floor(cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION*
+                                (cls.mainProgram.world.temperature[row, colon]+50)/80)
+        temperatureFitness = cls.temperatureFitnessPreComputed[int(iTemperature)]
+
+        iMoisture = np.floor(cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION*
+                              cls.mainProgram.world.moisture[row, colon])
+        moistureFitness = cls.moistureFitnessPreComputed[int(iMoisture)]
+
+
+        prey = cls.mainProgram.animals[row][colon]
+        if prey == None:
+            foodFitness = 0
+        else:
+            ifood = np.floor((cls.mainProgram.settings.VEGETATION_INTERPOLATION_RESOLUTION-1)*
+                                  prey.fitness)
+            foodFitness = cls.foodFitnessPreComputed[int(ifood)]
+
+        return elevationFitness * temperatureFitness * moistureFitness * foodFitness

@@ -8,8 +8,8 @@ class NormalGrass(Vegetation.Grass):
     def __init__(self, row, colon, fitness = None):
         super().__init__(row,
                          colon,
-                         reproductionRate=1,
-                         growthRate = 0.9,
+                         reproductionRate=1.0,
+                         growthRate = 0.2,
                          lifeLength=10,
                          fitness=fitness)
 
