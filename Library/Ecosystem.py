@@ -10,7 +10,7 @@ class Organism():
                  lifeLength = 20,
                  height = 1,
                  colour = [0, 1, 0],
-                 density = 0.0,
+                 density = 0.1,
                  fitness = None,
                  featureTemplate = None,
                  outcompeteParameter = 0):
@@ -22,6 +22,8 @@ class Organism():
         self.age = 0
         self.height = height # Determines which plants can overtake others. Larger overtakes lower.
         self.colour = colour
+
+        self.canPerformStep = False
 
         self.outcompeteParameter = outcompeteParameter
 
@@ -36,16 +38,18 @@ class Organism():
             self.fitness = fitness
 
     def Step(self):
-        self.age += 1
-        '''
-        if self.age == self.lifeLength:
-            self.Die()
-        else:
-        '''
+        if self.canPerformStep:
+            self.age += 1
+            '''
+            if self.age == self.lifeLength:
+                self.Die()
+            else:
+            '''
 
-        self.Grow()
+            self.Grow()
 
-        self.Reproduce()
+            self.Reproduce()
+        self.canPerformStep = True
 
     def Die(self):
         # The plant dies.
@@ -53,7 +57,8 @@ class Organism():
 
     def Grow(self):
         if self.density < self.fitness:
-            densityIncrease = self.growthRate*self.fitness
+            densityIncrease = self.density*self.growthRate*(1-self.density/self.fitness)
+            #densityIncrease = self.growthRate*self.fitness
             self.density = np.min((self.density+densityIncrease, self.fitness))
 
     def Reproduce(self):
@@ -244,7 +249,7 @@ class Grass(Vegetation):
                          browsingBiomass=browsingBiomass)
     def Die(self):
         # A little known fact is that grass is immortal, and thus can never truly die.
-        self.density = 0
+        self.density = 0.1
         pass
 
 class Forest(Vegetation):
@@ -285,7 +290,7 @@ class Animal(Organism):
                  growthRate = 0.1,
                  lifeLength = 50,
                  colour = [1, 0, 0],
-                 density = 0.0,
+                 density = 0,
                  fitness = None,
                  featureTemplate = None,
                  vegetationDestruction = 0.5):
@@ -301,39 +306,61 @@ class Animal(Organism):
                          outcompeteParameter=self.mainProgram.settings.ANIMAL_OUTCOMPETE_PARAMETER)
         self.vegetationDestruction = vegetationDestruction
     def Step(self):
-        #self.age += 1
+        if self.canPerformStep:
+            #self.age += 1
 
-        self.Eat()
+            self.Eat()
 
-        self.Grow()
+            self.Grow()
 
-        #self.Reproduce()
+            r = np.random.rand()
+            if r < 0.1:
+                #self.Migrate(migrationAmount=self.density*0.1)
+                #self.density *= 0.9
+                pass
+
+            #self.Reproduce()
+        self.canPerformStep = True
 
     def Eat(self):
         biomassEaten = self.vegetationDestruction*self.density
         self.mainProgram.plants[self.row][self.colon].density -= biomassEaten
-        if self.mainProgram.plants[self.row][self.colon].density < 0.2:
+        if self.mainProgram.plants[self.row][self.colon].density < 0:
+            #self.Die()
+            pass
+        elif self.mainProgram.plants[self.row][self.colon].density < 0.2:
             # The food has run out.
             self.mainProgram.plants[self.row][self.colon].Die()
 
-            self.Migrate()
+            self.Migrate(migrationAmount = self.density)
             self.Die()
 
     def Grow(self):
         if self.density < self.fitness:
-            densityIncrease = self.growthRate*self.fitness
-            self.density = np.min((self.density+densityIncrease, self.fitness))
+
+            if self.mainProgram.plants[self.row][self.colon]:
+                if self.mainProgram.plants[self.row][self.colon].density > 0.1:
+                    densityIncrease = self.density*self.growthRate*(1-self.density/self.mainProgram.plants[self.row][self.colon].density)
+                    self.density = np.min((self.density + densityIncrease, self.fitness))
+                else:
+                    self.Die()
+            else:
+                self.Die()
+
+            #densityIncrease = self.growthRate*self.fitness
+
         else:
-            self.Reproduce()
+            pass
+            #self.Reproduce()
             #self.Die()
 
-    def Migrate(self):
+    def Migrate(self, migrationAmount):
         adjacentTiles = np.zeros((8, 2), dtype=int)
         adjacentTiles[:, 0] = int(self.row) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 0]
         adjacentTiles[:, 1] = np.mod(int(self.colon) + self.mainProgram.settings.ADJACENT_TILES_TEMPLATE[:, 1],
                                      self.mainProgram.settings.N_COLONS)
 
-        remainingDensity = self.density
+        remainingDensity = migrationAmount
         while remainingDensity > 0:
 
 
@@ -356,8 +383,6 @@ class Animal(Organism):
 
             tilesToMigrateTo = np.sort(tilesToMigrateTo, order='food')
             tilesToMigrateTo = np.flip(tilesToMigrateTo, axis=0)
-
-
 
             #for adjacentTile in adjacentTiles:
             for tile in tilesToMigrateTo:

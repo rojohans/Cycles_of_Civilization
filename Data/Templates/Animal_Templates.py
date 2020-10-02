@@ -6,7 +6,7 @@ import Library.Ecosystem as Ecosystem
 
 
 class NormalBrowser(Ecosystem.Browser):
-    def __init__(self, row, colon, density = 0,fitness = None):
+    def __init__(self, row, colon, density = 0.1,fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.2,
@@ -25,7 +25,7 @@ class NormalBrowser(Ecosystem.Browser):
 
 
 class NormalGrazer(Ecosystem.Grazer):
-    def __init__(self, row, colon, density = 0, fitness = None):
+    def __init__(self, row, colon, density = 0.1, fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.2,
@@ -44,7 +44,7 @@ class NormalGrazer(Ecosystem.Grazer):
 
 
 class Boar(Ecosystem.Browser):
-    def __init__(self, row, colon, density = 0,fitness = None):
+    def __init__(self, row, colon, density = 0.1,fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.5,
@@ -64,7 +64,7 @@ class Boar(Ecosystem.Browser):
         cls.biomassFitnessScale = np.array([[0, 0], [0.4, 1], [1, 1]])
 
 class Turkey(Ecosystem.Browser):
-    def __init__(self, row, colon, density = 0,fitness = None):
+    def __init__(self, row, colon, density = 0.1,fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.5,
@@ -83,7 +83,7 @@ class Turkey(Ecosystem.Browser):
         cls.biomassFitnessScale = np.array([[0, 0], [0.4, 1], [1, 1]])
 
 class Deer(Ecosystem.Browser):
-    def __init__(self, row, colon, density = 0,fitness = None):
+    def __init__(self, row, colon, density = 0.1,fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.5,
@@ -105,7 +105,7 @@ class Deer(Ecosystem.Browser):
 #-------------------------------------------------------------------------------------------------
 
 class Caribou(Ecosystem.Grazer):
-    def __init__(self, row, colon, density = 0, fitness = None):
+    def __init__(self, row, colon, density = 0.1, fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.2,
@@ -123,7 +123,7 @@ class Caribou(Ecosystem.Grazer):
         cls.biomassFitnessScale = np.array([[0, 0], [0.4, 1], [1, 1]])
 
 class Bison(Ecosystem.Grazer):
-    def __init__(self, row, colon, density = 0, fitness = None):
+    def __init__(self, row, colon, density = 0.1, fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.2,
@@ -141,7 +141,7 @@ class Bison(Ecosystem.Grazer):
         cls.biomassFitnessScale = np.array([[0, 0], [0.4, 1], [1, 1]])
 
 class Horse(Ecosystem.Grazer):
-    def __init__(self, row, colon, density = 0, fitness = None):
+    def __init__(self, row, colon, density = 0.1, fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.2,
@@ -161,7 +161,7 @@ class Horse(Ecosystem.Grazer):
 #-------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------
 class Wolf(Ecosystem.Predator):
-    def __init__(self, row, colon, density = 0, fitness = None):
+    def __init__(self, row, colon, density = 0.1, fitness = None):
         super().__init__(row,
                          colon,
                          reproductionRate=0.3,

@@ -8,8 +8,9 @@ class NormalGrass(Vegetation.Grass):
     def __init__(self, row, colon, fitness = None):
         super().__init__(row,
                          colon,
+                         density=0.1,
                          reproductionRate=1.0,
-                         growthRate = 0.2,
+                         growthRate = 0.7,
                          lifeLength=10,
                          fitness=fitness)
 
@@ -20,20 +21,6 @@ class NormalGrass(Vegetation.Grass):
         cls.temperatureFitnessScale = np.array([[-50, 0], [-12, 0], [0, 0.5], [10, 0.8], [20, 1], [30, 0.9]])
         cls.moistureFitnessScale = np.array([[0, 0], [0.1, 0], [0.2, 0.5], [0.5, 0.8], [1, 1]])
 
-class NormalForest(Vegetation.Forest):
-    def __init__(self,row, colon, fitness = None):
-        super().__init__(row,
-                         colon,
-                         reproductionRate=0.4,
-                         lifeLength=50,
-                         fitness = fitness)
-    @classmethod
-    def CreateFitnessScales(cls):
-        maxZ = cls.mainProgram.settings.ELEVATION_LEVELS
-        cls.elevationFitnessScale = np.array([[0, 1], [0.4*maxZ, 1], [0.5*maxZ, 0.6], [0.6*maxZ, 0], [maxZ, 0]])
-        cls.temperatureFitnessScale = np.array([[-50, 0], [-5, 0], [0, 0.1], [10, 0.7], [20, 1], [30, 0.8]])
-        cls.moistureFitnessScale = np.array([[0, 0], [0.3, 0], [0.4, 0.4], [0.6, 0.9], [1, 1]])
-
 class Jungle(Vegetation.Forest):
     def __init__(self,row, colon, fitness = None):
         super().__init__(row,
@@ -41,6 +28,7 @@ class Jungle(Vegetation.Forest):
                          reproductionRate=0.3,
                          growthRate=0.4,
                          lifeLength=50,
+                         density=0.1,
                          fitness = fitness,
                          colour = [0.05, 0.2, 0],
                          featureTemplate='jungle')
@@ -58,6 +46,7 @@ class SpruceForest(Vegetation.Forest):
                          reproductionRate=0.2,
                          growthRate=0.05,
                          lifeLength=50,
+                         density=0.1,
                          fitness = fitness,
                          colour = [0, 0.25, 0.2],
                          featureTemplate='spruce_forest')
@@ -75,6 +64,7 @@ class PineForest(Vegetation.Forest):
                          reproductionRate=0.2,
                          growthRate=0.05,
                          lifeLength=50,
+                         density=0.1,
                          fitness = fitness,
                          colour = [0.2, 0.5, 0.1],
                          featureTemplate='pine_forest')
@@ -92,6 +82,7 @@ class BroadleafForest(Vegetation.Forest):
                          reproductionRate=0.2,
                          growthRate=0.1,
                          lifeLength=50,
+                         density=0.1,
                          fitness = fitness,
                          colour = [0, 0.7, 0.1],
                          featureTemplate='temperate_forest')

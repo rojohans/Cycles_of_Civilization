@@ -165,24 +165,42 @@ class Main():
 
         Animal_Templates.Wolf.InitializeFitnessInterpolators()
 
+        #Ecosystem.Vegetation.SeedWorld(5, Vegetation_Templates.NormalGrass, minFitness=0.2)
         Ecosystem.Vegetation.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
         Ecosystem.Vegetation.SeedWorld(20, Vegetation_Templates.Jungle, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(40, Vegetation_Templates.PineForest, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+        #Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        #Ecosystem.Vegetation.SeedWorld(40, Vegetation_Templates.PineForest, minFitness=0.2)
+        #Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
 
-        for iStep in range(5):
+        forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
+        animalImage = Ecosystem.Animal.GetImage()
+        predatorImage = Ecosystem.Predator.GetImage()
+        fig, axs = plt.subplots(3)
+        #fig.suptitle('Vertically stacked subplots')
+        vegetationImageObject = axs[0].imshow(forestImage)
+        animalImageObject = axs[1].imshow(animalImage)
+        predatorImageObject = axs[2].imshow(predatorImage)
+        plt.pause(3)
+
+        for iStep in range(30):
             for plantRow in self.plants.copy():
                 for plant in plantRow:
                     if plant:
                         plant.Step()
+            forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
+            animalImage = Ecosystem.Animal.GetImage()
+            predatorImage = Ecosystem.Predator.GetImage()
+            vegetationImageObject.set_array(forestImage)
+            animalImageObject.set_array(animalImage)
+            predatorImageObject.set_array(predatorImage)
+            plt.pause(0.001)
 
         Ecosystem.Animal.SeedWorld(30, Animal_Templates.Boar, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(20, Animal_Templates.Turkey, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Deer, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Caribou, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(20, Animal_Templates.Turkey, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(50, Animal_Templates.Deer, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(50, Animal_Templates.Caribou, minFitness=0.2)
         Ecosystem.Animal.SeedWorld(50, Animal_Templates.Bison, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Horse, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(50, Animal_Templates.Horse, minFitness=0.2)
 
         NSteps = 30
         for iStep in range(NSteps):
@@ -194,18 +212,17 @@ class Main():
                 for plant in plantRow:
                     if plant:
                         plant.Step()
+            forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
+            animalImage = Ecosystem.Animal.GetImage(densityScaling=True)
+            predatorImage = Ecosystem.Predator.GetImage()
+            vegetationImageObject.set_array(forestImage)
+            animalImageObject.set_array(animalImage)
+            predatorImageObject.set_array(predatorImage)
+            plt.pause(0.0001)
+
         NSteps = 100
         Ecosystem.Predator.SeedWorld(10, Animal_Templates.Wolf, minFitness=0.2)
 
-        forestImage = Ecosystem.Vegetation.GetImage()
-        animalImage = Ecosystem.Vegetation.GetImage()
-        predatorImage = Ecosystem.Predator.GetImage()
-
-        fig, axs = plt.subplots(3)
-        #fig.suptitle('Vertically stacked subplots')
-        vegetationImageObject = axs[0].imshow(forestImage)
-        animalImageObject = axs[1].imshow(animalImage)
-        predatorImageObject = axs[2].imshow(predatorImage)
 
         for iStep in range(NSteps):
             plants = self.plants.copy()
@@ -236,7 +253,7 @@ class Main():
             '''
 
             forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
-            animalImage = Ecosystem.Animal.GetImage()
+            animalImage = Ecosystem.Animal.GetImage(densityScaling=True)
             predatorImage = Ecosystem.Predator.GetImage()
             vegetationImageObject.set_array(forestImage)
             animalImageObject.set_array(animalImage)
