@@ -76,11 +76,11 @@ class Game(ShowBase):
         Animal_Templates.Bison.InitializeFitnessInterpolators()
         Animal_Templates.Horse.InitializeFitnessInterpolators()
 
-        Ecosystem.Vegetation.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(20, Vegetation_Templates.Jungle, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(40, Vegetation_Templates.PineForest, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(300, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(40, Vegetation_Templates.Jungle, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(100, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(90, Vegetation_Templates.PineForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(100, Vegetation_Templates.BroadleafForest, minFitness=0.2)
 
         for iStep in range(5):
             for plantRow in self.plants:
@@ -97,7 +97,7 @@ class Game(ShowBase):
 
         # migrate, predator, slope
 
-        NSteps = 1
+        NSteps = 100
 
         forestImage = Ecosystem.Vegetation.GetImage()
         animalImage = Ecosystem.Vegetation.GetImage()
@@ -264,7 +264,7 @@ class Game(ShowBase):
         self.elevationInterpolator = interpolate.interp2d(np.linspace(-2, self.settings.N_COLONS-1+2, self.settings.N_COLONS+4),
                                                           np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS),
                                                           extentedElevation, kind='cubic', fill_value=0)
-
+        #self.elevationInterpolator = self.world.elevationInterpolated
         tic = time.time()
         # Creates the tile models.
         for row in range(self.settings.N_ROWS):

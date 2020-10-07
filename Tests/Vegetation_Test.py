@@ -17,6 +17,25 @@ class Main():
             #return np.cos((value/maxValue -0.5)*np.pi)*np.pi/2
 
             return np.cos(value*np.pi / (2*maxValue)) * np.pi / 2
+
+        '''
+        x0 = 0.01
+        NSteps = 250
+
+        xLogistic = [x0]
+        xCompertz = [x0]
+
+        for iStep in range(NSteps):
+            xLogistic.append(xLogistic[-1] + 0.05*xLogistic[-1]*(1-xLogistic[-1]/0.8))
+            xCompertz.append(xCompertz[-1] + 0.05*np.log10(0.8/xCompertz[-1])*xCompertz[-1])
+
+        plt.plot(xLogistic)
+        plt.plot(xCompertz)
+        plt.legend(['Logistic', 'Compertz'])
+        plt.show()
+        quit()
+        '''
+
         '''
         xGrowth = 1.5
 
@@ -145,6 +164,11 @@ class Main():
         toc = time.time()
         print('World creation time: ', toc-tic)
 
+        animate = True
+        densityScaling = False
+        profile = False
+
+
         self.plants = Ecosystem.Vegetation.Initialize(mainProgram=self)
         self.animals = Ecosystem.Animal.Initialize(mainProgram=self)
         self.predators = Ecosystem.Predator.Initialize(mainProgram=self)
@@ -152,6 +176,7 @@ class Main():
         Vegetation_Templates.NormalGrass.InitializeFitnessInterpolators()
         Vegetation_Templates.Jungle.InitializeFitnessInterpolators()
         Vegetation_Templates.SpruceForest.InitializeFitnessInterpolators()
+        Vegetation_Templates.FirForest.InitializeFitnessInterpolators()
         Vegetation_Templates.PineForest.InitializeFitnessInterpolators()
         Vegetation_Templates.BroadleafForest.InitializeFitnessInterpolators()
 
@@ -159,108 +184,169 @@ class Main():
         Animal_Templates.Boar.InitializeFitnessInterpolators()
         Animal_Templates.Turkey.InitializeFitnessInterpolators()
         Animal_Templates.Deer.InitializeFitnessInterpolators()
+        Animal_Templates.Goat.InitializeFitnessInterpolators()
         Animal_Templates.Caribou.InitializeFitnessInterpolators()
         Animal_Templates.Bison.InitializeFitnessInterpolators()
+        Animal_Templates.Llama.InitializeFitnessInterpolators()
         Animal_Templates.Horse.InitializeFitnessInterpolators()
 
         Animal_Templates.Wolf.InitializeFitnessInterpolators()
 
-        #Ecosystem.Vegetation.SeedWorld(5, Vegetation_Templates.NormalGrass, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(200, Vegetation_Templates.NormalGrass, minFitness=0.2)
-        Ecosystem.Vegetation.SeedWorld(20, Vegetation_Templates.Jungle, minFitness=0.2)
-        #Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.SpruceForest, minFitness=0.2)
-        #Ecosystem.Vegetation.SeedWorld(40, Vegetation_Templates.PineForest, minFitness=0.2)
-        #Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(30, Vegetation_Templates.FirForest, minFitness=0.7)
 
-        forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
+        #Ecosystem.Vegetation.SeedWorld(50, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(300, Vegetation_Templates.NormalGrass, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(40, Vegetation_Templates.Jungle, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(200, Vegetation_Templates.SpruceForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(150, Vegetation_Templates.FirForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(200, Vegetation_Templates.PineForest, minFitness=0.2)
+        Ecosystem.Vegetation.SeedWorld(200, Vegetation_Templates.BroadleafForest, minFitness=0.2)
+
+        forestImage = Ecosystem.Vegetation.GetImage(densityScaling=densityScaling)
         animalImage = Ecosystem.Animal.GetImage()
         predatorImage = Ecosystem.Predator.GetImage()
-        fig, axs = plt.subplots(3)
-        #fig.suptitle('Vertically stacked subplots')
+        statsList = []
+        fig, axs = plt.subplots(4)
         vegetationImageObject = axs[0].imshow(forestImage)
         animalImageObject = axs[1].imshow(animalImage)
         predatorImageObject = axs[2].imshow(predatorImage)
+        statsPlotter, = axs[3].plot([0, 1])
         plt.pause(3)
 
-        for iStep in range(30):
+        for iStep in range(5):
             for plantRow in self.plants.copy():
                 for plant in plantRow:
                     if plant:
                         plant.Step()
-            forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
-            animalImage = Ecosystem.Animal.GetImage()
-            predatorImage = Ecosystem.Predator.GetImage()
-            vegetationImageObject.set_array(forestImage)
-            animalImageObject.set_array(animalImage)
-            predatorImageObject.set_array(predatorImage)
-            plt.pause(0.001)
+            if animate:
+                forestImage = Ecosystem.Vegetation.GetImage(densityScaling=densityScaling)
+                animalImage = Ecosystem.Animal.GetImage()
+                predatorImage = Ecosystem.Predator.GetImage()
+                vegetationImageObject.set_array(forestImage)
+                animalImageObject.set_array(animalImage)
+                predatorImageObject.set_array(predatorImage)
+                plt.pause(0.001)
 
-        Ecosystem.Animal.SeedWorld(30, Animal_Templates.Boar, minFitness=0.2)
-        #Ecosystem.Animal.SeedWorld(20, Animal_Templates.Turkey, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(5, Animal_Templates.Boar, minFitness=0.7)
+        #Ecosystem.Animal.SeedWorld(5, Animal_Templates.Turkey, minFitness=0.7)
+        #Ecosystem.Animal.SeedWorld(5, Animal_Templates.Deer, minFitness=0.7)
+        Ecosystem.Animal.SeedWorld(10, Animal_Templates.Goat, minFitness=0.7)
+        #Ecosystem.Animal.SeedWorld(5, Animal_Templates.Caribou, minFitness=0.7)
+        #Ecosystem.Animal.SeedWorld(5, Animal_Templates.Bison, minFitness=0.7)
+        Ecosystem.Animal.SeedWorld(10, Animal_Templates.Llama, minFitness=0.7)
+        #Ecosystem.Animal.SeedWorld(5, Animal_Templates.Horse, minFitness=0.7)
+
+        #Ecosystem.Animal.SeedWorld(30, Animal_Templates.Boar, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(30, Animal_Templates.Turkey, minFitness=0.2)
         #Ecosystem.Animal.SeedWorld(50, Animal_Templates.Deer, minFitness=0.2)
-        #Ecosystem.Animal.SeedWorld(50, Animal_Templates.Caribou, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Bison, minFitness=0.2)
-        #Ecosystem.Animal.SeedWorld(50, Animal_Templates.Horse, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(50, Animal_Templates.Goat, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(20, Animal_Templates.Caribou, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(20, Animal_Templates.Bison, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(10, Animal_Templates.Llama, minFitness=0.2)
+        #Ecosystem.Animal.SeedWorld(20, Animal_Templates.Horse, minFitness=0.2)
+
+        Ecosystem.Animal.SeedWorld(60, Animal_Templates.Boar, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(60, Animal_Templates.Turkey, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(100, Animal_Templates.Deer, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(100, Animal_Templates.Goat, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(30, Animal_Templates.Caribou, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(30, Animal_Templates.Bison, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(10, Animal_Templates.Llama, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(30, Animal_Templates.Horse, minFitness=0.2)
+
+        forestImage = Ecosystem.Vegetation.GetImage(densityScaling=densityScaling)
+        animalImage = Ecosystem.Animal.GetImage(densityScaling=densityScaling)
+        predatorImage = Ecosystem.Predator.GetImage()
+        vegetationImageObject.set_array(forestImage)
+        animalImageObject.set_array(animalImage)
+        predatorImageObject.set_array(predatorImage)
+        plt.pause(3)
 
         NSteps = 30
         for iStep in range(NSteps):
+            tmp = 0
             for animalRow in self.animals.copy():
                 for animal in animalRow:
                     if animal:
+                        tmp += animal.density
                         animal.Step()
             for plantRow in self.plants.copy():
                 for plant in plantRow:
                     if plant:
                         plant.Step()
-            forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
-            animalImage = Ecosystem.Animal.GetImage(densityScaling=True)
-            predatorImage = Ecosystem.Predator.GetImage()
-            vegetationImageObject.set_array(forestImage)
-            animalImageObject.set_array(animalImage)
-            predatorImageObject.set_array(predatorImage)
-            plt.pause(0.0001)
+            if animate:
+                forestImage = Ecosystem.Vegetation.GetImage(densityScaling=densityScaling)
+                animalImage = Ecosystem.Animal.GetImage(densityScaling=densityScaling)
+                predatorImage = Ecosystem.Predator.GetImage()
+                statsList.append(tmp)
+                vegetationImageObject.set_array(forestImage)
+                animalImageObject.set_array(animalImage)
+                predatorImageObject.set_array(predatorImage)
+                statsPlotter.set_data(range(len(statsList)), statsList)
+                axs[3].set_xlim(0, len(statsList))
+                axs[3].set_ylim(0, np.max(statsList))
+                plt.pause(0.0001)
 
         NSteps = 100
-        Ecosystem.Predator.SeedWorld(10, Animal_Templates.Wolf, minFitness=0.2)
+        #Ecosystem.Predator.SeedWorld(10, Animal_Templates.Wolf, minFitness=0.2)
 
+        if profile:
+            import cProfile, pstats, io
+            from pstats import SortKey
+            pr = cProfile.Profile()
+            pr.enable()
 
         for iStep in range(NSteps):
             plants = self.plants.copy()
             animals = self.animals.copy()
+            tmp = 0
             for row in range(self.settings.N_ROWS):
                 for colon in range(self.settings.N_COLONS):
                     plant = plants[row][colon]
                     animal = animals[row][colon]
                     if animal:
+                        tmp += animal.density
                         animal.Step()
-                    if plant:
-                        plant.Step()
-
-            '''        
-            for predatorRow in self.predators.copy():
-                for predator in predatorRow:
-                    if predator:
-                        pass
-                        #predator.Step()
-            for animalRow in self.animals.copy():
-                for animal in animalRow:
-                    if animal:
-                        animal.Step()
-            for plantRow in self.plants.copy():
-                for plant in plantRow:
                     if plant:
                         plant.Step()
             '''
+            if iStep == 100:
+                for row in range(self.settings.N_ROWS):
+                    for colon in range(self.settings.N_COLONS):
+                        self.plants[row][colon] = None
+            '''
+            if animate:
+                statsList.append(tmp)
+                forestImage = Ecosystem.Vegetation.GetImage(densityScaling=densityScaling)
+                animalImage = Ecosystem.Animal.GetImage(densityScaling=densityScaling)
+                predatorImage = Ecosystem.Predator.GetImage()
+                vegetationImageObject.set_array(forestImage)
+                animalImageObject.set_array(animalImage)
+                predatorImageObject.set_array(predatorImage)
+                statsPlotter.set_data(range(len(statsList)), statsList)
+                axs[3].set_xlim(0, len(statsList))
+                axs[3].set_ylim(0, np.max(statsList))
+                plt.pause(0.0001)
 
-            forestImage = Ecosystem.Vegetation.GetImage(densityScaling=True)
-            animalImage = Ecosystem.Animal.GetImage(densityScaling=True)
-            predatorImage = Ecosystem.Predator.GetImage()
-            vegetationImageObject.set_array(forestImage)
-            animalImageObject.set_array(animalImage)
-            predatorImageObject.set_array(predatorImage)
-            plt.pause(0.0001)
+        if profile:
+            pr.disable()
+            s = io.StringIO()
+            sortby = SortKey.CUMULATIVE
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
+            quit()
 
-        self.world.VisualizeMaps([self.world.elevation, self.world.temperature, self.world.moisture])
+        forestImage = Ecosystem.Vegetation.GetImage(densityScaling=densityScaling)
+        animalImage = Ecosystem.Animal.GetImage(densityScaling=densityScaling)
+        predatorImage = Ecosystem.Predator.GetImage()
+        vegetationImageObject.set_array(forestImage)
+        animalImageObject.set_array(animalImage)
+        predatorImageObject.set_array(predatorImage)
+        plt.pause(0.0001)
+
+
+        self.world.VisualizeMaps([self.world.elevation, self.world.temperature, self.world.moisture, self.world.elevationInterpolated])
 
         plt.show()
 

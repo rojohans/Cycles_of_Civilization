@@ -6,13 +6,33 @@ import Library.Noise as Noise
 class WorldClass():
     def __init__(self, discrete = False):
 
-        self.elevationFloat = self.CreateMap(minValue = 0,
+        #self.elevationFloat = self.CreateMap(minValue = 0,
+        #                                maxValue = self.mainProgram.settings.ELEVATION_LEVELS-1,
+        #                                persistance = 0.5,
+        #                                initialOctavesToSkip = 2,
+        #                                applyDistributionFilter = False,
+        #                                distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        self.elevationFloat = self.CreateMap(rows=self.mainProgram.settings.N_ROWS,
+                                             colons=self.mainProgram.settings.N_COLONS,
+                                        minValue = 0,
                                         maxValue = self.mainProgram.settings.ELEVATION_LEVELS-1,
-                                        persistance = 0.5,
+                                        persistance = 1,
                                         initialOctavesToSkip = 2,
                                         applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+
+        #self.elevationInterpolated = self.CreateMap(rows=self.mainProgram.settings.N_ROWS*self.mainProgram.settings.MODEL_RESOLUTION,
+        #                                            colons=self.mainProgram.settings.N_COLONS*self.mainProgram.settings.MODEL_RESOLUTION,
+        #                                            minValue=0,
+        #                                            maxValue=self.mainProgram.settings.ELEVATION_LEVELS - 1,
+        #                                            persistance=0.5,
+        #                                            initialOctavesToSkip=2,
+        #                                            applyDistributionFilter=False,
+        #                                            distributionSteps=self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        #self.elevationInterpolated = self.ApplyDistributionFilter(self.elevationInterpolated,
+        #                                                          self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        '''
         extentedElevation = np.concatenate((self.elevation[:, self.mainProgram.settings.N_COLONS-2:self.mainProgram.settings.N_COLONS],
                                             self.elevation,
                                             self.elevation[:, 0:2]),
@@ -24,8 +44,11 @@ class WorldClass():
         self.elevationInterpolator = interpolate.interp2d(np.linspace(-2, self.mainProgram.settings.N_COLONS-1+2, self.mainProgram.settings.N_COLONS+4),
                                                           np.linspace(-1, self.mainProgram.settings.N_ROWS-1 + 1, self.mainProgram.settings.N_ROWS+2),
                                                           extentedElevation, kind='cubic', fill_value=0)
+        self.elevationInterpolated = self.elevationInterpolator(np.linspace(-0.5, self.mainProgram.settings.N_COLONS-0.5, self.mainProgram.settings.N_COLONS*self.mainProgram.settings.MODEL_RESOLUTION),
+                                         np.linspace(-0.5, self.mainProgram.settings.N_ROWS-0.5, self.mainProgram.settings.N_ROWS*self.mainProgram.settings.MODEL_RESOLUTION))
+        
 
-        '''
+        
         self.soilFertility = self.CreateMap(minValue = 0,
                                             maxValue = self.mainProgram.settings.SOIL_FERTILITY_LEVELS-1,
                                             persistance = 1.2,
@@ -48,7 +71,7 @@ class WorldClass():
 
         #self.soilDepth =
 
-        self.slope = self.CreateSlopeMap()
+        #self.slope = self.CreateSlopeMap()
 
 
 
@@ -69,6 +92,8 @@ class WorldClass():
         #self.waterAbundance =
 
     def CreateMap(self,
+                  rows,
+                  colons,
                   minValue = 0,
                   maxValue = 1,
                   persistance = 1,
@@ -87,7 +112,9 @@ class WorldClass():
         :param distributionSteps:
         :return:
         '''
-        perlinMap = self.CreatePerlinMap(persistance = persistance, initialOctavesToSkip = initialOctavesToSkip)
+
+
+        perlinMap = self.CreatePerlinMap(rows=rows, colons=colons,persistance = persistance, initialOctavesToSkip = initialOctavesToSkip)
 
         perlinMin = np.min(perlinMap)
         perlinMax = np.max(perlinMap)
@@ -103,14 +130,14 @@ class WorldClass():
 
         return perlinMap
 
-    def CreatePerlinMap(self, persistance = 1, initialOctavesToSkip = 0):
-        perlinMaxResolution = np.max([self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS])
+    def CreatePerlinMap(self, rows, colons, persistance = 1, initialOctavesToSkip = 0):
+        perlinMaxResolution = np.max([rows, colons])
         perlinMaxOctaves = int(np.ceil(np.log2(perlinMaxResolution)))
 
         perlinObject = Noise.Perlin2D(maxOctaves=perlinMaxOctaves)
-        z = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
-        for row in range(self.mainProgram.settings.N_ROWS):
-            for colon in range(self.mainProgram.settings.N_COLONS):
+        z = np.zeros((rows, colons))
+        for row in range(rows):
+            for colon in range(colons):
                 z[row, colon] = perlinObject.SampleOctaves(colon / perlinMaxResolution,
                                                            row / perlinMaxResolution,
                                                            persistance=persistance,
@@ -125,7 +152,9 @@ class WorldClass():
         :param distribution: A list of float values, the sum is assumed to be one.
         :return:
         '''
-        numberOfTiles = self.mainProgram.settings.N_ROWS * self.mainProgram.settings.N_COLONS
+        rows = np.size(map, 0)
+        colons = np.size(map, 1)
+        numberOfTiles = rows * colons
         probabilityTemplate = np.ones((numberOfTiles, 1))
         tmpCount = 0
         # Calculate probabilityTemplate
@@ -155,7 +184,7 @@ class WorldClass():
             tmpIndex = tmpIndex[np.random.randint(0, len(tmpIndex))]
             map[tmpIndex] = probabilityTemplate[i]
 
-        map = np.reshape(map, (self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
+        map = np.reshape(map, (rows, colons))
 
         if discrete:
             map = map.astype(int)
@@ -169,12 +198,14 @@ class WorldClass():
                                                        3) Elevation
         :return:
         '''
-        temperaturePerlin = self.CreateMap(minValue = self.mainProgram.settings.TEMPERATURE_MIN_VALUE,
+        temperaturePerlin = self.CreateMap(rows=self.mainProgram.settings.N_ROWS,
+                                           colons=self.mainProgram.settings.N_COLONS,
+                                            minValue = self.mainProgram.settings.TEMPERATURE_MIN_VALUE,
                                            maxValue = self.mainProgram.settings.TEMPERATURE_MAX_VALUE,
                                            persistance = 0.5,
                                            initialOctavesToSkip = 3)
         temperatureElevation = self.mainProgram.settings.TEMPERATURE_MIN_VALUE*\
-                               (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**2
+                               (self.elevation/(self.mainProgram.settings.ELEVATION_LEVELS-1))**3
         temperatureLatitude = np.zeros((self.mainProgram.settings.N_ROWS, self.mainProgram.settings.N_COLONS))
         for row in range(self.mainProgram.settings.N_ROWS):
             for colon in range(self.mainProgram.settings.N_COLONS):
@@ -199,7 +230,9 @@ class WorldClass():
                                                 4) Distance from ocean
         :return:
         '''
-        moisturePerlin = self.CreateMap(minValue = 0,
+        moisturePerlin = self.CreateMap(rows=self.mainProgram.settings.N_ROWS,
+                                        colons=self.mainProgram.settings.N_COLONS,
+                                        minValue = 0,
                                         maxValue = 1,
                                         persistance = 0.5,
                                         initialOctavesToSkip = 3)
@@ -249,6 +282,9 @@ class WorldClass():
 
         moistureMap[moistureMap<0] = 0
         moistureMap[moistureMap>1] = 1
+        moistureMap -= np.min(moistureMap)
+        moistureMap /= np.max(moistureMap)
+        moistureMap *= 0.99
         moistureMap[self.elevation<=1] = 2
         return moistureMap
 

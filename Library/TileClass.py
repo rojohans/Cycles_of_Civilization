@@ -2238,7 +2238,8 @@ class FeatureClass(Entity):
         if self.parentNode:
             self.node = self.parentNode.attachNewNode('featureNode')
         else:
-            self.node = self.parentNode.render.attachNewNode('featureNode')
+            self.node = self.pandaProgram.featureRoot.attachNewNode('featureNode')
+            #self.node = self.parentNode.render.attachNewNode('featureNode')
         nodes = [self.node.attachNewNode('single_feature') for i in range(self.numberOfComponents)]
         for iNode, node in enumerate(nodes):
 

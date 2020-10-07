@@ -14,8 +14,8 @@ class SettingsClass():
         FEATURE_RENDER_CAPACITY :
         FEATURE_RENDER_MAX_SPEED :
         '''
-        self.N_ROWS = 32
-        self.N_COLONS = 64
+        self.N_ROWS = 64
+        self.N_COLONS = 128
         self.HORIZONTAL_WRAP_BUFFER = 20
 
         self.MODEL_RESOLUTION = 8
@@ -44,7 +44,7 @@ class SettingsClass():
 
         # ================ WORLD GENERATION ============================================================================
         self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
-        self.OCEAN_HEIGHT = 2.5
+        self.OCEAN_HEIGHT = 2
         self.ELEVATION_SCALE = 0.6
         self.ELEVATION_LEVELS = 9
         self.DISCRETE_ELEVATION = False
@@ -96,7 +96,7 @@ class SettingsClass():
         self.TEMPERATURE_MIN_VALUE = -20
         self.TEMPERATURE_MAX_VALUE = 30
         self.TEMPERATURE_PERLIN_WEIGHT = 0.5
-        self.TEMPERATURE_ELEVATION_WEIGHT = 1
+        self.TEMPERATURE_ELEVATION_WEIGHT = 1.2
         self.TEMPERATURE_LATITUDE_WEIGHT = 3
         self.TEMPERATURE_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),  #-40
                                                      (0.8, 0.1, 0.8),  #-30
@@ -111,10 +111,10 @@ class SettingsClass():
 
         # The range in which ocean increases moisture
         self.MOISTURE_OCEAN_RANGE = self.N_COLONS/7
-        self.MOISTURE_PERLIN_WEIGHT = 1.5
-        self.MOISTURE_OCEAN_WEIGHT = 0.5
-        self.MOISTURE_ELEVATION_WEIGHT = 0.2
-        self.MOISTURE_LATITUDE_WEIGHT = 2
+        self.MOISTURE_PERLIN_WEIGHT = 1.7
+        self.MOISTURE_OCEAN_WEIGHT = 0.8
+        self.MOISTURE_ELEVATION_WEIGHT = 0.1
+        self.MOISTURE_LATITUDE_WEIGHT = 1.5#2
         self.MOISTURE_MINIMAP_COLOURS = np.array([(0.4, 0.3, 0.1),
                                                   (0.7, 0.7, 0.3),
                                                   (0.2, 0.5, 0.7),
@@ -125,7 +125,7 @@ class SettingsClass():
         # ================= ECOSYSTEM ============================================================================
         self.VEGETATION_INTERPOLATION_RESOLUTION = 50
         self.VEGETATION_OUTCOMPETE_PARAMETER = 10
-        self.ANIMAL_OUTCOMPETE_PARAMETER = 1
+        self.ANIMAL_OUTCOMPETE_PARAMETER = 2
 
         # ==================== GUI ================================================================================
         self.BUTTON_SCALE = 0.08
