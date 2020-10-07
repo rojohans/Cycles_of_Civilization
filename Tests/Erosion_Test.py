@@ -11,14 +11,14 @@ class Main():
     def __init__(self):
         self.settings = Settings.SettingsClass()
 
-        if False:
+        if True:
             import noise
 
             #help(noise)
             shape = (512, 1024)
             scale = 1024
             octaves = 10
-            persistence = 0.5
+            persistence = 0.7
             lacunarity = 2.0
 
             world = np.zeros(shape)
