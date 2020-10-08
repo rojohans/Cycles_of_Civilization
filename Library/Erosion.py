@@ -255,6 +255,9 @@ class HydrolicErosion():
 
     def Visualize(self):
         if self.terrainplot == None:
+            self.terrainplot = plt.imshow(self.terrain)
+
+            '''
             fig, axs = plt.subplots(3, 2)
 
             self.terrainplot = axs[0][0].imshow(self.terrain)
@@ -262,15 +265,18 @@ class HydrolicErosion():
             self.suspendedSedimentPlot = axs[1][0].imshow(self.suspendedSediment[:, :, 0])
             self.slopeplot = axs[1][1].imshow(self.slope)
             self.velocityPlot = axs[2, 0].imshow(np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2))
+            '''
             plt.pause(0.00001)
         else:
             self.terrainplot.set_array(self.terrain)
+            '''
             self.waterPlot.set_array(self.water[:, :, 0])
             #self.waterPlot.set_clim(vmin = 0, vmax = np.max(self.water[:, :, 0]))
             self.waterPlot.set_clim(vmin=0, vmax=10)
             self.suspendedSedimentPlot.set_array(self.suspendedSediment[:, :, 0])
             self.slopeplot.set_array(self.slope)
             self.velocityPlot.set_array(np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2))
+            '''
             plt.pause(0.00001)
 
     @classmethod

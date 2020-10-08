@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import time
+import perlin_numpy
 
 import Settings
 import Library.World as World
@@ -11,16 +12,15 @@ class Main():
     def __init__(self):
         self.settings = Settings.SettingsClass()
 
-        if True:
-            import noise
+        if False:
+            #import noise
+
 
             #help(noise)
-            shape = (512, 1024)
-            scale = 1024
-            octaves = 10
-            persistence = 0.7
-            lacunarity = 2.0
+            shape = (256, 512)
+            world = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.7, tileable=(False, True))
 
+            '''
             world = np.zeros(shape)
             for i in range(shape[0]):
                 for j in range(shape[1]):
@@ -53,24 +53,29 @@ class Main():
                                                 base=0)
             world1 = np.concatenate((world1, world1), axis=0)
             world1 = np.concatenate((world1, world1), axis=1)
+            '''
 
             plt.imshow(world)
-            plt.figure()
-            plt.imshow(world1)
+            #fig, axs = plt.subplots(1, 2)
+            #axs[0].imshow(world)
+            #axs[1].imshow(world1)
             plt.show()
             quit()
 
 
 
 
-        if False:
+        if True:
             tic = time.time()
             World.WorldClass.Initialize(mainProgram = self)
             self.world = World.WorldClass()
             toc = time.time()
             print('World creation time: ', toc-tic)
 
-            self.heightMap = self.world.elevationInterpolated
+            shape = (256, 512)
+            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.7, tileable=(False, True))
+
+            #self.heightMap = self.world.elevationInterpolated
             #self.heightMap = self.world.elevation
 
             h = np.cos(np.linspace(-np.pi, np.pi, self.settings.N_COLONS*self.settings.MODEL_RESOLUTION))
@@ -78,7 +83,9 @@ class Main():
             h *= 100
 
             #self.heightMap = 10*self.heightMap + np.repeat(h, self.settings.N_ROWS*self.settings.MODEL_RESOLUTION, axis=0)
-            self.heightMap *= 30
+            self.heightMap -= np.min(self.heightMap)
+            self.heightMap /= np.max(self.heightMap)
+            self.heightMap *= 8*30
         else:
             self.heightMap = np.zeros((self.settings.N_ROWS*self.settings.MODEL_RESOLUTION, self.settings.N_COLONS*self.settings.MODEL_RESOLUTION))
         #self.heightMap[100, 100] = 1000
@@ -92,7 +99,7 @@ class Main():
                                                                 deltaT=1,
                                                                 flowSpeed=0.2,
                                                                 gridLength=1,
-                                                                carryCapacityLimit=5,
+                                                                carryCapacityLimit=.5,
                                                                 erosionRate=0.05,
                                                                 depositionRate=0.1,
                                                                 maximumErosionDepth=10)
