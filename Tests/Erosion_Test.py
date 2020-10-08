@@ -1,7 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import time
+
 import perlin_numpy
+
 
 import Settings
 import Library.World as World
@@ -73,7 +75,7 @@ class Main():
             print('World creation time: ', toc-tic)
 
             shape = (256, 512)
-            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.7, tileable=(False, True))
+            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.8, tileable=(False, True))
 
             #self.heightMap = self.world.elevationInterpolated
             #self.heightMap = self.world.elevation
@@ -99,9 +101,9 @@ class Main():
                                                                 deltaT=1,
                                                                 flowSpeed=0.2,
                                                                 gridLength=1,
-                                                                carryCapacityLimit=.5,
+                                                                carryCapacityLimit=.3,
                                                                 erosionRate=0.05,
-                                                                depositionRate=0.1,
+                                                                depositionRate=0.2,
                                                                 maximumErosionDepth=10)
 
         self.thermalErosion = Erosion.ThermalErosion(terrain = self.heightMap,
