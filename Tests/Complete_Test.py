@@ -122,13 +122,7 @@ class Game(ShowBase):
         self.selected_unit_ID = None
         self.SetupPicker()
 
-        import matplotlib.pyplot as plt
-        plt.imshow(self.world.topography)
-
         self.SetupTiles()
-        plt.figure()
-        plt.imshow(self.world.topography)
-        plt.show()
 
         tic = time.time()
         self.SetupFeatures(empty = False)
@@ -262,14 +256,14 @@ class Game(ShowBase):
         toc = time.time()
         print('object creation time: {}'.format(toc - tic))
 
-        #from scipy import interpolate
-        #extentedElevation = np.concatenate((self.world.elevation[:, self.settings.N_COLONS-2:self.settings.N_COLONS],
-        #                                    self.world.elevation,
-        #                                    self.world.elevation[:, 0:2]),
-        #                                   axis=1)
-        #self.elevationInterpolator = interpolate.interp2d(np.linspace(-2, self.settings.N_COLONS-1+2, self.settings.N_COLONS+4),
-        #                                                  np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS),
-        #                                                  extentedElevation, kind='cubic', fill_value=0)
+        from scipy import interpolate
+        extentedElevation = np.concatenate((self.world.elevation[:, self.settings.N_COLONS-2:self.settings.N_COLONS],
+                                            self.world.elevation,
+                                            self.world.elevation[:, 0:2]),
+                                           axis=1)
+        self.elevationInterpolator = interpolate.interp2d(np.linspace(-2, self.settings.N_COLONS-1+2, self.settings.N_COLONS+4),
+                                                          np.linspace(0, self.settings.N_ROWS-1, self.settings.N_ROWS),
+                                                          extentedElevation, kind='cubic', fill_value=0)
         #self.elevationInterpolator = self.world.elevationInterpolated
         tic = time.time()
         # Creates the tile models.

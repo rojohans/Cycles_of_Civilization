@@ -7,7 +7,6 @@ import scipy.interpolate as interpolate
 class HydrolicErosion():
     def __init__(self,
                  terrain,
-                 terrainHardness = None,
                  evaporationRate = 0.05,
                  deltaT = 1,
                  flowSpeed = 0.5,
@@ -29,14 +28,6 @@ class HydrolicErosion():
         self.depositionRate = depositionRate
         self.maximumErosionDepth = maximumErosionDepth
         self.minimumErosionAngle = np.pi*minimumErosionAngle/180
-
-        print(type(terrainHardness))
-        print(np.shape(terrainHardness))
-        if terrainHardness is None:
-            self.terrainHardness = np.ones(np.shape(terrain))
-        else:
-            self.terrainHardness = terrainHardness
-
 
         self.terrain = terrain
         self.water = np.zeros((self.NRows, self.NColons, 2))
@@ -104,7 +95,7 @@ class HydrolicErosion():
         newFlowBottom[newFlowBottom < 0] = 0
         self.flow[:, :, 3] = newFlowBottom
 
-        flowScaling = self.water[:, :, 0]/((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:, :, 3]+0.001)*self.deltaT)
+        flowScaling = 0.5*self.water[:, :, 0]/((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:, :, 3]+0.001)*self.deltaT)
         flowScaling[flowScaling>1] = 1
 
         #maxFlow = np.max((deltaHeightLeft, deltaHeightRight, deltaHeightTop, deltaHeightBottom))/10
@@ -154,12 +145,12 @@ class HydrolicErosion():
                               self.inFlowLeft + self.inFlowRight + self.inFlowTop + self.inFlowBottom
 
     def UpdateVelocity(self):
-        self.velocity[:, :, 0] = (self.flow[:, :, 1] - self.flow[:, :, 0] + self.inFlowLeft - self.inFlowRight)/2
-        self.velocity[:, :, 1] = (self.flow[:, :, 2] - self.flow[:, :, 3] + self.inFlowBottom - self.inFlowTop)/2
-        #self.velocity[:, :, 0] = (self.flow[:, :, 1] - self.flow[:, :, 0] + self.inFlowLeft - self.inFlowRight)/\
-        #                         (self.water[:, :, 0] + self.water[:, :, 1]+0.001)
-        #self.velocity[:, :, 1] = (self.flow[:, :, 2] - self.flow[:, :, 3] + self.inFlowBottom - self.inFlowTop)/\
-        #                         (self.water[:, :, 0] + self.water[:, :, 1]+0.001)
+        #self.velocity[:, :, 0] = (self.flow[:, :, 1] - self.flow[:, :, 0] + self.inFlowLeft - self.inFlowRight)
+        #self.velocity[:, :, 1] = (self.flow[:, :, 2] - self.flow[:, :, 3] + self.inFlowBottom - self.inFlowTop)
+        self.velocity[:, :, 0] = (self.flow[:, :, 1] - self.flow[:, :, 0] + self.inFlowLeft - self.inFlowRight)/\
+                                 (self.water[:, :, 0] + self.water[:, :, 1]+0.001)
+        self.velocity[:, :, 1] = (self.flow[:, :, 2] - self.flow[:, :, 3] + self.inFlowBottom - self.inFlowTop)/\
+                                 (self.water[:, :, 0] + self.water[:, :, 1]+0.001)
 
     def UpdateSlope(self):
         self.terrainLeft = np.concatenate((self.terrain[:, self.NColons - 1:self.NColons],
@@ -185,8 +176,7 @@ class HydrolicErosion():
         The carry capacity depends on the water depth. At water > mamimumErosionDepth the capacity is zero.
         :return:
         '''
-        #waterDepthMultiplier = self.water[:, :, 1]*2.5
-        waterDepthMultiplier = 1
+        waterDepthMultiplier = self.water[:, :, 1]*2.5
         #waterDepthMultiplier = 10*self.water[:, :, 1]*(1-self.water[:, :, 1]/self.maximumErosionDepth)/self.maximumErosionDepth
         #waterDepthMultiplier[self.water[:, :, 1] > self.maximumErosionDepth] = 0
         #slopeMultiplier = np.sin(self.slope)
@@ -263,48 +253,30 @@ class HydrolicErosion():
     def Evaporation(self):
         self.water[:, :, 0] = self.water[:, :, 1]*(1 - self.evaporationRate*self.deltaT)
 
-    def __call__(self):
-        self.UpdateFlow()
-        self.UpdateWaterHeight()
-        self.UpdateVelocity()
-
-        self.UpdateSlope()
-
-        self.UpdateCarryCapacity()
-        self.Erode()
-        self.Deposit()
-        self.SedimentTransportation()
-        self.Evaporation()
-
     def Visualize(self):
         if self.terrainplot == None:
-            if False:
-                self.terrainplot = plt.imshow(self.terrain)
-            else:
-                fig, axs = plt.subplots(3, 2)
+            self.terrainplot = plt.imshow(self.terrain)
 
-                self.terrainplot = axs[0][0].imshow(self.terrain)
-                self.waterPlot = axs[1][0].imshow(self.water[:, :, 0])
-                self.totalHeightPlot = axs[2][0].imshow(self.terrain + self.water[:, :, 0])
-                self.suspendedSedimentPlot = axs[0][1].imshow(self.suspendedSediment[:, :, 0])
-                self.slopeplot = axs[1][1].imshow(self.slope)
-                self.velocityPlot = axs[2, 1].imshow(np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2))
+            '''
+            fig, axs = plt.subplots(3, 2)
 
+            self.terrainplot = axs[0][0].imshow(self.terrain)
+            self.waterPlot = axs[0][1].imshow(self.water[:, :, 0])
+            self.suspendedSedimentPlot = axs[1][0].imshow(self.suspendedSediment[:, :, 0])
+            self.slopeplot = axs[1][1].imshow(self.slope)
+            self.velocityPlot = axs[2, 0].imshow(np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2))
+            '''
             plt.pause(0.00001)
         else:
-            if False:
-                self.terrainplot.set_array(self.terrain)
-            else:
-                self.terrainplot.set_array(self.terrain)
-                self.waterPlot.set_array(self.water[:, :, 0])
-                self.totalHeightPlot.set_array(self.terrain + self.water[:, :, 0])
-                #self.waterPlot.set_clim(vmin = 0, vmax = np.max(self.water[:, :, 0]))
-                self.waterPlot.set_clim(vmin=0, vmax=10)
-                self.suspendedSedimentPlot.set_array(self.suspendedSediment[:, :, 0])
-                self.slopeplot.set_array(self.slope)
-                self.velocityPlot.set_array(np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2))
-                self.velocityPlot.set_clim(vmin=0, vmax=10)
-
+            self.terrainplot.set_array(self.terrain)
+            '''
+            self.waterPlot.set_array(self.water[:, :, 0])
+            #self.waterPlot.set_clim(vmin = 0, vmax = np.max(self.water[:, :, 0]))
+            self.waterPlot.set_clim(vmin=0, vmax=10)
+            self.suspendedSedimentPlot.set_array(self.suspendedSediment[:, :, 0])
+            self.slopeplot.set_array(self.slope)
+            self.velocityPlot.set_array(np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2))
+            '''
             plt.pause(0.00001)
 
     @classmethod

@@ -279,7 +279,6 @@ class TileClass(Entity):
         The topography_roughness value is -1 where there is water. So at that place the flat topography will be used.
         :return:
         '''
-        '''
         baseTopographyCode = self.CreateBaseTopographyCode()
 
         if baseTopographyCode == None:
@@ -300,81 +299,17 @@ class TileClass(Entity):
                 self.baseTopographyDictionary[baseTopographyCode] = self.topographyBase.copy()
                 #print('topography calculated from scratch')
 
-        
-        #if self.pandaProgram.world.topographyRoughness[self.row, self.colon] >=0:
-        #    self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
-        #else:
-        #    self.topographyTop = self.terrainTopography[
-        #        'topography_roughness_0']
-        
+        '''
+        if self.pandaProgram.world.topographyRoughness[self.row, self.colon] >=0:
+            self.topographyTop = self.terrainTopography['topography_roughness_' + str(self.pandaProgram.world.topographyRoughness[self.row, self.colon])]
+        else:
+            self.topographyTop = self.terrainTopography[
+                'topography_roughness_0']
+        '''
+
         #self.topography = self.elevation + self.topographyBase + self.topographyTop
         #self.topography = self.elevation + self.topographyBase
         self.topography = self.topographyBase# + self.topographyTop
-        '''
-
-        # :     : :     : :     :     : :     :
-        # . . . . . . . . . . . . . . . . . . .
-        #
-
-        row = self.row * (self.pandaProgram.settings.MODEL_RESOLUTION-2)
-        colon = self.colon * (self.pandaProgram.settings.MODEL_RESOLUTION-2)
-
-
-        if self.colon == 0:
-            left = self.pandaProgram.world.topography[row:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2,
-                   self.pandaProgram.settings.N_COLONS * (self.pandaProgram.settings.MODEL_RESOLUTION-2)-1:self.pandaProgram.settings.N_COLONS * (self.pandaProgram.settings.MODEL_RESOLUTION-2)]
-            right = self.pandaProgram.world.topography[row:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2,
-                    colon+self.pandaProgram.settings.MODEL_RESOLUTION-2:colon+self.pandaProgram.settings.MODEL_RESOLUTION-2+1]
-        elif self.colon == self.pandaProgram.settings.N_COLONS - 1:
-            left = self.pandaProgram.world.topography[row:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2,
-                   colon - 1:colon]
-            right = self.pandaProgram.world.topography[row:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2,
-                   0:1]
-        else:
-            left = self.pandaProgram.world.topography[row:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2,
-                   colon - 1:colon]
-            right = self.pandaProgram.world.topography[row:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2,
-                    colon + self.pandaProgram.settings.MODEL_RESOLUTION - 2:colon + self.pandaProgram.settings.MODEL_RESOLUTION - 2 + 1]
-
-        center = self.pandaProgram.world.topography[row:row+self.pandaProgram.settings.MODEL_RESOLUTION-2,
-                 colon:colon+self.pandaProgram.settings.MODEL_RESOLUTION-2]
-        center = np.concatenate((left, center, right), axis=1)
-
-
-        colons = np.linspace(colon-1, colon+self.pandaProgram.settings.MODEL_RESOLUTION-2, self.pandaProgram.settings.MODEL_RESOLUTION, dtype=int)
-        if self.colon == 0:
-            colons[0] = 0
-        elif self.colon == self.pandaProgram.settings.N_COLONS - 1:
-            colons[-1] = colon+self.pandaProgram.settings.MODEL_RESOLUTION-2 -1
-        else:
-            pass
-
-
-        print(colons)
-        if self.row == 0:
-            bottom = self.pandaProgram.world.topography[0:1, colons]
-            top = self.pandaProgram.world.topography[
-                  row + self.pandaProgram.settings.MODEL_RESOLUTION - 2:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2 + 1,
-                  colons]
-        elif self.row == self.pandaProgram.settings.N_ROWS-1:
-            bottom = self.pandaProgram.world.topography[row-1:row, colons]
-            top = self.pandaProgram.world.topography[
-                  row + self.pandaProgram.settings.MODEL_RESOLUTION - 2-1:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2,
-                  colons]
-        else:
-            bottom = self.pandaProgram.world.topography[row-1:row, colons]
-            top = self.pandaProgram.world.topography[row + self.pandaProgram.settings.MODEL_RESOLUTION - 2:row + self.pandaProgram.settings.MODEL_RESOLUTION - 2+1,
-                  colons]
-
-        tmp = np.concatenate((bottom, center, top), axis=0)
-
-        tmp = np.flip(tmp, axis=0)
-        self.topography = tmp.copy()
-        #import matplotlib.pyplot as plt
-        #plt.imshow(self.topography)
-        #plt.pause(0.000001)
-
-        #self.topography = np.zeros((self.pandaProgram.settings.MODEL_RESOLUTION, self.pandaProgram.settings.MODEL_RESOLUTION))
 
     def CreateBaseTopographyCode(self):
         if self.row > 0 and self.row < self.N_ROWS - 1:
