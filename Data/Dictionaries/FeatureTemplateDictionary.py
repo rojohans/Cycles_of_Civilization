@@ -71,10 +71,10 @@ def GetFeatureTemplateDictionary():
         [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_1.bam")],
         [1],
         [[0.5, 1]])
-    featureTemplateDictionary['jungle_trees'] = FeatureProperties(
-        [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_1.bam")],
-        [1],
-        [[0.8, 1.2]])
+    #featureTemplateDictionary['jungle_trees'] = FeatureProperties(
+    #    [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_1.bam")],
+    #    [1],
+    #    [[0.8, 1.2]])
     featureTemplateDictionary['jungle'] = FeatureProperties(
         [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_2.bam"),
          loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_1.bam"),
