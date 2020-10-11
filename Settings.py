@@ -18,7 +18,7 @@ class SettingsClass():
         self.N_COLONS = 64
         self.HORIZONTAL_WRAP_BUFFER = 20
 
-        self.MODEL_RESOLUTION = 8
+        self.MODEL_RESOLUTION = 10
         self.TILE_CENTER_WIDTH = 0.5
         self.TILE_TEXTURE_RESOLUTION = 128
         self.ADJACENT_TILES_TEMPLATE_CROSS = np.array([[0, -1], [-1, 0], [0, 1], [1, 0]], dtype=int)
@@ -44,7 +44,7 @@ class SettingsClass():
 
         # ================ WORLD GENERATION ============================================================================
         self.WATER_HEIGHT = 0.5 # The water level above the underlying tile.
-        self.OCEAN_HEIGHT = 2
+        self.OCEAN_HEIGHT = 1.5
         self.ELEVATION_SCALE = 0.6
         self.ELEVATION_LEVELS = 9
         self.DISCRETE_ELEVATION = False

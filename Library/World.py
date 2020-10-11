@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import interpolate
+import matplotlib.pyplot as plt
 
 import Library.Noise as Noise
 
@@ -12,6 +13,7 @@ class WorldClass():
         #                                initialOctavesToSkip = 2,
         #                                applyDistributionFilter = False,
         #                                distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        '''
         self.elevationFloat = self.CreateMap(rows=self.mainProgram.settings.N_ROWS,
                                              colons=self.mainProgram.settings.N_COLONS,
                                         minValue = 0,
@@ -21,6 +23,8 @@ class WorldClass():
                                         applyDistributionFilter = False,
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
+        '''
+        self.elevation, self.topography = self.CreateElevationMap()
 
         #self.elevationInterpolated = self.CreateMap(rows=self.mainProgram.settings.N_ROWS*self.mainProgram.settings.MODEL_RESOLUTION,
         #                                            colons=self.mainProgram.settings.N_COLONS*self.mainProgram.settings.MODEL_RESOLUTION,
@@ -190,6 +194,62 @@ class WorldClass():
             map = map.astype(int)
 
         return map
+
+    def CreateElevationMap(self):
+        import perlin_numpy
+        import Library.Erosion as Erosion
+
+        shape = (self.mainProgram.settings.N_ROWS*(self.mainProgram.settings.MODEL_RESOLUTION-2),
+                 self.mainProgram.settings.N_COLONS*(self.mainProgram.settings.MODEL_RESOLUTION-2))
+        octaves = int(np.log2(np.max(shape))-1)
+
+        elevation = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2, persistence=0.5,
+                                                                tileable=(False, True))
+        elevation -= np.min(elevation)
+        elevation /= np.max(elevation)
+        elevation *= 8 * 30
+
+        #a = elevation[7:7 + self.mainProgram.settings.MODEL_RESOLUTION,
+        #    10:10 + self.mainProgram.settings.MODEL_RESOLUTION]
+        #print(a)
+        #print(np.shape(a))
+        #quit()
+
+
+        Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=10)
+        self.hydrolicErosion = Erosion.HydrolicErosion(terrain = elevation,
+                                                                evaporationRate=0.02,
+                                                                deltaT=1,
+                                                                flowSpeed=0.2,
+                                                                gridLength=1,
+                                                                carryCapacityLimit=1,
+                                                                erosionRate=0.1,
+                                                                depositionRate=0.1,
+                                                                maximumErosionDepth=10)
+
+        self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=100, application='even')
+        for i in range(400):
+            # self.hydrolicErosion.Rain(numberOfDrops=10, radius=10, dropSize=0.01, application='even')
+
+            if i > 100:
+                self.hydrolicErosion.Rain(numberOfDrops=100, radius=10, dropSize=100, application='drop')
+                # if np.mod(i, 10) == 0:
+                #    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.5, application='even')
+
+            self.hydrolicErosion()
+
+        elevation -= np.min(elevation)
+        elevation /= np.max(elevation)
+        elevation *= self.mainProgram.settings.ELEVATION_LEVELS
+
+        from scipy import interpolate
+        interpolator = interpolate.interp2d(np.linspace(-0.5, self.mainProgram.settings.N_COLONS-0.5, self.mainProgram.settings.N_COLONS*(self.mainProgram.settings.MODEL_RESOLUTION-2)),
+                             np.linspace(-0.5, self.mainProgram.settings.N_ROWS-0.5, self.mainProgram.settings.N_ROWS*(self.mainProgram.settings.MODEL_RESOLUTION-2)),
+                             elevation.copy())
+        tileElevation = interpolator(range(self.mainProgram.settings.N_COLONS), range(self.mainProgram.settings.N_ROWS))
+
+        return tileElevation, elevation
+
 
     def CreateTemperatureMap(self):
         '''
