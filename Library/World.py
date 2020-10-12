@@ -209,13 +209,8 @@ class WorldClass():
         elevation /= np.max(elevation)
         elevation *= 8 * 30
 
-        #a = elevation[7:7 + self.mainProgram.settings.MODEL_RESOLUTION,
-        #    10:10 + self.mainProgram.settings.MODEL_RESOLUTION]
-        #print(a)
-        #print(np.shape(a))
-        #quit()
 
-
+        '''
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=10)
         self.hydrolicErosion = Erosion.HydrolicErosion(terrain = elevation,
                                                                 evaporationRate=0.02,
@@ -235,7 +230,24 @@ class WorldClass():
                 self.hydrolicErosion.Rain(numberOfDrops=100, radius=10, dropSize=100, application='drop')
                 # if np.mod(i, 10) == 0:
                 #    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.5, application='even')
+            self.hydrolicErosion()
+        '''
 
+        Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
+        self.hydrolicErosion = Erosion.HydrolicErosion(terrain =elevation,
+                                                                evaporationRate=0.02,
+                                                                deltaT=1,
+                                                                flowSpeed=0.2,
+                                                                gridLength=1,
+                                                                carryCapacityLimit=0.5,
+                                                                erosionRate=0.25,
+                                                                depositionRate=0.5,
+                                                                maximumErosionDepth=10)
+        for i in range(600):
+            if i > 100:
+                self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
+            else:
+                self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
             self.hydrolicErosion()
 
         elevation -= np.min(elevation)

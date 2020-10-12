@@ -359,7 +359,7 @@ class Game(ShowBase):
                 iTile = colon + row * self.settings.N_COLONS
                 #self.tileList[iTile].CreateTextureArrayDebug()
                 self.tileList[iTile].CreateTextureArray()
-                #self.tileList[iTile].AddSlopeTexture()
+                self.tileList[iTile].AddSlopeTexture()
         toc = time.time()
         print('Create texture array (slopes included): {}'.format(toc - tic))
 

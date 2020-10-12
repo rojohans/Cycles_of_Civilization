@@ -75,7 +75,7 @@ class Main():
             print('World creation time: ', toc-tic)
 
             shape = (256, 512)
-            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.8, tileable=(False, True))
+            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.65, tileable=(False, True))
             self.terrainHardness = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2,
                                                                     persistence=0.8, tileable=(False, True))
             self.terrainHardness -= np.min(self.terrainHardness)
@@ -110,17 +110,15 @@ class Main():
                                                                 deltaT=1,
                                                                 flowSpeed=0.2,
                                                                 gridLength=1,
-                                                                carryCapacityLimit=2,
-                                                                erosionRate=0.5,
+                                                                carryCapacityLimit=.5,
+                                                                erosionRate=0.25,
                                                                 depositionRate=0.5,
                                                                 maximumErosionDepth=10)
 
-        self.thermalErosion = Erosion.ThermalErosion(terrain = self.heightMap,
-                                                              maximumSlope=50,
-                                                              flowSpeed=0.01,
-                                                              deltaT=0.1)
-
-        #self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=10, application='even')
+        #self.thermalErosion = Erosion.ThermalErosion(terrain = self.heightMap,
+        #                                                      maximumSlope=50,
+        #                                                      flowSpeed=0.01,
+        #                                                      deltaT=0.1)
 
         tic = time.time()
         for i in range(600):
@@ -129,40 +127,16 @@ class Main():
 
 
 
-            #if i > 100:
-                #self.hydrolicErosion.Rain(numberOfDrops=10, radius=10, dropSize=1000, application='drop')
+            if i > 100:
+                self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
+            else:
+                self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
+                #self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.2, application='even')
+
             #self.hydrolicErosion.Rain(numberOfDrops=10, radius=20, dropSize=100, application='drop')
-            if np.mod(i, 50) == 0:
-                self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=2, application='even')
+            #if np.mod(i, 50) == 0:
+            #    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=2, application='even')
             self.hydrolicErosion()
-            #else:
-            #    self.hydrolicErosion.UpdateFlow()
-            #    self.hydrolicErosion.UpdateWaterHeight()
-            #    self.hydrolicErosion.UpdateVelocity()
-            #    self.hydrolicErosion.UpdateSlope()
-            #    self.hydrolicErosion.Evaporation()
-
-            '''
-            self.hydrolicErosion.UpdateFlow()
-            self.hydrolicErosion.UpdateWaterHeight()
-            self.hydrolicErosion.UpdateVelocity()
-
-            self.hydrolicErosion.UpdateSlope()
-
-            self.hydrolicErosion.UpdateCarryCapacity()
-            self.hydrolicErosion.Erode()
-            self.hydrolicErosion.Deposit()
-            self.hydrolicErosion.SedimentTransportation()
-            self.hydrolicErosion.Evaporation()
-            '''
-            #self.hydrolicErosion()
-
-
-
-            #self.thermalErosion.UpdateSlope()
-            #self.thermalErosion.UpdateFlow()
-            #self.thermalErosion.UpdateTerrainHeight()
-            #self.hydrolicErosion.slope = self.thermalErosion.flow[:, :, 0]
 
             self.hydrolicErosion.Visualize()
             plt.pause(0.000001)
