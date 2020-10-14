@@ -19,8 +19,8 @@ class Game(ShowBase):
 
         self.settings = Settings.SettingsClass()
 
-        #Camera.CameraClass.Initialize(self)
-        #self.cameraObject = Camera.CameraClass()
+        Camera.CameraClass.Initialize(self)
+        self.cameraObject = Camera.CameraClass()
         #self.camera.cameraUpdateFunctions.append(self.camera.UpdateFeatureRender)
         self.light = Light.LightClass(shadowsEnabled=False)
 
@@ -68,6 +68,7 @@ class Game(ShowBase):
         print(type(hMap))
         plt.imsave(Root_Directory.Path() + '/Data/tmp_Data/' + 'heightMap.png', self.heightMap)
 
+
         self.terrain = p3d.GeoMipTerrain('terrain')
         #self.terrain = world.myGeoMipTerrain('terrain')
         self.terrain.setHeightfield(Root_Directory.Path() + '/Data/tmp_Data/' + 'heightMap.png')
@@ -84,9 +85,10 @@ class Game(ShowBase):
 
         root = self.terrain.getRoot()
         root.reparentTo(render)
-        root.setSz(5)
+        root.setSz(10)
 
         self.terrain.generate()
+
 
         def updateTask(task):
             self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2,
@@ -100,7 +102,7 @@ class Game(ShowBase):
             self.terrain.update()
             return task.cont
 
-        taskMgr.add(updateTask, "update")
+        #taskMgr.add(updateTask, "update")
 
         '''
         # Set up the GeoMipTerrain
