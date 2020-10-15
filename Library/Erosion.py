@@ -157,9 +157,9 @@ class HydrolicErosion():
     def UpdateVelocity(self):
         self.velocity[:, :, 0] = (self.flow[:, :, 1] - self.flow[:, :, 0] + self.inFlowLeft - self.inFlowRight)/2
         self.velocity[:, :, 1] = (self.flow[:, :, 2] - self.flow[:, :, 3] + self.inFlowBottom - self.inFlowTop)/2
-        #self.velocity[:, :, 0] = 5*(self.flow[:, :, 1] - self.flow[:, :, 0] + self.inFlowLeft - self.inFlowRight)/\
+        #self.velocity[:, :, 0] = (self.flow[:, :, 1] - self.flow[:, :, 0] + self.inFlowLeft - self.inFlowRight)/\
         #                         (self.water[:, :, 0] + self.water[:, :, 1]+0.001)
-        #self.velocity[:, :, 1] = 5*(self.flow[:, :, 2] - self.flow[:, :, 3] + self.inFlowBottom - self.inFlowTop)/\
+        #self.velocity[:, :, 1] = (self.flow[:, :, 2] - self.flow[:, :, 3] + self.inFlowBottom - self.inFlowTop)/\
         #                         (self.water[:, :, 0] + self.water[:, :, 1]+0.001)
     '''
     def UpdateSlope(self):
@@ -252,12 +252,16 @@ class HydrolicErosion():
                                  (np.pi / 2 - self.minimumErosionAngle) * np.pi / 2)
         slopeMultiplier[self.slope < self.minimumErosionAngle] = 0
         #self.carryCapacity =  waterDepthMultiplier * self.carryCapacityLimit * slopeMultiplier * np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2)
-        self.carryCapacity = self.carryCapacityLimit  * np.sqrt(self.velocity[:, :, 0] ** 2 + self.velocity[:, :, 1] ** 2)
+        self.carryCapacity = self.carryCapacityLimit * slopeMultiplier * np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2)
+        #self.carryCapacity = self.carryCapacityLimit * np.sqrt(self.velocity[:, :, 0] ** 2 + self.velocity[:, :, 1] ** 2)
         self.suspendedSediment[:, :, 1] = self.suspendedSediment[:, :, 0]
 
     def Erode(self):
         erodedSediment = self.deltaT*self.erosionRate*(self.carryCapacity - self.suspendedSediment[:, :, 0])
         erodedSediment[erodedSediment < 0] = 0
+
+        erosionLimit = self.water[:, :, 1] - 2*self.suspendedSediment[:, :, 0]
+        erodedSediment[erodedSediment > erosionLimit] = erosionLimit[erodedSediment > erosionLimit]
 
         lowestAdjacentHeight = np.zeros((self.NRows, self.NColons, 4))
         lowestAdjacentHeight[:, :, 0] = self.terrainLeft
@@ -271,9 +275,11 @@ class HydrolicErosion():
 
         self.terrain -= erodedSediment
         self.suspendedSediment[:, :, 1] += erodedSediment
+        self.water[:, :, 1] += erodedSediment
+
 
     def Deposit(self):
-        depositedSediment = 0.01+self.deltaT*self.depositionRate * (self.suspendedSediment[:, :, 0] - self.carryCapacity)
+        depositedSediment = self.deltaT*self.depositionRate * (self.suspendedSediment[:, :, 0] - self.carryCapacity)
         depositedSediment[depositedSediment < 0] = 0
 
         highestAdjacentHeight = np.zeros((self.NRows, self.NColons, 4))
@@ -288,6 +294,7 @@ class HydrolicErosion():
 
         self.terrain += depositedSediment
         self.suspendedSediment[:, :, 1] -= depositedSediment
+        self.water[:, :, 1] -= depositedSediment
 
     def SedimentTransportation(self):
         flowScaling = self.suspendedSediment[:, :, 1] / ((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :,
@@ -315,9 +322,12 @@ class HydrolicErosion():
                                          sedimentFlow[0:1, :, 3]),
                                         axis=0)
 
-        self.suspendedSediment[:, :, 0] = self.suspendedSediment[:, :, 1] + self.deltaT*(- (
-                sedimentFlow[:, :, 0] + sedimentFlow[:, :, 1] + sedimentFlow[:, :, 2] + sedimentFlow[:, :, 3]) + \
-                              sedimentInFlowLeft + sedimentInFlowRight + sedimentInFlowTop + sedimentInFlowBottom)
+        sedimentOut = self.deltaT * (sedimentFlow[:, :, 0] + sedimentFlow[:, :, 1] + sedimentFlow[:, :, 2] + sedimentFlow[:, :, 3])
+        sedimentIn = self.deltaT * (sedimentInFlowLeft + sedimentInFlowRight + sedimentInFlowTop + sedimentInFlowBottom)
+
+        self.suspendedSediment[:, :, 0] = self.suspendedSediment[:, :, 1] - sedimentOut + sedimentIn
+        self.water[:, :, 1] -= sedimentOut
+        self.water[:, :, 1] += sedimentIn
 
     def Evaporation(self):
         self.water[:, :, 0] = self.water[:, :, 1]*(1 - self.evaporationRate*self.deltaT)

@@ -75,7 +75,7 @@ class Main():
             print('World creation time: ', toc-tic)
 
             shape = (256, 512)
-            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.8, tileable=(False, True))
+            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.3, tileable=(False, True))
             self.terrainHardness = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2,
                                                                     persistence=0.8, tileable=(False, True))
             self.terrainHardness -= np.min(self.terrainHardness)
@@ -111,22 +111,38 @@ class Main():
             #self.heightMap[100:110, 100:110] = 100
             #self.heightMap[:, 300:310] = 100
 
+        X = np.arange(0, 512, 1)
+        Y = np.arange(0, 256, 1)
+        X, Y = np.meshgrid(X, Y)
+
+        from mpl_toolkits.mplot3d import Axes3D
+        #ax = fig.add_subplot(111, projection='3d')
+
+        #from matplotlib import cm
+        #fig = plt.figure()
+        #ax = fig.gca(projection='3d')
+        #ax.set_aspect(1)
+        #elevationPlot = ax.plot_surface(X, Y, self.heightMap, cmap = cm.coolwarm)
+
+        #import mayavi
+
+
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
         #self.terrainHardness
         self.hydrolicErosion = Erosion.HydrolicErosion(terrain = self.heightMap,
                                                        terrainHardness = None,
-                                                                evaporationRate=0.03,
+                                                                evaporationRate=0.05,
                                                                 deltaT=0.1,
                                                                 flowSpeed=2,
                                                                 gridLength=1,
-                                                                carryCapacityLimit=5,
+                                                                carryCapacityLimit=1,
                                                                 erosionRate=0.1,
-                                                                depositionRate=0.1,
+                                                                depositionRate=0.5,
                                                                 maximumErosionDepth=10)
 
         self.thermalErosion = Erosion.ThermalErosion(terrain = self.heightMap,
-                                                              maximumSlope=60,
-                                                              flowSpeed=0.5,
+                                                              maximumSlope=30,
+                                                              flowSpeed=1,
                                                               deltaT=1)
 
         tic = time.time()
@@ -134,17 +150,18 @@ class Main():
             print(i)
             #self.hydrolicErosion.Rain(numberOfDrops=10, radius=10, dropSize=0.01, application='even')
 
-
-
+            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.02, application='even')
+            '''
             if i > 100:
                 #self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
                 if np.mod(i, 10) == 0:
                     #self.hydrolicErosion.Rain(numberOfDrops=200, radius=2, dropSize=100, application='drop')
-                    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.5, application='even')
+                    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.1, application='even')
             else:
                 #self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
                 if np.mod(i, 20) == 0:
-                    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=1, application='even')
+                    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.2, application='even')
+            '''
 
             #self.hydrolicErosion.Rain(numberOfDrops=10, radius=20, dropSize=100, application='drop')
             #if np.mod(i, 50) == 0:
@@ -159,11 +176,18 @@ class Main():
             if i%20 == 0:
                 pass
                 #self.thermalErosion()
-            self.thermalErosion()
+            #self.thermalErosion()
+
+            #print(np.min(self.heightMap))
+            #print(np.max(self.heightMap))
+
             #self.thermalErosion()
             #self.thermalErosion()
 
             self.hydrolicErosion.Visualize()
+
+            #elevationPlot.remove()
+            #elevationPlot = ax.plot_surface(X, Y, self.heightMap, cmap=cm.coolwarm)
             plt.pause(0.000001)
         toc = time.time()
         print('Total erosion time: ', toc-tic)
