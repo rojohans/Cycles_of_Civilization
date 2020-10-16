@@ -263,8 +263,8 @@ class HydrolicErosion():
         erodedSediment = self.deltaT*self.erosionRate*(self.carryCapacity - self.suspendedSediment[:, :, 0])
         erodedSediment[erodedSediment < 0] = 0
 
-        erosionLimit = self.water[:, :, 1] - 2*self.suspendedSediment[:, :, 0]
-        erodedSediment[erodedSediment > erosionLimit] = erosionLimit[erodedSediment > erosionLimit]
+        #erosionLimit = self.water[:, :, 1] - 2*self.suspendedSediment[:, :, 0]
+        #erodedSediment[erodedSediment > erosionLimit] = erosionLimit[erodedSediment > erosionLimit]
 
         lowestAdjacentHeight = np.zeros((self.NRows, self.NColons, 4))
         lowestAdjacentHeight[:, :, 0] = self.terrainLeft
@@ -278,7 +278,7 @@ class HydrolicErosion():
 
         self.terrain -= erodedSediment
         self.suspendedSediment[:, :, 1] += erodedSediment
-        self.water[:, :, 1] += erodedSediment
+        #self.water[:, :, 1] += erodedSediment
 
 
     def Deposit(self):
@@ -297,7 +297,7 @@ class HydrolicErosion():
 
         self.terrain += depositedSediment
         self.suspendedSediment[:, :, 1] -= depositedSediment
-        self.water[:, :, 1] -= depositedSediment
+        #self.water[:, :, 1] -= depositedSediment
 
     def SedimentTransportation(self):
         self.sedimentFlow = self.sedimentFlowSpeed * self.flow.copy()

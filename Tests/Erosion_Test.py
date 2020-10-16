@@ -1,7 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib
-matplotlib.use('TkAgg')
+import System_Information
+if System_Information.OPERATING_SYSTEM == 'windows':
+    matplotlib.use('TkAgg')
 import time
 
 import perlin_numpy
@@ -16,59 +18,6 @@ class Main():
     def __init__(self):
         self.settings = Settings.SettingsClass()
 
-        if False:
-            #import noise
-
-
-            #help(noise)
-            shape = (256, 512)
-            world = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.7, tileable=(False, True))
-
-            '''
-            world = np.zeros(shape)
-            for i in range(shape[0]):
-                for j in range(shape[1]):
-                    world[i][j] = noise.pnoise2(i / scale,
-                                                j / scale,
-                                                octaves=octaves,
-                                                persistence=persistence,
-                                                lacunarity=lacunarity,
-                                                repeatx=0.5,
-                                                repeaty=1,
-                                                base=0)
-            world = np.concatenate((world, world), axis=0)
-            world = np.concatenate((world, world), axis=1)
-
-            np.random.seed(42)
-
-            import random
-            random.seed(42)
-            #np.random.seed(42)
-            world1 = np.zeros(shape)
-            for i in range(shape[0]):
-                for j in range(shape[1]):
-                    world1[i][j] = noise.pnoise2(i / scale,
-                                                j / scale,
-                                                octaves=octaves,
-                                                persistence=persistence,
-                                                lacunarity=lacunarity,
-                                                repeatx=0.5,
-                                                repeaty=1,
-                                                base=0)
-            world1 = np.concatenate((world1, world1), axis=0)
-            world1 = np.concatenate((world1, world1), axis=1)
-            '''
-
-            plt.imshow(world)
-            #fig, axs = plt.subplots(1, 2)
-            #axs[0].imshow(world)
-            #axs[1].imshow(world1)
-            plt.show()
-            quit()
-
-
-
-
         if True:
             tic = time.time()
             World.WorldClass.Initialize(mainProgram = self)
@@ -77,7 +26,7 @@ class Main():
             print('World creation time: ', toc-tic)
 
             shape = (256, 512)
-            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.3, tileable=(False, True))
+            self.heightMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.5, tileable=(False, True))
             self.terrainHardness = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2,
                                                                     persistence=0.8, tileable=(False, True))
             self.terrainHardness -= np.min(self.terrainHardness)
@@ -97,7 +46,7 @@ class Main():
 
             #self.heightMap -= np.min(self.heightMap)
             #self.heightMap /= np.max(self.heightMap)
-            self.heightMap *= 512/10
+            self.heightMap *= 512/5
         else:
             h = np.linspace(0, 512, 512)
             h = np.reshape(h, (1, 512))
@@ -113,107 +62,66 @@ class Main():
             #self.heightMap[100:110, 100:110] = 100
             #self.heightMap[:, 300:310] = 100
 
-        X = np.arange(0, 512, 1)
-        Y = np.arange(0, 256, 1)
-        X, Y = np.meshgrid(X, Y)
+        matplotlibVisualization = True
+        pyvistaVisualization = False
 
-        from mpl_toolkits.mplot3d import Axes3D
-        #ax = fig.add_subplot(111, projection='3d')
+        if pyvistaVisualization:
+            X = np.arange(0, 512, 1)
+            Y = np.arange(0, 256, 1)
+            X, Y = np.meshgrid(X, Y)
 
-        #from matplotlib import cm
-        #fig = plt.figure()
-        #ax = fig.gca(projection='3d')
-        #ax.set_aspect(1)
-        #elevationPlot = ax.plot_surface(X, Y, self.heightMap, cmap = cm.coolwarm)
+            import pyvista as pv
 
-        #import sys
-        #sys.path.append("/usr/local/visit/current/linux-x86_64/lib/site-packages")
-        #import visit
-        #visit.Launch()
+            def CoordinatesToIndex(x, y):
+                return x + y*shape[1]
 
-        import pyvista as pv
-        #import numpy as np
-        from pyvista import examples
+            NPoints = shape[0]*shape[1]
+            terrainPoints = np.zeros((NPoints, 3))
+            terrainPoints[:, 0] = np.reshape(X, (NPoints, 1))[:, 0]
+            terrainPoints[:, 1] = np.reshape(Y, (NPoints, 1))[:, 0]
+            terrainPoints[:, 2] = np.reshape(self.heightMap, (NPoints, 1))[:, 0]
 
-        #dem = examples.download_crater_topo()
-        #dem
+            waterPoints = np.zeros((NPoints, 3))
+            waterPoints[:, 0] = np.reshape(X, (NPoints, 1))[:, 0]
+            waterPoints[:, 1] = np.reshape(Y, (NPoints, 1))[:, 0]
+            waterPoints[:, 2] = np.reshape(np.zeros((shape[0], shape[1])), (NPoints, 1))[:, 0]
 
-        #subset = dem.extract_subset((500, 900, 400, 800, 0, 0), (5, 5, 1))
+            faces = []
+            for x in range(shape[1]-1):
+                for y in range(shape[0]-1):
+                    faces.append([4, CoordinatesToIndex(x, y), CoordinatesToIndex(x+1, y), CoordinatesToIndex(x+1, y+1), CoordinatesToIndex(x, y+1)])
+            faces = np.hstack(faces)
 
-        #terrain = subset.warp_by_scalar()
-        #terrain
+            terrainMesh = pv.PolyData(terrainPoints, faces)
+            waterMesh = pv.PolyData(waterPoints, faces)
 
-        #terrain.plot()
 
-        x = np.arange(-10, 10, 0.25)
-        y = np.arange(-10, 10, 0.25)
-        x, y = np.meshgrid(x, y)
-        r = np.sqrt(x ** 2 + y ** 2)
-        z = np.sin(r)
 
-        #grid = pv.StructuredGrid(X, Y, self.heightMap)
-        #grid.plot(show_grid=True)
-        # Plot mean curvature as well
-        #grid.plot_curvature(clim=[-1, 1])
+            plotter = pv.Plotter()
+            # , scalars = grid.points[:, -1]
+            # opacity=1+waterPoints[:, -1]
+            plotter.add_mesh(terrainMesh, scalars = terrainPoints[:, -1], smooth_shading=True)
+            plotter.add_mesh(waterMesh, smooth_shading=True, color = [0.1, 0.3, 0.6], opacity=0.5)
+            plotter.enable_3_lights()
+            #waterMesh = plotter.add_mesh(mesh = waterGrid, color=[0.1, 0.4, 0.8], smooth_shading=True, show_edges=False)
+            plotter.enable_terrain_style()
+            plotter.show(auto_close=False)
 
-        #https: // github.com / BartheG / Orvisu
-        #https: // github.com / OpenGeoVis / PVGeo
-
-        x = np.arange(-10, 10, 0.25)
-        y = np.arange(-10, 10, 0.25)
-        x, y = np.meshgrid(x, y)
-        r = np.sqrt(x ** 2 + y ** 2)
-        z = np.sin(r)
-
-        # Create and structured surface
-        grid = pv.StructuredGrid(x, y, z)
-
-        # Create a plotter object and set the scalars to the Z height
-        plotter = pv.Plotter()
-        plotter.add_mesh(grid, scalars=z.ravel(), smooth_shading=True)
-
-        print('Orient the view, then press "q" to close window and produce movie')
-
-        # setup camera and close
-        plotter.show(auto_close=False)
-
-        # Open a gif
-        #plotter.open_gif("wave.gif")
-
-        pts = grid.points.copy()
-
-        # Update Z and write a frame for each updated position
-        nframe = 15
-        for phase in np.linspace(0, 2 * np.pi, nframe + 1)[:nframe]:
-            print('loop')
-            z = np.sin(r + phase)
-            pts[:, -1] = z.ravel()
-            plotter.update_coordinates(pts, render=False)
-            plotter.update_scalars(z.ravel(), render=False)
-
-            # must update normals when smooth shading is enabled
-            plotter.mesh.compute_normals(cell_normals=False, inplace=True)
-            #plotter.write_frame()  # this will trigger the render
-
-            # otherwise, when not writing frames, render with:
-            plotter.render()
-
-        # Close movie and delete object
-        plotter.close()
-
+            #https: // github.com / BartheG / Orvisu
+            #https: // github.com / OpenGeoVis / PVGeo
 
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
         #self.terrainHardness
         self.hydrolicErosion = Erosion.HydrolicErosion(terrain = self.heightMap,
                                                        terrainHardness = None,
-                                                                evaporationRate=0.05,
+                                                                evaporationRate=0.1,
                                                                 deltaT=0.1,
                                                                 flowSpeed=2,
                                                        sedimentFlowSpeed=0.5,
                                                                 gridLength=1,
-                                                                carryCapacityLimit=1,
+                                                                carryCapacityLimit=2,
                                                                 erosionRate=0.1,
-                                                                depositionRate=0.5,
+                                                                depositionRate=0.1,
                                                                 maximumErosionDepth=10)
 
         self.thermalErosion = Erosion.ThermalErosion(terrain = self.heightMap,
@@ -221,12 +129,28 @@ class Main():
                                                               flowSpeed=1,
                                                               deltaT=1)
 
+        #          USEFUL PAPERS
+        #https: // github.com / bshishov / UnityTerrainErosionGPU
+        #https://old.cescg.org/CESCG-2011/papers/TUBudapest-Jako-Balazs.pdf
+        #https://hal.inria.fr/inria-00402079/document
+        #http: // www - cg.cis.iwate - u.ac.jp / lab / graphite06.pdf
+        #https://matthias-research.github.io/pages/publications/SPHShallow.pdf
+        #https://dl.acm.org/doi/pdf/10.1145/97880.97884
+        #
+
         tic = time.time()
         for i in range(600):
             print(i)
             #self.hydrolicErosion.Rain(numberOfDrops=10, radius=10, dropSize=0.01, application='even')
 
-            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.02, application='even')
+
+            if i>400:
+                rainAmount = 0
+            else:
+                rainAmount = 0.03 * (1 + np.sin(i / 20)) / 2
+
+            #self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.02, application='even')
+            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
             '''
             if i > 100:
                 #self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
@@ -260,13 +184,43 @@ class Main():
             #self.thermalErosion()
             #self.thermalErosion()
 
-            self.hydrolicErosion.Visualize()
+            if pyvistaVisualization:
+                z = self.heightMap.copy()
+                z[:, 0] = -10
+                z[:, -1] = -10
+                z[0, :] = -10
+                z[-1, :] = -10
+                terrainPoints[:, -1] = np.reshape(z, (NPoints, 1))[:, 0]
 
-            #elevationPlot.remove()
-            #elevationPlot = ax.plot_surface(X, Y, self.heightMap, cmap=cm.coolwarm)
-            #plt.pause(0.000001)
+                z = self.heightMap.copy()+self.hydrolicErosion.water[:, :, 0].copy()
+                z[self.hydrolicErosion.water[:, :, 0] < 1] = 0
+                z[:, 0] = -10
+                z[:, -1] = -10
+                z[0, :] = -10
+                z[-1, :] = -10
+                waterPoints[:, -1] = np.reshape(z, (NPoints, 1))[:, 0]
+
+                print(np.max(waterPoints[:, -1]))
+
+                plotter.update_coordinates(points=terrainPoints, mesh=terrainMesh)
+                plotter.update_coordinates(points=waterPoints, mesh = waterMesh)
+
+                #plotter.update_coordinates(points=pts, render=False)
+                #plotter.update_coordinates(waterPts, render=False)
+                plotter.update_scalars(terrainPoints[:, -1], mesh=terrainMesh, render=False)
+                plotter.mesh.compute_normals(cell_normals=False, inplace=True)
+                plotter.render()
+
+
+            if matplotlibVisualization:
+                self.hydrolicErosion.Visualize()
+                plt.pause(0.000001)
         toc = time.time()
         print('Total erosion time: ', toc-tic)
+        if pyvistaVisualization:
+            plotter.show(auto_close=False)
+        if matplotlibVisualization:
+            plt.show()
 
         #scaledHeightMap = self.world.ApplyDistributionFilter(self.heightMap, self.settings.ELEVATION_DISTRIBUTION)
         scaledHeightMap = self.heightMap.copy()
