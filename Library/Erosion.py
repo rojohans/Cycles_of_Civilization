@@ -11,6 +11,7 @@ class HydrolicErosion():
                  evaporationRate = 0.05,
                  deltaT = 1,
                  flowSpeed = 0.5,
+                 sedimentFlowSpeed = 0.5,
                  gridLength = 1,
                  carryCapacityLimit = 1,
                  erosionRate = 0.5,
@@ -23,6 +24,7 @@ class HydrolicErosion():
         self.deltaT = deltaT
         self.evaporationRate = evaporationRate
         self.flowSpeed = flowSpeed
+        self.sedimentFlowSpeed = sedimentFlowSpeed
         self.gridLength = gridLength
         self.carryCapacityLimit = carryCapacityLimit
         self.erosionRate = erosionRate
@@ -52,6 +54,7 @@ class HydrolicErosion():
         self.velocity = np.zeros((self.NRows, self.NColons, 2)) # x, y
         self.slope = np.zeros((self.NRows, self.NColons))
         self.carryCapacity = np.zeros((self.NRows, self.NColons))
+        self.sedimentFlow = np.zeros((self.NRows, self.NColons, 4))  # Left, Right, Top, Bottom
 
         self.terrainplot = None
         self.waterPlot = None
@@ -297,32 +300,34 @@ class HydrolicErosion():
         self.water[:, :, 1] -= depositedSediment
 
     def SedimentTransportation(self):
-        flowScaling = self.suspendedSediment[:, :, 1] / ((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :,
-                                                                                        2] + self.flow[:, :,
+        self.sedimentFlow = self.sedimentFlowSpeed * self.flow.copy()
+
+        flowScaling = self.suspendedSediment[:, :, 1] / ((self.sedimentFlow[:, :, 0] + self.sedimentFlow[:, :, 1] + self.sedimentFlow[:, :,
+                                                                                        2] + self.sedimentFlow[:, :,
                                                                                              3] + 0.001) * self.deltaT)
         flowScaling[flowScaling > 1] = 1
 
-        sedimentFlow = self.flow.copy()
+        #sedimentFlow = self.flow.copy()
 
-        sedimentFlow[:, :, 0] *= flowScaling
-        sedimentFlow[:, :, 1] *= flowScaling
-        sedimentFlow[:, :, 2] *= flowScaling
-        sedimentFlow[:, :, 3] *= flowScaling
+        self.sedimentFlow[:, :, 0] *= flowScaling
+        self.sedimentFlow[:, :, 1] *= flowScaling
+        self.sedimentFlow[:, :, 2] *= flowScaling
+        self.sedimentFlow[:, :, 3] *= flowScaling
 
-        sedimentInFlowRight = np.concatenate((sedimentFlow[:, 1:self.NColons, 0],
-                                           sedimentFlow[:, 0:1, 0]),
+        sedimentInFlowRight = np.concatenate((self.sedimentFlow[:, 1:self.NColons, 0],
+                                           self.sedimentFlow[:, 0:1, 0]),
                                           axis=1)
-        sedimentInFlowLeft = np.concatenate((sedimentFlow[:, self.NColons - 1:self.NColons, 1],
-                                          sedimentFlow[:, 0:-1, 1]),
+        sedimentInFlowLeft = np.concatenate((self.sedimentFlow[:, self.NColons - 1:self.NColons, 1],
+                                          self.sedimentFlow[:, 0:-1, 1]),
                                          axis=1)
-        sedimentInFlowBottom = np.concatenate((sedimentFlow[self.NRows - 1:self.NRows, :, 2],
-                                            sedimentFlow[0:-1, :, 2]),
+        sedimentInFlowBottom = np.concatenate((self.sedimentFlow[self.NRows - 1:self.NRows, :, 2],
+                                            self.sedimentFlow[0:-1, :, 2]),
                                            axis=0)
-        sedimentInFlowTop = np.concatenate((sedimentFlow[1:self.NRows, :, 3],
-                                         sedimentFlow[0:1, :, 3]),
+        sedimentInFlowTop = np.concatenate((self.sedimentFlow[1:self.NRows, :, 3],
+                                         self.sedimentFlow[0:1, :, 3]),
                                         axis=0)
 
-        sedimentOut = self.deltaT * (sedimentFlow[:, :, 0] + sedimentFlow[:, :, 1] + sedimentFlow[:, :, 2] + sedimentFlow[:, :, 3])
+        sedimentOut = self.deltaT * (self.sedimentFlow[:, :, 0] + self.sedimentFlow[:, :, 1] + self.sedimentFlow[:, :, 2] + self.sedimentFlow[:, :, 3])
         sedimentIn = self.deltaT * (sedimentInFlowLeft + sedimentInFlowRight + sedimentInFlowTop + sedimentInFlowBottom)
 
         self.suspendedSediment[:, :, 0] = self.suspendedSediment[:, :, 1] - sedimentOut + sedimentIn
@@ -376,7 +381,7 @@ class HydrolicErosion():
                 self.suspendedSedimentPlot.set_clim(vmin=0, vmax=2)
                 self.slopeplot.set_array(180*self.slope/np.pi)
                 self.velocityPlot.set_array(np.sqrt(self.velocity[:, :, 0]**2 + self.velocity[:, :, 1]**2))
-                self.velocityPlot.set_clim(vmin=0, vmax=5)
+                self.velocityPlot.set_clim(vmin=0, vmax=10)
 
             plt.pause(0.00001)
 

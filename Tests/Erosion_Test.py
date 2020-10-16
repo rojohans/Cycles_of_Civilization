@@ -1,5 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
 import time
 
 import perlin_numpy
@@ -124,7 +126,80 @@ class Main():
         #ax.set_aspect(1)
         #elevationPlot = ax.plot_surface(X, Y, self.heightMap, cmap = cm.coolwarm)
 
-        #import mayavi
+        #import sys
+        #sys.path.append("/usr/local/visit/current/linux-x86_64/lib/site-packages")
+        #import visit
+        #visit.Launch()
+
+        import pyvista as pv
+        #import numpy as np
+        from pyvista import examples
+
+        #dem = examples.download_crater_topo()
+        #dem
+
+        #subset = dem.extract_subset((500, 900, 400, 800, 0, 0), (5, 5, 1))
+
+        #terrain = subset.warp_by_scalar()
+        #terrain
+
+        #terrain.plot()
+
+        x = np.arange(-10, 10, 0.25)
+        y = np.arange(-10, 10, 0.25)
+        x, y = np.meshgrid(x, y)
+        r = np.sqrt(x ** 2 + y ** 2)
+        z = np.sin(r)
+
+        #grid = pv.StructuredGrid(X, Y, self.heightMap)
+        #grid.plot(show_grid=True)
+        # Plot mean curvature as well
+        #grid.plot_curvature(clim=[-1, 1])
+
+        #https: // github.com / BartheG / Orvisu
+        #https: // github.com / OpenGeoVis / PVGeo
+
+        x = np.arange(-10, 10, 0.25)
+        y = np.arange(-10, 10, 0.25)
+        x, y = np.meshgrid(x, y)
+        r = np.sqrt(x ** 2 + y ** 2)
+        z = np.sin(r)
+
+        # Create and structured surface
+        grid = pv.StructuredGrid(x, y, z)
+
+        # Create a plotter object and set the scalars to the Z height
+        plotter = pv.Plotter()
+        plotter.add_mesh(grid, scalars=z.ravel(), smooth_shading=True)
+
+        print('Orient the view, then press "q" to close window and produce movie')
+
+        # setup camera and close
+        plotter.show(auto_close=False)
+
+        # Open a gif
+        #plotter.open_gif("wave.gif")
+
+        pts = grid.points.copy()
+
+        # Update Z and write a frame for each updated position
+        nframe = 15
+        for phase in np.linspace(0, 2 * np.pi, nframe + 1)[:nframe]:
+            print('loop')
+            z = np.sin(r + phase)
+            pts[:, -1] = z.ravel()
+            plotter.update_coordinates(pts, render=False)
+            plotter.update_scalars(z.ravel(), render=False)
+
+            # must update normals when smooth shading is enabled
+            plotter.mesh.compute_normals(cell_normals=False, inplace=True)
+            #plotter.write_frame()  # this will trigger the render
+
+            # otherwise, when not writing frames, render with:
+            plotter.render()
+
+        # Close movie and delete object
+        plotter.close()
 
 
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
@@ -134,6 +209,7 @@ class Main():
                                                                 evaporationRate=0.05,
                                                                 deltaT=0.1,
                                                                 flowSpeed=2,
+                                                       sedimentFlowSpeed=0.5,
                                                                 gridLength=1,
                                                                 carryCapacityLimit=1,
                                                                 erosionRate=0.1,
@@ -188,7 +264,7 @@ class Main():
 
             #elevationPlot.remove()
             #elevationPlot = ax.plot_surface(X, Y, self.heightMap, cmap=cm.coolwarm)
-            plt.pause(0.000001)
+            #plt.pause(0.000001)
         toc = time.time()
         print('Total erosion time: ', toc-tic)
 
