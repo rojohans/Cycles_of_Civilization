@@ -280,10 +280,11 @@ class HydrolicErosion():
         self.suspendedSediment[:, :, 1] += erodedSediment
         #self.water[:, :, 1] += erodedSediment
 
-
     def Deposit(self):
         depositedSediment = self.deltaT*self.depositionRate * (self.suspendedSediment[:, :, 0] - self.carryCapacity)
         depositedSediment[depositedSediment < 0] = 0
+        #minDepos = 0.3 * self.suspendedSediment[:, :, 0]
+        #depositedSediment[depositedSediment < minDepos] = minDepos[depositedSediment < minDepos]
 
         highestAdjacentHeight = np.zeros((self.NRows, self.NColons, 4))
         highestAdjacentHeight[:, :, 0] = self.terrainLeft
@@ -331,8 +332,8 @@ class HydrolicErosion():
         sedimentIn = self.deltaT * (sedimentInFlowLeft + sedimentInFlowRight + sedimentInFlowTop + sedimentInFlowBottom)
 
         self.suspendedSediment[:, :, 0] = self.suspendedSediment[:, :, 1] - sedimentOut + sedimentIn
-        self.water[:, :, 1] -= sedimentOut
-        self.water[:, :, 1] += sedimentIn
+        #self.water[:, :, 1] -= sedimentOut
+        #self.water[:, :, 1] += sedimentIn
 
     def Evaporation(self):
         self.water[:, :, 0] = self.water[:, :, 1]*(1 - self.evaporationRate*self.deltaT)
@@ -427,82 +428,70 @@ class ThermalErosion():
         self.deltaT = deltaT
         self.gridLength = gridLength
         self.flowSpeed = flowSpeed
-        self.maximumSlope = np.pi*maximumSlope/180
+        self.maximumSlopeDegree = np.array(maximumSlope)
+        self.maximumSlope = np.pi*self.maximumSlopeDegree.copy()/180
         self.maximumDeltaHeight = gridLength * np.tan(self.maximumSlope)
 
         self.terrain = terrain
-        self.flow = np.zeros((self.NRows, self.NColons, 4))  # Left, Right, Top, Bottom
+        self.flow = np.zeros((self.NRows, self.NColons, 8))  # Left, Right, Top, Bottom, Top_Left, Bottom_Right, Bottom_Left, Top_Right
 
-    def UpdateFlow(self):
-        if True:
-            deltaHeightLeft = self.CalculateDeltaHeight('left')
-            #newFlowLeft = self.flow[:, :, 0] + self.deltaT * self.flowSpeed * deltaHeightLeft
-            newFlowLeft = self.flowSpeed*(deltaHeightLeft - self.maximumDeltaHeight)
-            newFlowLeft[newFlowLeft < 0] = 0
-            self.flow[:, :, 0] = newFlowLeft
+        self.numberOfLayers = np.size(terrain, 2)
 
-            deltaHeightRight = self.CalculateDeltaHeight('right')
-            #newFlowRight = self.flow[:, :, 1] + self.deltaT * self.flowSpeed * deltaHeightRight
-            newFlowRight = self.flowSpeed*(deltaHeightRight - self.maximumDeltaHeight)
-            newFlowRight[newFlowRight < 0] = 0
-            self.flow[:, :, 1] = newFlowRight
+    def UpdateFlow(self, iLayer):
+        deltaHeightLeft = self.CalculateDeltaHeight(iLayer, 'left')
+        newFlowLeft = self.flowSpeed*(deltaHeightLeft - self.maximumDeltaHeight[iLayer])
+        newFlowLeft[newFlowLeft < 0] = 0
+        self.flow[:, :, 0] = newFlowLeft
 
-            deltaHeightTop = self.CalculateDeltaHeight('top')
-            #newFlowTop = self.flow[:, :, 2] + self.deltaT * self.flowSpeed * deltaHeightTop
-            newFlowTop = self.flowSpeed*(deltaHeightTop - self.maximumDeltaHeight)
-            newFlowTop[newFlowTop < 0] = 0
-            self.flow[:, :, 2] = newFlowTop
+        deltaHeightRight = self.CalculateDeltaHeight(iLayer, 'right')
+        newFlowRight = self.flowSpeed*(deltaHeightRight - self.maximumDeltaHeight[iLayer])
+        newFlowRight[newFlowRight < 0] = 0
+        self.flow[:, :, 1] = newFlowRight
 
-            deltaHeightBottom = self.CalculateDeltaHeight('bottom')
-            #newFlowBottom = self.flow[:, :, 3] + self.deltaT * self.flowSpeed * deltaHeightBottom
-            newFlowBottom = self.flowSpeed*(deltaHeightBottom - self.maximumDeltaHeight)
-            newFlowBottom[newFlowBottom < 0] = 0
-            self.flow[:, :, 3] = newFlowBottom
+        deltaHeightTop = self.CalculateDeltaHeight(iLayer, 'top')
+        newFlowTop = self.flowSpeed*(deltaHeightTop - self.maximumDeltaHeight[iLayer])
+        newFlowTop[newFlowTop < 0] = 0
+        self.flow[:, :, 2] = newFlowTop
 
-            a = np.max(self.flow, axis=2)
-            #flowScaling = self.terrain / ((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:,
-            #                                                                                                   :,
-            #                                                                                                   3] + 0.001) * self.deltaT)
-            flowScaling = a / ((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:,
-                                                                                                               :,
-                                                                                                               3] + 0.001) * self.deltaT)
-            flowScaling[flowScaling > 1] = 1
-            self.flow[:, :, 0] *= flowScaling
-            self.flow[:, :, 1] *= flowScaling
-            self.flow[:, :, 2] *= flowScaling
-            self.flow[:, :, 3] *= flowScaling
-        else:
-            deltaHeightLeft = self.CalculateDeltaHeight('left')
-            newFlowLeft = (deltaHeightLeft - self.maximumDeltaHeight)
-            newFlowLeft[newFlowLeft < 0] = 0
-            newFlowLeft[newFlowLeft > 0] = 1
-            self.flow[:, :, 0] = newFlowLeft
+        deltaHeightBottom = self.CalculateDeltaHeight(iLayer, 'bottom')
+        newFlowBottom = self.flowSpeed*(deltaHeightBottom - self.maximumDeltaHeight[iLayer])
+        newFlowBottom[newFlowBottom < 0] = 0
+        self.flow[:, :, 3] = newFlowBottom
 
-            deltaHeightRight = self.CalculateDeltaHeight('right')
-            newFlowRight = (deltaHeightRight - self.maximumDeltaHeight)
-            newFlowRight[newFlowRight < 0] = 0
-            newFlowRight[newFlowRight > 0] = 1
-            self.flow[:, :, 1] = newFlowRight
+        deltaHeightTopLeft = self.CalculateDeltaHeight(iLayer, 'bottom_right')
+        newFlowTopLeft = self.flowSpeed*(deltaHeightTopLeft - np.sqrt(2)*self.maximumDeltaHeight[iLayer])
+        newFlowTopLeft[newFlowTopLeft < 0] = 0
+        self.flow[:, :, 4] = newFlowTopLeft
 
-            deltaHeightTop = self.CalculateDeltaHeight('top')
-            newFlowTop = (deltaHeightTop - self.maximumDeltaHeight)
-            newFlowTop[newFlowTop < 0] = 0
-            newFlowTop[newFlowTop > 0] = 1
-            self.flow[:, :, 2] = newFlowTop
+        deltaHeightBottomRight = self.CalculateDeltaHeight(iLayer, 'top_left')
+        newFlowBottomRight = self.flowSpeed*(deltaHeightBottomRight - np.sqrt(2)*self.maximumDeltaHeight[iLayer])
+        newFlowBottomRight[newFlowBottomRight < 0] = 0
+        self.flow[:, :, 5] = newFlowBottomRight
 
-            deltaHeightBottom = self.CalculateDeltaHeight('bottom')
-            newFlowBottom = (deltaHeightBottom - self.maximumDeltaHeight)
-            newFlowBottom[newFlowBottom < 0] = 0
-            newFlowBottom[newFlowBottom > 0] = 1
-            self.flow[:, :, 3] = newFlowBottom
+        deltaHeightBottomLeft = self.CalculateDeltaHeight(iLayer, 'top_right')
+        newFlowBottomLeft = self.flowSpeed*(deltaHeightBottomLeft - np.sqrt(2)*self.maximumDeltaHeight[iLayer])
+        newFlowBottomLeft[newFlowBottomLeft < 0] = 0
+        self.flow[:, :, 6] = newFlowBottomLeft
 
-            a = 0.5*(deltaHeightLeft*newFlowLeft + deltaHeightRight*newFlowRight + deltaHeightBottom*newFlowBottom + deltaHeightTop*newFlowTop)/\
-                ((newFlowLeft+newFlowRight+newFlowBottom+newFlowTop+0.0001)**2)
+        deltaHeightTopRight = self.CalculateDeltaHeight(iLayer, 'bottom_left')
+        newFlowTopRight = self.flowSpeed*(deltaHeightTopRight - np.sqrt(2)*self.maximumDeltaHeight[iLayer])
+        newFlowTopRight[newFlowTopRight < 0] = 0
+        self.flow[:, :, 7] = newFlowTopRight
 
-            self.flow[:, :, 0] *= a
-            self.flow[:, :, 1] *= a
-            self.flow[:, :, 2] *= a
-            self.flow[:, :, 3] *= a
+        #a = np.max(self.flow, axis=2)
+        #flowScaling = self.terrain / ((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:,
+        #                                                                                                   :,
+        #                                                                                                   3] + 0.001) * self.deltaT)
+        flowScaling = self.terrain[:, :, iLayer] / ((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:, :, 3] + self.flow[:, :, 4] + self.flow[:, :, 5] + self.flow[:, :, 6] + self.flow[:, :, 7] + 0.001) * self.deltaT)
+        flowScaling[flowScaling > 1] = 1
+        self.flow[:, :, 0] *= flowScaling
+        self.flow[:, :, 1] *= flowScaling
+        self.flow[:, :, 2] *= flowScaling
+        self.flow[:, :, 3] *= flowScaling
+        self.flow[:, :, 4] *= flowScaling
+        self.flow[:, :, 5] *= flowScaling
+        self.flow[:, :, 6] *= flowScaling
+        self.flow[:, :, 7] *= flowScaling
 
         self.inFlowRight = np.concatenate((self.flow[:, 1:self.NColons, 0],
                                            self.flow[:, 0:1, 0]),
@@ -517,37 +506,116 @@ class ThermalErosion():
                                          self.flow[0:1, :, 3]),
                                         axis=0)
 
-    def CalculateDeltaHeight(self, direction='left'):
+        # top left
+        self.inFlowTopLeft = np.concatenate((self.flow[:, self.NColons - 1:self.NColons, 4],
+                                             self.flow[:, 0:-1, 4]),
+                                            axis=1)
+        self.inFlowTopLeft = np.concatenate((self.inFlowTopLeft[1:self.NRows, :],
+                                             self.inFlowTopLeft[self.NRows - 1:self.NRows, :]),
+                                            axis=0)
+        # bottom right
+        self.inFlowBottomRight = np.concatenate((self.flow[:, 1:self.NColons, 5],
+                                             self.flow[:, 0:1, 5]),
+                                            axis=1)
+        self.inFlowBottomRight = np.concatenate((self.inFlowBottomRight[0:1, :],
+                                             self.inFlowBottomRight[0:self.NRows - 1, :]),
+                                            axis=0)
+        # bottom left
+        self.inFlowBottomLeft = np.concatenate((self.flow[:, self.NColons - 1:self.NColons, 6],
+                                             self.flow[:, 0:-1, 6]),
+                                            axis=1)
+        self.inFlowBottomLeft = np.concatenate((self.inFlowBottomLeft[0:1, :],
+                                             self.inFlowBottomLeft[0:self.NRows - 1, :]),
+                                            axis=0)
+        # top right
+        self.inFlowTopRight = np.concatenate((self.flow[:, 1:self.NColons, 7],
+                                             self.flow[:, 0:1, 7]),
+                                            axis=1)
+        self.inFlowTopRight = np.concatenate((self.inFlowTopRight[1:self.NRows, :],
+                                             self.inFlowTopRight[self.NRows - 1:self.NRows, :]),
+                                            axis=0)
+
+    def CalculateDeltaHeight(self, iLayer, direction='left'):
+        totalHeight = np.sum(self.terrain[:, :, 0:iLayer+1], axis=2)
         if direction == 'left':
-            totalHeightWrapped = np.concatenate((self.terrain[:, self.NColons - 1:self.NColons],
-                                                 self.terrain[:, 0:-1]),
+            totalHeightWrapped = np.concatenate((totalHeight[:, self.NColons - 1:self.NColons],
+                                                 totalHeight[:, 0:-1]),
                                                 axis=1)
         elif direction == 'right':
-            totalHeightWrapped = np.concatenate((self.terrain[:, 1:self.NColons],
-                                                 self.terrain[:, 0:1]),
+            totalHeightWrapped = np.concatenate((totalHeight[:, 1:self.NColons],
+                                                 totalHeight[:, 0:1]),
                                                 axis=1)
         elif direction == 'top':
-            totalHeightWrapped = np.concatenate((self.terrain[1:self.NRows, :],
-                                                 self.terrain[self.NRows - 1:self.NRows, :]),
+            totalHeightWrapped = np.concatenate((totalHeight[1:self.NRows, :],
+                                                 totalHeight[self.NRows - 1:self.NRows, :]),
                                                 axis=0)
         elif direction == 'bottom':
-            totalHeightWrapped = np.concatenate((self.terrain[0:1, :],
-                                                 self.terrain[0:self.NRows - 1, :]),
+            totalHeightWrapped = np.concatenate((totalHeight[0:1, :],
+                                                 totalHeight[0:self.NRows - 1, :]),
                                                 axis=0)
-        deltaH = self.terrain - totalHeightWrapped
-        #deltaH[deltaH > self.maximumDeltaHeight] = self.maximumDeltaHeight
+        elif direction == 'top_left':
+            totalHeightWrapped = np.concatenate((totalHeight[:, self.NColons - 1:self.NColons],
+                                                 totalHeight[:, 0:-1]),
+                                                axis=1)
+            totalHeightWrapped = np.concatenate((totalHeightWrapped[1:self.NRows, :],
+                                                 totalHeightWrapped[self.NRows - 1:self.NRows, :]),
+                                                axis=0)
+        elif direction == 'bottom_right':
+            totalHeightWrapped = np.concatenate((totalHeight[:, 1:self.NColons],
+                                                 totalHeight[:, 0:1]),
+                                                axis=1)
+            totalHeightWrapped = np.concatenate((totalHeightWrapped[0:1, :],
+                                                 totalHeightWrapped[0:self.NRows - 1, :]),
+                                                axis=0)
+        elif direction == 'bottom_left':
+            totalHeightWrapped = np.concatenate((totalHeight[:, self.NColons - 1:self.NColons],
+                                                 totalHeight[:, 0:-1]),
+                                                axis=1)
+            totalHeightWrapped = np.concatenate((totalHeightWrapped[0:1, :],
+                                                 totalHeightWrapped[0:self.NRows - 1, :]),
+                                                axis=0)
+        elif direction == 'top_right':
+            totalHeightWrapped = np.concatenate((totalHeight[:, 1:self.NColons],
+                                                 totalHeight[:, 0:1]),
+                                                axis=1)
+            totalHeightWrapped = np.concatenate((totalHeightWrapped[1:self.NRows, :],
+                                                 totalHeightWrapped[self.NRows - 1:self.NRows, :]),
+                                                axis=0)
+        deltaH = totalHeight - totalHeightWrapped
         return deltaH
 
-    def UpdateTerrainHeight(self):
-        self.terrain -= self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:, :, 3]
-        self.terrain += self.inFlowLeft + self.inFlowRight + self.inFlowTop + self.inFlowBottom
+    def UpdateTerrainHeight(self, iLayer):
+        self.terrain[:, :, iLayer] -= self.deltaT*(self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:, :, 3] + self.flow[:, :, 4] + self.flow[:, :, 5] + self.flow[:, :, 6] + self.flow[:, :, 7])
+        self.terrain[:, :, iLayer] += self.deltaT*(self.inFlowLeft + self.inFlowRight + self.inFlowTop + self.inFlowBottom + self.inFlowTopLeft + self.inFlowBottomRight + self.inFlowBottomLeft + self.inFlowTopRight)
 
     def __call__(self, *args, **kwargs):
+        for iLayer in range(self.numberOfLayers):
+            if self.maximumSlopeDegree[iLayer] < 90:
+                self.UpdateFlow(iLayer)
+                self.UpdateTerrainHeight(iLayer)
 
-        #print(np.arctan(12/30))
-        #print(180*np.arctan(12 / 30)/np.pi)
-        #quit()
+class ThermalWeathering():
+    def __init__(self,
+                 terrain,
+                 weatheringRate = 1):
+        self.weatheringRate = np.array(weatheringRate)
+        self.numberOfLayers = np.size(terrain, axis=2)
+        self.layerShape = (np.size(terrain, 0), np.size(terrain, 1))
+        self.terrain = terrain
 
-        self.UpdateFlow()
-        self.UpdateTerrainHeight()
+    def Weather(self, amount):
+        '''
+        NOTE THAT CURRENTLY ONLY WORKS FOR 2 LAYERS, IT WOULD BE SIMPLE TO CORRECT THIS THOU.
+        '''
+        amountToWeather = amount * np.ones(self.layerShape)
+        for iLayer in np.linspace(self.numberOfLayers-1, 0, self.numberOfLayers, dtype=int):
+            if iLayer == self.numberOfLayers-1:
+                amountToWeather -= self.terrain[:, :, iLayer]
+                amountToWeather[amountToWeather < 0] = 0
+            else:
+                self.terrain[:, :, iLayer] -= self.weatheringRate[iLayer]*amountToWeather
+                self.terrain[:, :, iLayer+1] += self.weatheringRate[iLayer]*amountToWeather
+
+
+
 

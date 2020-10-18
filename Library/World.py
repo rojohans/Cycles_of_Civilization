@@ -203,90 +203,46 @@ class WorldClass():
                  self.mainProgram.settings.N_COLONS*(self.mainProgram.settings.MODEL_RESOLUTION-2))
         octaves = int(np.log2(np.max(shape))-1)
 
-        elevation = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2, persistence=0.3,
+        elevation = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2, persistence=0.5,
                                                                 tileable=(False, True))
+        roughNoise = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=1.0,
+                                                            tileable=(False, True))
         elevation -= np.min(elevation)
         elevation /= np.max(elevation)
+
+        roughNoise -= np.min(roughNoise)
+        roughNoise /= np.max(roughNoise)
         #elevation *= 8 * 30*0.5
         elevation *= 512/10
-
-
-        '''
-        Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=10)
-        self.hydrolicErosion = Erosion.HydrolicErosion(terrain = elevation,
-                                                                evaporationRate=0.02,
-                                                                deltaT=1,
-                                                                flowSpeed=0.2,
-                                                                gridLength=1,
-                                                                carryCapacityLimit=1,
-                                                                erosionRate=0.1,
-                                                                depositionRate=0.1,
-                                                                maximumErosionDepth=10)
-
-        self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=100, application='even')
-        for i in range(400):
-            # self.hydrolicErosion.Rain(numberOfDrops=10, radius=10, dropSize=0.01, application='even')
-
-            if i > 100:
-                self.hydrolicErosion.Rain(numberOfDrops=100, radius=10, dropSize=100, application='drop')
-                # if np.mod(i, 10) == 0:
-                #    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.5, application='even')
-            self.hydrolicErosion()
-        '''
+        elevation += 10 * roughNoise
 
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
         # self.terrainHardness
         self.hydrolicErosion = Erosion.HydrolicErosion(terrain=elevation,
                                                        terrainHardness=None,
-                                                       evaporationRate=0.05,
+                                                       evaporationRate=0.1,
                                                        deltaT=0.1,
-                                                       flowSpeed=2,
+                                                       flowSpeed=10,
+                                                       sedimentFlowSpeed=1,
                                                        gridLength=1,
-                                                       carryCapacityLimit=1,
+                                                       carryCapacityLimit=2,
                                                        erosionRate=0.1,
-                                                       depositionRate=0.5,
+                                                       depositionRate=0.1,
                                                        maximumErosionDepth=10)
 
         self.thermalErosion = Erosion.ThermalErosion(terrain=elevation,
                                                      maximumSlope=30,
-                                                     flowSpeed=0.1,
-                                                     deltaT=1)
+                                                     flowSpeed=1,
+                                                     deltaT=0.1)
 
-        for i in range(500):
-            print(i)
-
-            '''
-            if i%300==0:
-                elevationAdd = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2,
-                                                                   persistence=0.5,
-                                                                   tileable=(False, True))
-                elevationAdd -= np.min(elevationAdd)
-                elevationAdd /= np.max(elevationAdd)
-                # elevation *= 8 * 30*0.5
-                elevationAdd *= 512 / 20
-                elevation += elevationAdd
-            '''
-
-            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.02, application='even')
-            '''
-            if i > 100:
-                # self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
-                if np.mod(i, 10) == 0:
-                    #self.hydrolicErosion.Rain(numberOfDrops=200, radius=2, dropSize=100, application='drop')
-                    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.5*0.5, application='even')
+        for i in range(600):
+            if i>400:
+                rainAmount = 0
             else:
-                # self.hydrolicErosion.Rain(numberOfDrops=100, radius=2, dropSize=100, application='drop')
-                if np.mod(i, 20) == 0:
-                    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=0.5*1, application='even')
-            '''
-
-            # self.hydrolicErosion.Rain(numberOfDrops=10, radius=20, dropSize=100, application='drop')
-            # if np.mod(i, 50) == 0:
-            #    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=2, application='even')
+                rainAmount = 0.03 * (1 + np.sin(i / 20)) / 2
+            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
             self.hydrolicErosion()
             self.thermalErosion()
-        #for i in range(200):
-        #    self.thermalErosion()
 
         elevation -= np.min(elevation)
         elevation /= np.max(elevation)
