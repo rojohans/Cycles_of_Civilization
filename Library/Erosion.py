@@ -2,6 +2,9 @@ import numpy as np
 #from ... import FluidDynamics as FluidDynamics # Be aware that this needs to change if the folder structure were to change,
 import matplotlib.pyplot as plt
 import scipy.interpolate as interpolate
+import System_Information
+if System_Information.OPERATING_SYSTEM == 'windows':
+    import cupy as cp
 
 
 class HydrolicErosion():
@@ -27,13 +30,11 @@ class HydrolicErosion():
         self.sedimentFlowSpeed = sedimentFlowSpeed
         self.gridLength = gridLength
         self.carryCapacityLimit = carryCapacityLimit
-        self.erosionRate = erosionRate
+        self.erosionRate = np.array(erosionRate)
         self.depositionRate = depositionRate
         self.maximumErosionDepth = maximumErosionDepth
         self.minimumErosionAngle = np.pi*minimumErosionAngle/180
 
-        print(type(terrainHardness))
-        print(np.shape(terrainHardness))
         if terrainHardness is None:
             self.terrainHardness = np.ones(np.shape(terrain))
         else:
@@ -42,6 +43,9 @@ class HydrolicErosion():
 
         self.terrain = terrain
         self.water = np.zeros((self.NRows, self.NColons, 2))
+
+        self.numberOfLayers = np.size(terrain, axis=2)
+        self.layerShape = (np.size(terrain, 0), np.size(terrain, 1))
 
         #self.water[200, 200, 0] = 100
         #self.water[201, 200, 0] = 100
@@ -132,7 +136,7 @@ class HydrolicErosion():
                                    axis=0)
 
     def CalculateDeltaHeight(self, direction = 'left'):
-        totalHeight =self.terrain + self.water[:, :, 0]
+        totalHeight =np.sum(self.terrain, 2) + self.water[:, :, 0]
 
         if direction == 'left':
             totalHeightWrapped = np.concatenate((totalHeight[:, self.NColons - 1:self.NColons],
@@ -186,25 +190,27 @@ class HydrolicErosion():
     '''
 
     def UpdateSlope(self):
-        self.terrainLeft = np.concatenate((self.terrain[:, self.NColons - 1:self.NColons],
-                                      self.terrain[:, 0:-1]),
+        totalHeight = np.sum(self.terrain, 2)
+
+        self.terrainLeft = np.concatenate((totalHeight[:, self.NColons - 1:self.NColons],
+                                      totalHeight[:, 0:-1]),
                                      axis=1)
-        self.terrainRight = np.concatenate((self.terrain[:, 1:self.NColons],
-                                       self.terrain[:, 0:1]),
+        self.terrainRight = np.concatenate((totalHeight[:, 1:self.NColons],
+                                       totalHeight[:, 0:1]),
                                       axis=1)
         xAngle = np.arctan((self.terrainRight-self.terrainLeft)/ (2*self.gridLength))
 
-        self.terrainTop = np.concatenate((self.terrain[1:self.NRows, :],
-                                     self.terrain[self.NRows-1:self.NRows, :]),
+        self.terrainTop = np.concatenate((totalHeight[1:self.NRows, :],
+                                     totalHeight[self.NRows-1:self.NRows, :]),
                                     axis=0)
-        self.terrainBottom = np.concatenate((self.terrain[0:1, :],
-                                        self.terrain[0:self.NRows-1, :]),
+        self.terrainBottom = np.concatenate((totalHeight[0:1, :],
+                                        totalHeight[0:self.NRows-1, :]),
                                        axis = 0)
         yAngle = np.arctan((self.terrainTop-self.terrainBottom)/(2*self.gridLength))
 
         #self.slope = np.sqrt(xAngle**2 + yAngle**2)/np.sqrt(2)
 
-        totalHeight = self.terrain + self.water[:, :, 1]
+        totalHeight = np.sum(self.terrain, 2) + self.water[:, :, 1]
         terrainLeft = np.concatenate((totalHeight[:, self.NColons - 1:self.NColons],
                                       totalHeight[:, 0:-1]),
                                      axis=1)
@@ -223,7 +229,8 @@ class HydrolicErosion():
 
         #self.slope = np.sqrt(xAngle**2 + yAngle**2)/np.sqrt(2)
 
-        self.slope = np.arctan(np.gradient(self.terrain))
+
+        self.slope = np.arctan(np.gradient(totalHeight))
         r = np.sqrt(self.slope[0] ** 2 + self.slope[1] ** 2)
         #self.slope = self.slope[1]
         self.slope = np.sqrt(self.slope[0] ** 4 + self.slope[1] ** 4)/r
@@ -260,25 +267,34 @@ class HydrolicErosion():
         self.suspendedSediment[:, :, 1] = self.suspendedSediment[:, :, 0]
 
     def Erode(self):
-        erodedSediment = self.deltaT*self.erosionRate*(self.carryCapacity - self.suspendedSediment[:, :, 0])
+        #erosionAlreadyDone = np.ones(self.layerShape)
+        erodedSediment = self.deltaT * (self.carryCapacity - self.suspendedSediment[:, :, 0])
         erodedSediment[erodedSediment < 0] = 0
+        for iLayer in np.linspace(self.numberOfLayers-1, 0, self.numberOfLayers, dtype=int):
+            erodedSediment *= self.erosionRate[iLayer]
 
-        #erosionLimit = self.water[:, :, 1] - 2*self.suspendedSediment[:, :, 0]
-        #erodedSediment[erodedSediment > erosionLimit] = erosionLimit[erodedSediment > erosionLimit]
+            #erodedSediment = self.deltaT*self.erosionRate[iLayer]*(self.carryCapacity - self.suspendedSediment[:, :, 0])
+            #erodedSediment[erodedSediment < 0] = 0
 
-        lowestAdjacentHeight = np.zeros((self.NRows, self.NColons, 4))
-        lowestAdjacentHeight[:, :, 0] = self.terrainLeft
-        lowestAdjacentHeight[:, :, 1] = self.terrainRight
-        lowestAdjacentHeight[:, :, 2] = self.terrainTop
-        lowestAdjacentHeight[:, :, 3] = self.terrainBottom
-        lowestAdjacentHeight = np.min(lowestAdjacentHeight, axis=2)
+            #erosionLimit = self.water[:, :, 1] - 2*self.suspendedSediment[:, :, 0]
+            #erodedSediment[erodedSediment > erosionLimit] = erosionLimit[erodedSediment > erosionLimit]
 
-        maximumErosion = self.terrain-lowestAdjacentHeight
-        erodedSediment[erodedSediment > maximumErosion] = maximumErosion[erodedSediment > maximumErosion]
+            lowestAdjacentHeight = np.zeros((self.NRows, self.NColons, 4))
+            lowestAdjacentHeight[:, :, 0] = self.terrainLeft
+            lowestAdjacentHeight[:, :, 1] = self.terrainRight
+            lowestAdjacentHeight[:, :, 2] = self.terrainTop
+            lowestAdjacentHeight[:, :, 3] = self.terrainBottom
+            lowestAdjacentHeight = np.min(lowestAdjacentHeight, axis=2)
 
-        self.terrain -= erodedSediment
-        self.suspendedSediment[:, :, 1] += erodedSediment
-        #self.water[:, :, 1] += erodedSediment
+            maximumErosion = np.sum(self.terrain, 2) - lowestAdjacentHeight
+            erodedSediment[erodedSediment > maximumErosion] = maximumErosion[erodedSediment > maximumErosion]
+
+            self.terrain[:, :, iLayer] -= erodedSediment
+            erodedSediment = self.terrain[:, :, iLayer].copy()
+            erodedSediment[erodedSediment >= 0] = 0
+            erodedSediment *= -1/self.erosionRate[iLayer]
+            self.suspendedSediment[:, :, 1] += erodedSediment
+            #self.water[:, :, 1] += erodedSediment
 
     def Deposit(self):
         depositedSediment = self.deltaT*self.depositionRate * (self.suspendedSediment[:, :, 0] - self.carryCapacity)
@@ -293,10 +309,10 @@ class HydrolicErosion():
         highestAdjacentHeight[:, :, 3] = self.terrainBottom
         highestAdjacentHeight = np.max(highestAdjacentHeight, axis=2)
 
-        maximumDeposition = highestAdjacentHeight - self.terrain
+        maximumDeposition = highestAdjacentHeight - np.sum(self.terrain, 2)
         depositedSediment[depositedSediment > maximumDeposition] = maximumDeposition[depositedSediment > maximumDeposition]
 
-        self.terrain += depositedSediment
+        self.terrain[:, :, -1] += depositedSediment
         self.suspendedSediment[:, :, 1] -= depositedSediment
         #self.water[:, :, 1] -= depositedSediment
 
@@ -354,13 +370,13 @@ class HydrolicErosion():
     def Visualize(self):
         if self.terrainplot == None:
             if False:
-                self.terrainplot = plt.imshow(self.terrain)
+                self.terrainplot = plt.imshow(np.sum(self.terrain, 2))
             else:
                 fig, axs = plt.subplots(3, 2)
 
-                self.terrainplot = axs[0][0].imshow(self.terrain)
+                self.terrainplot = axs[0][0].imshow(np.sum(self.terrain, 2))
                 self.waterPlot = axs[1][0].imshow(self.water[:, :, 0])
-                self.totalHeightPlot = axs[2][0].imshow(self.terrain + self.water[:, :, 0])
+                self.totalHeightPlot = axs[2][0].imshow(np.sum(self.terrain, 2) + self.water[:, :, 0])
                 self.suspendedSedimentPlot = axs[0][1].imshow(self.suspendedSediment[:, :, 0])
                 self.slopeplot = axs[1][1].imshow(180*self.slope/np.pi)
                 self.slopeplot.set_clim(vmin=0, vmax=90)
@@ -369,13 +385,13 @@ class HydrolicErosion():
             plt.pause(0.00001)
         else:
             if False:
-                self.terrainplot.set_array(self.terrain)
+                self.terrainplot.set_array(np.sum(self.terrain, 2))
                 #self.terrainplot.set_clim(vmin=np.min(self.terrain), vmax=np.max(self.terrain))
             else:
-                self.terrainplot.set_array(self.terrain)
-                self.terrainplot.set_clim(vmin=np.min(self.terrain), vmax=np.max(self.terrain))
+                self.terrainplot.set_array(np.sum(self.terrain, 2))
+                self.terrainplot.set_clim(vmin=np.min(np.sum(self.terrain, 2)), vmax=np.max(np.sum(self.terrain, 2)))
                 self.waterPlot.set_array(self.water[:, :, 0])
-                self.totalHeightPlot.set_array(self.terrain + self.water[:, :, 0])
+                self.totalHeightPlot.set_array(np.sum(self.terrain, 2) + self.water[:, :, 0])
                 #self.waterPlot.set_clim(vmin = 0, vmax = np.max(self.water[:, :, 0]))
                 self.waterPlot.set_clim(vmin=0, vmax=20)
                 self.suspendedSedimentPlot.set_array(self.suspendedSediment[:, :, 0])
@@ -484,6 +500,7 @@ class ThermalErosion():
         #                                                                                                   3] + 0.001) * self.deltaT)
         flowScaling = self.terrain[:, :, iLayer] / ((self.flow[:, :, 0] + self.flow[:, :, 1] + self.flow[:, :, 2] + self.flow[:, :, 3] + self.flow[:, :, 4] + self.flow[:, :, 5] + self.flow[:, :, 6] + self.flow[:, :, 7] + 0.001) * self.deltaT)
         flowScaling[flowScaling > 1] = 1
+        #flowScaling *= 3
         self.flow[:, :, 0] *= flowScaling
         self.flow[:, :, 1] *= flowScaling
         self.flow[:, :, 2] *= flowScaling
@@ -614,8 +631,7 @@ class ThermalWeathering():
                 amountToWeather[amountToWeather < 0] = 0
             else:
                 self.terrain[:, :, iLayer] -= self.weatheringRate[iLayer]*amountToWeather
-                self.terrain[:, :, iLayer+1] += self.weatheringRate[iLayer]*amountToWeather
-
+                self.terrain[:, :, iLayer+1] += 10.0*self.weatheringRate[iLayer]*amountToWeather
 
 
 

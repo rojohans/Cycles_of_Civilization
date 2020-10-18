@@ -7,6 +7,9 @@ if System_Information.OPERATING_SYSTEM == 'windows':
 import time
 import pyvista as pv
 from matplotlib.colors import ListedColormap
+import System_Information
+if System_Information.OPERATING_SYSTEM == 'windows':
+    import cupy as cp
 
 import perlin_numpy
 
@@ -29,7 +32,7 @@ class Main():
 
             shape = (256, 512)
             self.rockMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.5, tileable=(False, True))
-            roughNoise = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2,persistence=1.0, tileable=(False, True))
+            roughNoise = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2,persistence=0.8, tileable=(False, True))
             self.terrainHardness = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.8, tileable=(False, True))
             self.terrainHardness -= np.min(self.terrainHardness)
             self.terrainHardness /= np.max(self.terrainHardness)
@@ -54,13 +57,13 @@ class Main():
             #self.heightMap /= np.max(self.heightMap)
             #self.rockMap *= 512/10
             #self.rockMap += 10 * roughNoise
-            self.rockMap *= 512/2
-            self.rockMap += 20 * roughNoise
+            self.rockMap *= 512/10
+            self.rockMap += 10 * roughNoise
 
             self.heightMap = np.zeros((shape[0], shape[1], 2))
             self.heightMap[:, :, 0] = self.rockMap
             #self.heightMap[:, :, 1] += 0.5
-
+            #self.heightMap[100:110, 100:110, 1] += 100
         else:
             #h = np.linspace(0, 512, 512)
             #h = np.reshape(h, (1, 512))
@@ -175,13 +178,13 @@ class Main():
                                                         sedimentFlowSpeed=1,
                                                         gridLength=1,
                                                         carryCapacityLimit=2,
-                                                        erosionRate=0.1,
+                                                        erosionRate=[0.1, 0.5],
                                                         depositionRate=0.1,
                                                         maximumErosionDepth=10)
 
         self.thermalErosion = Erosion.ThermalErosion(terrain = self.heightMap,
                                                       maximumSlope=[90, 30],
-                                                      flowSpeed=0.5,
+                                                      flowSpeed=1,
                                                       deltaT=0.1)
 
         self.thermalWeathering = Erosion.ThermalWeathering(terrain=self.heightMap,
@@ -204,19 +207,18 @@ class Main():
                 rainAmount = 0
             else:
                 rainAmount = 0.03 * (1 + np.sin(i / 20)) / 2
-            #self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
-            #self.hydrolicErosion()
+            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
+            self.hydrolicErosion()
             #self.hydrolicErosion.UpdateSlope()
 
             #self.hydrolicErosion.UpdateFlow()
             #self.hydrolicErosion.UpdateWaterHeight()
             #self.hydrolicErosion.UpdateVelocity()
 
-            self.thermalWeathering.Weather(0.05)
+            #if i < 400:
+            #    self.thermalWeathering.Weather(0.002)
             #if i%10 == 0:
-            self.thermalErosion()
-
-
+            #self.thermalErosion()
 
             if pyvistaVisualization:
                 z = self.heightMap[:, :, 0].copy()
