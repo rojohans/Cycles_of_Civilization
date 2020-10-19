@@ -398,26 +398,6 @@ class MinimapSelectionFrame(CustomFrame):
                                                      value=['elevation'],
                                                       indicatorValue=0,
                                                 command=self.minimap.UpdateMinimap)
-        self.buttons['Fertility'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_fertility.png',
-                                                            GUIDataDirectoryPath + 'minimap_selection_fertility_pressed.png', None),
-                                                     scale=self.buttonScale,
-                                                     pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
-                                                     relief=None,
-                                                     parent=base.a2dBottomLeft,
-                                                      variable=self.minimap.minimapFilter,
-                                                      value=['fertility'],
-                                                      indicatorValue=0,
-                                                     command=self.minimap.UpdateMinimap)
-        self.buttons['Roughness'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_roughness.png',
-                                                             GUIDataDirectoryPath + 'minimap_selection_roughness_pressed.png', None),
-                                                      scale=self.buttonScale,
-                                                      pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
-                                                      relief=None,
-                                                      parent=base.a2dBottomLeft,
-                                                      variable=self.minimap.minimapFilter,
-                                                      value=['roughness'],
-                                                      indicatorValue=0,
-                                                      command=self.minimap.UpdateMinimap)
         self.buttons['temperature'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'minimap_selection_temperature.png',
                                                              GUIDataDirectoryPath + 'minimap_selection_temperature_pressed.png', None),
                                                       scale=self.buttonScale,
@@ -438,6 +418,28 @@ class MinimapSelectionFrame(CustomFrame):
                                                       value=['moisture'],
                                                       indicatorValue=0,
                                                       command=self.minimap.UpdateMinimap)
+        self.buttons['vegetation'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'feature_toggle.png',
+                                                               GUIDataDirectoryPath + 'feature_toggle.png',
+                                                               None),
+                                                     scale=self.buttonScale,
+                                                     pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                                     relief=None,
+                                                     parent=base.a2dBottomLeft,
+                                                     variable=self.minimap.minimapFilter,
+                                                     value=['vegetation'],
+                                                     indicatorValue=0,
+                                                     command=self.minimap.UpdateMinimap)
+        self.buttons['fauna'] = DirectRadioButton(boxImage=(GUIDataDirectoryPath + 'button_marker_skull.png',
+                                                                 GUIDataDirectoryPath + 'button_marker_skull.png',
+                                                                 None),
+                                                       scale=self.buttonScale,
+                                                       pos=(-0.4 * self.windowRatio - 0.1, 0, 0),
+                                                       relief=None,
+                                                       parent=base.a2dBottomLeft,
+                                                       variable=self.minimap.minimapFilter,
+                                                       value=['fauna'],
+                                                       indicatorValue=0,
+                                                       command=self.minimap.UpdateMinimap)
 
         # Links the radio buttons together.
         buttons = []
@@ -477,11 +479,11 @@ class Minimap():
         self.minimapFilter = [''] # Changed by the selection buttons
         self.minimapFilterUpToDate = {}
         self.minimapFilterUpToDate['biome'] = False
-        self.minimapFilterUpToDate['fertility'] = False
-        self.minimapFilterUpToDate['roughness'] = False
         self.minimapFilterUpToDate['elevation'] = False
         self.minimapFilterUpToDate['temperature'] = False
         self.minimapFilterUpToDate['moisture'] = False
+        self.minimapFilterUpToDate['vegetation'] = False
+        self.minimapFilterUpToDate['fauna'] = False
 
         self.minimap = DirectButton(image=(self.GUIDataDirectoryPath + "remove_feature.png",
                                            self.GUIDataDirectoryPath + "remove_feature_pressed.png",
@@ -527,18 +529,6 @@ class Minimap():
             colourBounds = self.mainProgram.settings.ELEVATION_MINIMAP_COLOURS_BOUNDS
             colourSteps = np.linspace(0, self.mainProgram.settings.ELEVATION_LEVELS-1,
                                       self.mainProgram.settings.ELEVATION_LEVELS)
-        elif type == 'fertility':
-            baseMap = self.mainProgram.world.soilFertility
-            colourRamp = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS
-            colourBounds = self.mainProgram.settings.SOIL_FERTILITY_MINIMAP_COLOURS_BOUNDS
-            colourSteps = np.linspace(0, self.mainProgram.settings.SOIL_FERTILITY_LEVELS - 1,
-                                      self.mainProgram.settings.SOIL_FERTILITY_LEVELS)
-        elif type == 'roughness':
-            baseMap = self.mainProgram.world.topographyRoughness
-            colourRamp = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS
-            colourBounds = self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_MINIMAP_COLOURS_BOUNDS
-            colourSteps = np.linspace(0, self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS - 1,
-                                      self.mainProgram.settings.TOPOGRAPHY_ROUGHNESS_LEVELS)
         elif type == 'temperature':
             baseMap = self.mainProgram.world.temperature
             colourRamp = self.mainProgram.settings.TEMPERATURE_MINIMAP_COLOURS
@@ -549,6 +539,24 @@ class Minimap():
             colourRamp = self.mainProgram.settings.MOISTURE_MINIMAP_COLOURS
             colourBounds = self.mainProgram.settings.MOISTURE_MINIMAP_COLOURS_BOUNDS
             colourSteps = np.linspace(0, 1, np.size(self.mainProgram.settings.MOISTURE_MINIMAP_COLOURS, 0))
+        elif type == 'vegetation':
+            baseMap = self.mainProgram.Ecosystem.Vegetation.GetImage(densityScaling=False)
+            baseMap = np.mean(baseMap, axis=2)
+
+            colourRamp = np.array([(0.1, 0.3, 0.1),
+                                   (0.2, 0.8, 0.2)])
+            colourBounds = np.array([(0.0, 0.0, 0.0),
+                                     (0.0, 0.0, 0.0)])
+            colourSteps = [0.15, 0.9]
+        elif type == 'fauna':
+            baseMap = self.mainProgram.Ecosystem.Animal.GetImage(densityScaling=False)
+            baseMap = np.mean(baseMap, axis=2)
+
+            colourRamp = np.array([(0.1, 0.3, 0.1),
+                                   (0.2, 0.8, 0.2)])
+            colourBounds = np.array([(0.0, 0.0, 0.0),
+                                     (0.0, 0.0, 0.0)])
+            colourSteps = [0.15, 0.9]
 
 
         interpolatedMap = self.GetInterpolatedMap(baseMap = baseMap)

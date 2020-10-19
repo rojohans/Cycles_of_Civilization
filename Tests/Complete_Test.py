@@ -53,7 +53,7 @@ class Game(ShowBase):
 
         tic = time.time()
         World.WorldClass.Initialize(mainProgram = self)
-        self.world = World.WorldClass()
+        self.world = World.WorldClass(numberOfErosionIterations=350)
         toc = time.time()
         print('World creation time: ', format(toc-tic))
 
@@ -114,7 +114,7 @@ class Game(ShowBase):
 
         toc = time.time()
         print('Ecosystem simulation: ', format(toc-tic))
-
+        self.Ecosystem = Ecosystem
 
 
 

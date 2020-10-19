@@ -203,9 +203,9 @@ class WorldClass():
                  self.mainProgram.settings.N_COLONS*(self.mainProgram.settings.MODEL_RESOLUTION-2))
         octaves = int(np.log2(np.max(shape))-1)
 
-        rockMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2, persistence=0.5,
+        rockMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2, persistence=0.4,
                                                                 tileable=(False, True))
-        roughNoise = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=1.0,
+        roughNoise = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.8,
                                                             tileable=(False, True))
         rockMap -= np.min(rockMap)
         rockMap /= np.max(rockMap)
@@ -224,10 +224,10 @@ class WorldClass():
         self.hydrolicErosion = Erosion.HydrolicErosion(terrain=elevation,
                                                        evaporationRate=0.1,
                                                        deltaT=0.1,
-                                                       flowSpeed=10,
+                                                       flowSpeed=3,
                                                        sedimentFlowSpeed=1,
                                                        gridLength=1,
-                                                       carryCapacityLimit=2,
+                                                       carryCapacityLimit=4,
                                                        erosionRate=[0.05, 0.5],
                                                        depositionRate=0.1,
                                                        maximumErosionDepth=10)
@@ -244,12 +244,12 @@ class WorldClass():
             if i > 400:
                 rainAmount = 0
             else:
-                rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
+                rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
             self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
             self.hydrolicErosion()
 
             if i < 400:
-                self.thermalWeathering.Weather(0.002)
+                self.thermalWeathering.Weather(0.02)
             self.thermalErosion()
 
         elevation = np.sum(elevation, 2)

@@ -219,7 +219,7 @@ class Main():
 
             if i < 400:
                 #self.thermalWeathering.Weather(0.002)
-                self.thermalWeathering.Weather(0.002)
+                self.thermalWeathering.Weather(0.02)
             #if i%10 == 0:
             self.thermalErosion()
 
@@ -230,10 +230,6 @@ class Main():
                 z = np.sum(self.heightMap, axis=2)
                 z -= 0.2
                 sedimentPoints[:, -1] = np.reshape(z, (NPoints, 1))[:, 0]
-                #sedimentDepth = self.heightMap[:, :, 1].copy()
-                #sedimentDepth /= sedimentVisibilityDepth
-                #sedimentDepth[sedimentDepth > 1] = 1
-                #sedimentDepth = np.reshape(sedimentDepth, (NPoints, 1))
 
                 z = np.sum(self.heightMap, axis=2)+self.hydrolicErosion.water[:, :, 0].copy()
                 waterPoints[:, -1] = np.reshape(z, (NPoints, 1))[:, 0]
@@ -241,7 +237,6 @@ class Main():
                 waterDepth /= waterVisibilityDepth
                 waterDepth[waterDepth > 1] = 1
                 waterDepth = np.reshape(waterDepth, (NPoints, 1))
-
 
                 plotter.update_coordinates(points=terrainPoints, mesh=terrainMesh)
                 plotter.update_coordinates(points=sedimentPoints, mesh=sedimentMesh)
