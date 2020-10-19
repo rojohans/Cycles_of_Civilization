@@ -10,7 +10,6 @@ if System_Information.OPERATING_SYSTEM == 'windows':
 class HydrolicErosion():
     def __init__(self,
                  terrain,
-                 terrainHardness = None,
                  evaporationRate = 0.05,
                  deltaT = 1,
                  flowSpeed = 0.5,
@@ -34,12 +33,6 @@ class HydrolicErosion():
         self.depositionRate = depositionRate
         self.maximumErosionDepth = maximumErosionDepth
         self.minimumErosionAngle = np.pi*minimumErosionAngle/180
-
-        if terrainHardness is None:
-            self.terrainHardness = np.ones(np.shape(terrain))
-        else:
-            self.terrainHardness = terrainHardness
-
 
         self.terrain = terrain
         self.water = np.zeros((self.NRows, self.NColons, 2))
@@ -293,13 +286,18 @@ class HydrolicErosion():
             erodedSediment = self.terrain[:, :, iLayer].copy()
             erodedSediment[erodedSediment >= 0] = 0
             erodedSediment *= -1/self.erosionRate[iLayer]
-            self.suspendedSediment[:, :, 1] += erodedSediment
+
+            if iLayer == 0:
+                # rock decreases in density as it is eroded.
+                self.suspendedSediment[:, :, 1] += 2*erodedSediment
+            else:
+                self.suspendedSediment[:, :, 1] += erodedSediment
             #self.water[:, :, 1] += erodedSediment
 
     def Deposit(self):
         depositedSediment = self.deltaT*self.depositionRate * (self.suspendedSediment[:, :, 0] - self.carryCapacity)
         depositedSediment[depositedSediment < 0] = 0
-        #minDepos = 0.3 * self.suspendedSediment[:, :, 0]
+        #minDepos = 0.1 * self.suspendedSediment[:, :, 0]
         #depositedSediment[depositedSediment < minDepos] = minDepos[depositedSediment < minDepos]
 
         highestAdjacentHeight = np.zeros((self.NRows, self.NColons, 4))

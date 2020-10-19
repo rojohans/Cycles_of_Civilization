@@ -31,11 +31,8 @@ class Main():
             print('World creation time: ', toc-tic)
 
             shape = (256, 512)
-            self.rockMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.5, tileable=(False, True))
+            self.rockMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.4, tileable=(False, True))
             roughNoise = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2,persistence=0.8, tileable=(False, True))
-            self.terrainHardness = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=0.8, tileable=(False, True))
-            self.terrainHardness -= np.min(self.terrainHardness)
-            self.terrainHardness /= np.max(self.terrainHardness)
 
             h = np.cos(np.linspace(-np.pi, np.pi, 512))
             h = np.reshape(h, (1, 512))
@@ -57,8 +54,11 @@ class Main():
             #self.heightMap /= np.max(self.heightMap)
             #self.rockMap *= 512/10
             #self.rockMap += 10 * roughNoise
+
             self.rockMap *= 512/10
             self.rockMap += 10 * roughNoise
+            #self.rockMap *= 512/15
+            #self.rockMap += 5 * roughNoise
 
             self.heightMap = np.zeros((shape[0], shape[1], 2))
             self.heightMap[:, :, 0] = self.rockMap
@@ -81,12 +81,12 @@ class Main():
 
         matplotlibVisualization = False
         pyvistaVisualization = True
-        waterVisibilityDepth = 5
+        waterVisibilityDepth = 3
         sedimentVisibilityDepth = 1
 
         if pyvistaVisualization:
-            X = np.arange(0, 512, 1)
-            Y = np.arange(0, 256, 1)
+            X = np.arange(0, shape[1], 1)
+            Y = np.arange(0, shape[0], 1)
             X, Y = np.meshgrid(X, Y)
 
             def CoordinatesToIndex(x, y):
@@ -165,20 +165,15 @@ class Main():
             plotter.enable_terrain_style()
             plotter.show(auto_close=False)
 
-            #https: // github.com / BartheG / Orvisu
-            #https: // github.com / OpenGeoVis / PVGeo
-
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
-        #self.terrainHardness
         self.hydrolicErosion = Erosion.HydrolicErosion(terrain = self.heightMap,
-                                                        terrainHardness = None,
                                                         evaporationRate=0.1,
                                                         deltaT=0.1,
-                                                        flowSpeed=10,
+                                                        flowSpeed=3,
                                                         sedimentFlowSpeed=1,
                                                         gridLength=1,
-                                                        carryCapacityLimit=2,
-                                                        erosionRate=[0.1, 0.5],
+                                                        carryCapacityLimit=4,
+                                                        erosionRate=[0.05, 0.5],
                                                         depositionRate=0.1,
                                                         maximumErosionDepth=10)
 
@@ -190,24 +185,31 @@ class Main():
         self.thermalWeathering = Erosion.ThermalWeathering(terrain=self.heightMap,
                                                            weatheringRate=[1, 1])
 
+        #
+        #         VISUALIZATION LIBRARIES
+        # https: // github.com / BartheG / Orvisu
+        # https: // github.com / OpenGeoVis / PVGeo
+        #
         #          USEFUL PAPERS
-        #https: // github.com / bshishov / UnityTerrainErosionGPU
-        #https://old.cescg.org/CESCG-2011/papers/TUBudapest-Jako-Balazs.pdf
-        #https://hal.inria.fr/inria-00402079/document
-        #http: // www - cg.cis.iwate - u.ac.jp / lab / graphite06.pdf
-        #https://matthias-research.github.io/pages/publications/SPHShallow.pdf
-        #https://dl.acm.org/doi/pdf/10.1145/97880.97884
+        # https: // github.com / bshishov / UnityTerrainErosionGPU
+        # https://old.cescg.org/CESCG-2011/papers/TUBudapest-Jako-Balazs.pdf
+        # https://hal.inria.fr/inria-00402079/document
+        # http: // www - cg.cis.iwate - u.ac.jp / lab / graphite06.pdf
+        # https://matthias-research.github.io/pages/publications/SPHShallow.pdf
+        # https://dl.acm.org/doi/pdf/10.1145/97880.97884
         #
 
         tic = time.time()
-        for i in range(600):
+        for i in range(500):
             print(i)
 
             if i>400:
                 rainAmount = 0
             else:
-                rainAmount = 0.03 * (1 + np.sin(i / 20)) / 2
+                rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
+                #rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
             self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
+
             self.hydrolicErosion()
             #self.hydrolicErosion.UpdateSlope()
 
@@ -215,10 +217,11 @@ class Main():
             #self.hydrolicErosion.UpdateWaterHeight()
             #self.hydrolicErosion.UpdateVelocity()
 
-            #if i < 400:
-            #    self.thermalWeathering.Weather(0.002)
+            if i < 400:
+                #self.thermalWeathering.Weather(0.002)
+                self.thermalWeathering.Weather(0.002)
             #if i%10 == 0:
-            #self.thermalErosion()
+            self.thermalErosion()
 
             if pyvistaVisualization:
                 z = self.heightMap[:, :, 0].copy()
@@ -232,7 +235,7 @@ class Main():
                 #sedimentDepth[sedimentDepth > 1] = 1
                 #sedimentDepth = np.reshape(sedimentDepth, (NPoints, 1))
 
-                z = self.heightMap[:, :, 0].copy()+self.hydrolicErosion.water[:, :, 0].copy()
+                z = np.sum(self.heightMap, axis=2)+self.hydrolicErosion.water[:, :, 0].copy()
                 waterPoints[:, -1] = np.reshape(z, (NPoints, 1))[:, 0]
                 waterDepth = self.hydrolicErosion.water[:, :, 0].copy()
                 waterDepth /= waterVisibilityDepth

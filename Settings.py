@@ -96,7 +96,7 @@ class SettingsClass():
         self.TEMPERATURE_MIN_VALUE = -20
         self.TEMPERATURE_MAX_VALUE = 30
         self.TEMPERATURE_PERLIN_WEIGHT = 0.5
-        self.TEMPERATURE_ELEVATION_WEIGHT = 1.2
+        self.TEMPERATURE_ELEVATION_WEIGHT = 1.7
         self.TEMPERATURE_LATITUDE_WEIGHT = 3
         self.TEMPERATURE_MINIMAP_COLOURS = np.array([(1.0, 1.0, 1.0),  #-40
                                                      (0.8, 0.1, 0.8),  #-30

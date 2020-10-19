@@ -350,7 +350,7 @@ class TileClass(Entity):
             pass
 
 
-        print(colons)
+        #print(colons)
         if self.row == 0:
             bottom = self.pandaProgram.world.topography[0:1, colons]
             top = self.pandaProgram.world.topography[
@@ -1655,7 +1655,13 @@ class TileClass(Entity):
         if self.isWater == False:
             #soilFertility = self.pandaProgram.world.soilFertility[self.row, self.colon]
             #self.textureArray = self.terrainTextures['soil_fertility_' + str(soilFertility)].copy()
-            self.textureArray = self.terrainTextures['soil_fertility_2'].copy()
+
+            if self.pandaProgram.world.temperature[self.row, self.colon] < 0:
+                self.textureArray = self.terrainTextures['snow_terrain'].copy()
+            elif self.pandaProgram.world.temperature[self.row, self.colon] < 5:
+                self.textureArray = self.terrainTextures['tundra_terrain'].copy()
+            else:
+                self.textureArray = self.terrainTextures['soil_fertility_2'].copy()
         else:
             if self.elevation == 0:
                 self.textureArray = self.terrainTextures['deep_water_terrain'].copy()
@@ -2132,7 +2138,9 @@ class TileClass(Entity):
                                'water':image.imread(Root_Directory.Path() + "/Data/Tile_Data/water.png"),
                                'deep_water_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/deep_water_terrain.png"),
                                'shallow_water_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/shallow_water_terrain.png"),
-                               'grid_debug':image.imread(Root_Directory.Path() + "/Data/Tile_Data/grid_debug.png")}
+                               'grid_debug':image.imread(Root_Directory.Path() + "/Data/Tile_Data/grid_debug.png"),
+                               'snow_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png"),
+                               'tundra_terrain':image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra_terrain.png")}
 
         #cls.terrainTextures = {'grass':image.imread("panda3d-master/samples/chessboard/models/grass_4_symmetrical.jpg"),
         #                       'desert':image.imread("panda3d-master/samples/chessboard/models/desert_1_symmetrical.jpg"),
@@ -2232,7 +2240,6 @@ class FeatureClass(Entity):
                     for colon in range(self.pandaProgram.MODEL_RESOLUTION):
                         accumulativeWeights += positioningWeights[row, colon] / totalWeight
                         if r < accumulativeWeights:
-
                             if a == 0:
                                 self.positionValues[iComponent, :] = [colon, row]
                                 a = 1

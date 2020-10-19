@@ -91,9 +91,9 @@ class Game(ShowBase):
         Ecosystem.Animal.SeedWorld(30, Animal_Templates.Boar, minFitness=0.2)
         Ecosystem.Animal.SeedWorld(20, Animal_Templates.Turkey, minFitness=0.2)
         Ecosystem.Animal.SeedWorld(50, Animal_Templates.Deer, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Caribou, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Bison, minFitness=0.2)
-        Ecosystem.Animal.SeedWorld(50, Animal_Templates.Horse, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(10, Animal_Templates.Caribou, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(10, Animal_Templates.Bison, minFitness=0.2)
+        Ecosystem.Animal.SeedWorld(10, Animal_Templates.Horse, minFitness=0.2)
 
         # migrate, predator, slope
 

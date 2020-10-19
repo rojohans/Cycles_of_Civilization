@@ -160,7 +160,7 @@ class Main():
 
         tic = time.time()
         World.WorldClass.Initialize(mainProgram = self)
-        self.world = World.WorldClass()
+        self.world = World.WorldClass(numberOfErosionIterations=1)
         toc = time.time()
         print('World creation time: ', toc-tic)
 
@@ -346,7 +346,7 @@ class Main():
         plt.pause(0.0001)
 
 
-        self.world.VisualizeMaps([self.world.elevation, self.world.temperature, self.world.moisture, self.world.elevationInterpolated])
+        self.world.VisualizeMaps([self.world.elevation, self.world.temperature, self.world.moisture])
 
         plt.show()
 

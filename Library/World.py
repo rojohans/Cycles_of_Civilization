@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import Library.Noise as Noise
 
 class WorldClass():
-    def __init__(self, discrete = False):
+    def __init__(self, discrete = False, numberOfErosionIterations = 500):
 
         #self.elevationFloat = self.CreateMap(minValue = 0,
         #                                maxValue = self.mainProgram.settings.ELEVATION_LEVELS-1,
@@ -24,7 +24,7 @@ class WorldClass():
                                         distributionSteps = self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         self.elevation = self.ApplyDistributionFilter(self.elevationFloat, self.mainProgram.settings.ELEVATION_DISTRIBUTION)
         '''
-        self.elevation, self.topography = self.CreateElevationMap()
+        self.elevation, self.topography = self.CreateElevationMap(numberOfErosionIterations = numberOfErosionIterations)
 
         #self.elevationInterpolated = self.CreateMap(rows=self.mainProgram.settings.N_ROWS*self.mainProgram.settings.MODEL_RESOLUTION,
         #                                            colons=self.mainProgram.settings.N_COLONS*self.mainProgram.settings.MODEL_RESOLUTION,
@@ -195,7 +195,7 @@ class WorldClass():
 
         return map
 
-    def CreateElevationMap(self):
+    def CreateElevationMap(self, numberOfErosionIterations = 500):
         import perlin_numpy
         import Library.Erosion as Erosion
 
@@ -203,47 +203,56 @@ class WorldClass():
                  self.mainProgram.settings.N_COLONS*(self.mainProgram.settings.MODEL_RESOLUTION-2))
         octaves = int(np.log2(np.max(shape))-1)
 
-        elevation = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2, persistence=0.5,
+        rockMap = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=octaves, lacunarity=2, persistence=0.5,
                                                                 tileable=(False, True))
         roughNoise = perlin_numpy.generate_fractal_noise_2d(shape, (2, 4), octaves=8, lacunarity=2, persistence=1.0,
                                                             tileable=(False, True))
-        elevation -= np.min(elevation)
-        elevation /= np.max(elevation)
+        rockMap -= np.min(rockMap)
+        rockMap /= np.max(rockMap)
 
         roughNoise -= np.min(roughNoise)
         roughNoise /= np.max(roughNoise)
         #elevation *= 8 * 30*0.5
-        elevation *= 512/10
-        elevation += 10 * roughNoise
+        rockMap *= 512/10
+        rockMap += 10 * roughNoise
+
+        elevation = np.zeros((shape[0], shape[1], 2))
+        elevation[:, :, 0] = rockMap
 
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
-        # self.terrainHardness
+
         self.hydrolicErosion = Erosion.HydrolicErosion(terrain=elevation,
-                                                       terrainHardness=None,
                                                        evaporationRate=0.1,
                                                        deltaT=0.1,
                                                        flowSpeed=10,
                                                        sedimentFlowSpeed=1,
                                                        gridLength=1,
                                                        carryCapacityLimit=2,
-                                                       erosionRate=0.1,
+                                                       erosionRate=[0.05, 0.5],
                                                        depositionRate=0.1,
                                                        maximumErosionDepth=10)
 
         self.thermalErosion = Erosion.ThermalErosion(terrain=elevation,
-                                                     maximumSlope=30,
+                                                     maximumSlope=[90, 30],
                                                      flowSpeed=1,
                                                      deltaT=0.1)
 
-        for i in range(600):
-            if i>400:
+        self.thermalWeathering = Erosion.ThermalWeathering(terrain=elevation,
+                                                           weatheringRate=[1, 1])
+
+        for i in range(numberOfErosionIterations):
+            if i > 400:
                 rainAmount = 0
             else:
-                rainAmount = 0.03 * (1 + np.sin(i / 20)) / 2
+                rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
             self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
             self.hydrolicErosion()
+
+            if i < 400:
+                self.thermalWeathering.Weather(0.002)
             self.thermalErosion()
 
+        elevation = np.sum(elevation, 2)
         elevation -= np.min(elevation)
         elevation /= np.max(elevation)
         elevation *= self.mainProgram.settings.ELEVATION_LEVELS
