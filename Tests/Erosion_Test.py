@@ -10,6 +10,7 @@ from matplotlib.colors import ListedColormap
 import System_Information
 if System_Information.OPERATING_SYSTEM == 'windows':
     import cupy as cp
+from numba import jit
 
 import perlin_numpy
 
@@ -78,9 +79,84 @@ class Main():
             #self.heightMap[101, 101] = 1000
             self.heightMap[100:110, 100:110] = 50
             #self.heightMap[:, 300:310] = 100
+        '''
+        
+        x = np.arange(10000).reshape(100, 100)
+
+        @jit(nopython=True)
+        def go_fast(a):  # Function is compiled and runs in machine code
+            trace = 0.0
+            for i in range(a.shape[0]):
+                trace += np.tanh(a[i, i])
+            return a + trace
+
+        # DO NOT REPORT THIS... COMPILATION TIME IS INCLUDED IN THE EXECUTION TIME!
+        start = time.time()
+        a = go_fast(x)
+        end = time.time()
+        print("Elapsed (with compilation) = %s" % (end - start))
+
+        # NOW THE FUNCTION IS COMPILED, RE-TIME IT EXECUTING FROM CACHE
+        start = time.time()
+        b = go_fast(x)
+        end = time.time()
+        print("Elapsed (after compilation) = %s" % (end - start))
+        print(a)
+        print(b)
+        quit()
+
+        #shape = (512, 1024)
+        shape = (2**13, 2**14)
+        print(shape)
+
+        ### Numpy and CPU
+        s = time.time()
+        x_cpu = np.ones(shape)
+        e = time.time()
+        print(e - s)
+        ### CuPy and GPU
+        s = time.time()
+        x_gpu = cp.ones(shape)
+        cp.cuda.Stream.null.synchronize()
+        e = time.time()
+        print(e - s)
+
+        print('-------------------')
+        ### Numpy and CPU
+        s = time.time()
+        x_cpu *= 5
+        e = time.time()
+        print(e - s)
+        ### CuPy and GPU
+        s = time.time()
+        x_gpu *= 5
+        cp.cuda.Stream.null.synchronize()
+        e = time.time()
+        print(e - s)
+
+        print('-------------------')
+        ### Numpy and CPU
+        s = time.time()
+        x_cpu *= 5
+        x_cpu *= x_cpu
+        x_cpu += x_cpu
+        e = time.time()
+        print(e - s)
+        ### CuPy and GPU
+        s = time.time()
+        x_gpu *= 5
+        x_gpu *= x_gpu
+        x_gpu += x_gpu
+        cp.cuda.Stream.null.synchronize()
+        e = time.time()
+        print(e - s)
+
+        quit()
+        '''
+
 
         matplotlibVisualization = False
-        pyvistaVisualization = True
+        pyvistaVisualization = False
         waterVisibilityDepth = 3
         sedimentVisibilityDepth = 1
 
@@ -165,22 +241,73 @@ class Main():
             plotter.enable_terrain_style()
             plotter.show(auto_close=False)
 
-        Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
-        self.hydrolicErosion = Erosion.HydrolicErosion(terrain = self.heightMap,
-                                                        evaporationRate=0.1,
-                                                        deltaT=0.1,
-                                                        flowSpeed=3,
-                                                        sedimentFlowSpeed=1,
-                                                        gridLength=1,
-                                                        carryCapacityLimit=4,
-                                                        erosionRate=[0.05, 0.5],
-                                                        depositionRate=0.1,
-                                                        maximumErosionDepth=10)
+        '''
+        from numba import int32, float32  # import the types
 
-        self.thermalErosion = Erosion.ThermalErosion(terrain = self.heightMap,
-                                                      maximumSlope=[90, 30],
-                                                      flowSpeed=1,
-                                                      deltaT=0.1)
+        spec = [
+            ('value', int32),  # a simple scalar field
+            ('array', float32[:]),  # an array field
+        ]
+
+        import numba
+        @numba.jitclass(spec)
+        class Bag(object):
+            def __init__(self, value):
+                self.value = value
+                self.array = np.zeros(value, dtype=np.float32)
+
+            @property
+            def size(self):
+                return self.array.size
+
+            def increment(self, val):
+                for i in range(self.size):
+                    self.array[i] += val
+                return self.array
+
+        n = 21
+        mybag = Bag(n)
+        print(mybag)
+        quit()
+        '''
+
+
+
+        Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
+        if False:
+            self.hydrolicErosion = Erosion.HydrolicErosion(terrain = self.heightMap,
+                                                            evaporationRate=0.1,
+                                                            deltaT=0.1,
+                                                            flowSpeed=3,
+                                                            sedimentFlowSpeed=1,
+                                                            gridLength=1,
+                                                            carryCapacityLimit=4,
+                                                            erosionRate=[0.05, 0.5],
+                                                            depositionRate=0.1,
+                                                            maximumErosionDepth=10)
+            self.thermalErosion = Erosion.ThermalErosion(terrain=self.heightMap,
+                                                         maximumSlope=[90, 30],
+                                                         flowSpeed=1,
+                                                         deltaT=0.1)
+        else:
+            self.hydrolicErosion = Erosion.HydrolicErosionNumba(terrain = self.heightMap,
+                                                                evaporationRate=0.1,
+                                                                deltaT=0.1,
+                                                                flowSpeed=3,
+                                                                sedimentFlowSpeed=1,
+                                                                gridLength=1,
+                                                                carryCapacityLimit=4,
+                                                                erosionRate=[0.05, 0.5],
+                                                                depositionRate=0.1,
+                                                                maximumErosionDepth=10)
+            self.thermalErosion = Erosion.ThermalErosionNumba(terrain = self.heightMap,
+                                                              NRows=np.size(self.heightMap, 0),
+                                                              NColons=np.size(self.heightMap, 1),
+                                                              NLayers=np.size(self.heightMap, 2),
+                                                              maximumSlope=[90, 30],
+                                                              flowSpeed=1,
+                                                              deltaT=0.1,
+                                                              gridLength=1)
 
         self.thermalWeathering = Erosion.ThermalWeathering(terrain=self.heightMap,
                                                            weatheringRate=[1, 1])
@@ -199,18 +326,25 @@ class Main():
         # https://dl.acm.org/doi/pdf/10.1145/97880.97884
         #
 
+
+        import cProfile, pstats, io
+        from pstats import SortKey
+        pr = cProfile.Profile()
+        pr.enable()
+
+
         tic = time.time()
-        for i in range(500):
+        for i in range(50):
             print(i)
 
-            if i>400:
-                rainAmount = 0
-            else:
-                rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
-                #rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
-            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
+            #if i>400:
+            #    rainAmount = 0
+            #else:
+            #    rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
+            #    #rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
+            #self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
+            #self.hydrolicErosion()
 
-            self.hydrolicErosion()
             #self.hydrolicErosion.UpdateSlope()
 
             #self.hydrolicErosion.UpdateFlow()
@@ -255,6 +389,14 @@ class Main():
             if matplotlibVisualization:
                 self.hydrolicErosion.Visualize()
                 plt.pause(0.000001)
+        pr.disable()
+        s = io.StringIO()
+        sortby = SortKey.CUMULATIVE
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        quit()
+
         toc = time.time()
         print('Total erosion time: ', toc-tic)
         if pyvistaVisualization:
