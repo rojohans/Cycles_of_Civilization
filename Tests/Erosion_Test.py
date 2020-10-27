@@ -10,7 +10,7 @@ from matplotlib.colors import ListedColormap
 import System_Information
 if System_Information.OPERATING_SYSTEM == 'windows':
     import cupy as cp
-from numba import jit
+    from numba import jit
 
 import perlin_numpy
 
@@ -61,7 +61,7 @@ class Main():
             #self.rockMap *= 512/5
             #self.rockMap += 25 * roughNoise
 
-            self.heightMap = np.zeros((shape[0], shape[1], 3))
+            self.heightMap = np.zeros((shape[0], shape[1], 2))
             self.heightMap[:, :, 0] = self.rockMap
             #self.heightMap[:, :, 1] += 0.5
             #self.heightMap[100:110, 100:110, 1] += 100
@@ -282,7 +282,7 @@ class Main():
 
         #self.heightMap[:, :, -1] += 10
 
-        self.heightMap = self.heightMap[:, :, 0:2]
+        #self.heightMap = self.heightMap[:, :, 0:2]
 
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
         Erosion.HydrolicErosion2.InitializeRainDropTemplates(maximumRainDropRadius=20)
@@ -293,7 +293,7 @@ class Main():
                                                             flowSpeed=3,
                                                             sedimentFlowSpeed=1,
                                                             gridLength=1,
-                                                            carryCapacityLimit=2,
+                                                            carryCapacityLimit=0.5,
                                                             erosionRate=[0.05, 0.5],
                                                             depositionRate=0.1,
                                                             maximumErosionDepth=10)
