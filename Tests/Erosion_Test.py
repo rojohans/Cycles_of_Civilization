@@ -53,15 +53,15 @@ class Main():
 
             #self.heightMap -= np.min(self.heightMap)
             #self.heightMap /= np.max(self.heightMap)
-            #self.rockMap *= 512/10
-            #self.rockMap += 10 * roughNoise
-
-            self.rockMap *= 512/10
-            self.rockMap += 10 * roughNoise
             #self.rockMap *= 512/15
             #self.rockMap += 5 * roughNoise
 
-            self.heightMap = np.zeros((shape[0], shape[1], 2))
+            self.rockMap *= 512/10
+            self.rockMap += 10 * roughNoise
+            #self.rockMap *= 512/5
+            #self.rockMap += 25 * roughNoise
+
+            self.heightMap = np.zeros((shape[0], shape[1], 3))
             self.heightMap[:, :, 0] = self.rockMap
             #self.heightMap[:, :, 1] += 0.5
             #self.heightMap[100:110, 100:110, 1] += 100
@@ -79,8 +79,8 @@ class Main():
             #self.heightMap[101, 101] = 1000
             self.heightMap[100:110, 100:110] = 50
             #self.heightMap[:, 300:310] = 100
+
         '''
-        
         x = np.arange(10000).reshape(100, 100)
 
         @jit(nopython=True)
@@ -104,7 +104,9 @@ class Main():
         print(a)
         print(b)
         quit()
+        '''
 
+        '''
         #shape = (512, 1024)
         shape = (2**13, 2**14)
         print(shape)
@@ -154,10 +156,12 @@ class Main():
         quit()
         '''
 
-
         matplotlibVisualization = False
-        pyvistaVisualization = False
-        waterVisibilityDepth = 3
+        pyvistaVisualization = True
+        profile = False
+        NSimulationItterations = 500
+        #waterVisibilityDepth = 3
+        waterVisibilityDepth = 1
         sedimentVisibilityDepth = 1
 
         if pyvistaVisualization:
@@ -208,23 +212,23 @@ class Main():
             waterDepth = np.reshape(np.zeros((shape[0], shape[1])), (NPoints, 1))
             mapping = np.linspace(0, 1, 256)
             newcolors = np.empty((256, 4))
-            newcolors[mapping >= 1] = np.array([0.1, 0.1, 0.3, 1.0])
-            newcolors[mapping < 1.0] = np.array([0.1, 0.2, 0.4, 0.8])
-            newcolors[mapping < 0.75] = np.array([0.1, 0.4, 0.6, 0.6])
-            newcolors[mapping < 0.5] = np.array([0.05, 0.65, 0.8, 0.4])
-            newcolors[mapping < 0.25] = np.array([0.05, 0.9, 1.0, 0.1])
-            newcolors[mapping < 0.1] = np.array([1.0, 1.0, 1.0, 0.0])
+            newcolors[mapping >= 1] = np.array([0.1, 0.1, 0.3, 1])
+            newcolors[mapping < 1.0] = np.array([0.1, 0.2, 0.4, 1])
+            newcolors[mapping < 0.75] = np.array([0.1, 0.4, 0.6, 1])
+            newcolors[mapping < 0.5] = np.array([0.05, 0.65, 0.8, 1])
+            newcolors[mapping < 0.25] = np.array([0.05, 0.9, 1.0, 1])
+            newcolors[mapping < 0.1] = np.array([1.0, 1.0, 1.0, 0])
             my_colormap = ListedColormap(newcolors)
 
             plotter = pv.Plotter()
             # , scalars = grid.points[:, -1]
             # opacity=1+waterPoints[:, -1]
             #plotter.add_mesh(terrainMesh, scalars = terrainPoints[:, -1], smooth_shading=True)
-            plotter.add_mesh(terrainMesh, color = [0.4, 0.3, 0.3], smooth_shading=True)
+            plotter.add_mesh(terrainMesh, color = [0.3, 0.3, 0.35], smooth_shading=True)
 
             #plotter.add_mesh(sedimentMesh, scalars=sedimentDepth, cmap=sedimentColormap, smooth_shading=True)
             #plotter.add_mesh(sedimentMesh, scalars=sedimentDepth, cmap=sedimentColormap)
-            plotter.add_mesh(sedimentMesh, color = [0.5, 0.4, 0.4], smooth_shading=True)
+            plotter.add_mesh(sedimentMesh, color = [0.6, 0.5, 0.5], smooth_shading=True)
             #plotter.add_mesh(sedimentMesh, scalars=sedimentDepth)
             #plotter.add_mesh(sedimentMesh, color = [1, 0, 0], opacity=0.5)
             #plotter.add_mesh(sedimentMesh, color = [1, 0, 0], smooth_shading=True)
@@ -232,7 +236,7 @@ class Main():
             #plotter.add_mesh(waterMesh, smooth_shading=True, color = [0.1, 0.3, 0.4], opacity=0.5, specular=1, specular_power=15)
             #plotter.add_mesh(waterMesh, scalars=waterDepth, smooth_shading=True, color=[0.1, 0.3, 0.4], opacity='sigmoid', specular=1)
 
-            #plotter.add_mesh(waterMesh, scalars=waterDepth, cmap = my_colormap, specular=1, specular_power=10)
+            #plotter.add_mesh(waterMesh, scalars=waterDepth, cmap=my_colormap, specular=1, specular_power=10)
             plotter.add_mesh(waterMesh, scalars=waterDepth, cmap=my_colormap)
 
             #plotter.enable_3_lights()
@@ -270,21 +274,51 @@ class Main():
         print(mybag)
         quit()
         '''
+        #fig = pyplot.figure(figsize=(11, 7), dpi=100)
+        #pyplot.quiver(X[::3, ::3], Y[::3, ::3], u[::3, ::3], v[::3, ::3]);
 
+        #fig = pyplot.figure(figsize=(11, 7), dpi=100)
+        #pyplot.quiver(X, Y, u, v);
 
+        #self.heightMap[:, :, -1] += 10
+
+        self.heightMap = self.heightMap[:, :, 0:2]
 
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
-        if False:
+        Erosion.HydrolicErosion2.InitializeRainDropTemplates(maximumRainDropRadius=20)
+        if True:
             self.hydrolicErosion = Erosion.HydrolicErosion(terrain = self.heightMap,
                                                             evaporationRate=0.1,
                                                             deltaT=0.1,
                                                             flowSpeed=3,
                                                             sedimentFlowSpeed=1,
                                                             gridLength=1,
-                                                            carryCapacityLimit=4,
+                                                            carryCapacityLimit=2,
                                                             erosionRate=[0.05, 0.5],
                                                             depositionRate=0.1,
                                                             maximumErosionDepth=10)
+            #self.hydrolicErosion = Erosion.HydrolicErosion2(terrain = self.heightMap,
+            #                                                evaporationRate=0.1,
+            #                                                deltaT=0.01,
+            #                                                flowSpeed=1500,
+            #                                                sedimentFlowSpeed=0.5,
+            #                                                gridLength=1,
+            #                                                carryCapacityCoefficient=0.0001,
+            #                                                erosionRate=0.005,
+            #                                                disolveRate = 5,
+            #                                                depositionRate=0.1,
+            #                                                maximumErosionDepth=0.5,
+            #                                                bedrockHardness=20000)
+            #self.hydrolicErosion = Erosion.HydrolicErosion(terrain = self.heightMap,
+            #                                                evaporationRate=0.15,
+            #                                                deltaT=0.02,
+            #                                                flowSpeed=300,
+            #                                                sedimentFlowSpeed=1,
+            #                                                gridLength=1,
+            #                                                carryCapacityLimit=1,
+            #                                                erosionRate=[0.01, 0.1],
+            #                                                depositionRate=0.1,
+            #                                                maximumErosionDepth=10)
             self.thermalErosion = Erosion.ThermalErosion(terrain=self.heightMap,
                                                          maximumSlope=[90, 30],
                                                          flowSpeed=1,
@@ -327,35 +361,52 @@ class Main():
         #
 
 
-        import cProfile, pstats, io
-        from pstats import SortKey
-        pr = cProfile.Profile()
-        pr.enable()
-
+        if profile:
+            import cProfile, pstats, io
+            from pstats import SortKey
+            pr = cProfile.Profile()
+            pr.enable()
 
         tic = time.time()
-        for i in range(50):
+        for i in range(NSimulationItterations):
             print(i)
 
-            #if i>400:
-            #    rainAmount = 0
-            #else:
-            #    rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
-            #    #rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
-            #self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
-            #self.hydrolicErosion()
+            if i>400:
+                rainAmount = 0
+            else:
+                #if i%50 == 0:
+                #    rainAmount = 1
+                #else:
+                #
+                #    rainAmount = 0
+                #if i%10 == 0:
+                #    rainAmount = 0.1 * (1 + np.sin(np.pi*(i / 15))) / 2
+                #else:
+                #    rainAmount = 0
+                #rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
+                #rainAmount = 0.01 * (1 + np.sin(2*np.pi*(i / 40))) / 2
+                rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
+                #rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
+                #self.hydrolicErosion.Rain(numberOfDrops=1, radius=3, dropSize=10000, application='drop')
+            self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
+            self.hydrolicErosion()
 
+            #self.hydrolicErosion.UpdateTotalTerrain()
             #self.hydrolicErosion.UpdateSlope()
 
             #self.hydrolicErosion.UpdateFlow()
             #self.hydrolicErosion.UpdateWaterHeight()
+            #self.hydrolicErosion.Evaporation()
             #self.hydrolicErosion.UpdateVelocity()
 
-            if i < 400:
-                #self.thermalWeathering.Weather(0.002)
-                self.thermalWeathering.Weather(0.02)
-            #if i%10 == 0:
-            self.thermalErosion()
+            if True:
+                if i < 400:
+                    #self.thermalWeathering.Weather(0.002)
+                    self.thermalWeathering.Weather(0.02)
+                    #self.thermalWeathering.Weather(0.04)
+                #if i%10 == 0:
+                self.thermalErosion()
+
 
             if pyvistaVisualization:
                 z = self.heightMap[:, :, 0].copy()
@@ -374,10 +425,10 @@ class Main():
 
                 plotter.update_coordinates(points=terrainPoints, mesh=terrainMesh)
                 plotter.update_coordinates(points=sedimentPoints, mesh=sedimentMesh)
-                plotter.update_coordinates(points=waterPoints, mesh = waterMesh)
+                #plotter.update_coordinates(points=waterPoints, mesh = waterMesh)
 
                 #plotter.update_scalars(sedimentDepth[:, 0], mesh=sedimentMesh, render=False)
-                plotter.update_scalars(waterDepth[:, 0], mesh=waterMesh, render=False)
+                #plotter.update_scalars(waterDepth[:, 0], mesh=waterMesh, render=False)
 
                 terrainMesh.compute_normals(point_normals=True, inplace=True)
                 sedimentMesh.compute_normals(point_normals=True, inplace=True)
@@ -389,13 +440,14 @@ class Main():
             if matplotlibVisualization:
                 self.hydrolicErosion.Visualize()
                 plt.pause(0.000001)
-        pr.disable()
-        s = io.StringIO()
-        sortby = SortKey.CUMULATIVE
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
-        quit()
+        if profile:
+            pr.disable()
+            s = io.StringIO()
+            sortby = SortKey.CUMULATIVE
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
+            quit()
 
         toc = time.time()
         print('Total erosion time: ', toc-tic)
