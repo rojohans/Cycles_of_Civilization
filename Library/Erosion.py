@@ -289,7 +289,8 @@ class HydrolicErosion():
 
             if iLayer == 0:
                 # rock decreases in density as it is eroded.
-                self.suspendedSediment[:, :, 1] += 2*erodedSediment
+                #self.suspendedSediment[:, :, 1] += 2*erodedSediment
+                self.suspendedSediment[:, :, 1] += erodedSediment
             else:
                 self.suspendedSediment[:, :, 1] += erodedSediment
             #self.water[:, :, 1] += erodedSediment
@@ -297,7 +298,7 @@ class HydrolicErosion():
     def Deposit(self):
         depositedSediment = self.deltaT*self.depositionRate * (self.suspendedSediment[:, :, 0] - self.carryCapacity)
         #depositedSediment[depositedSediment < 0] = 0
-        minDepos = 0.3 * self.suspendedSediment[:, :, 0]
+        minDepos = 0.7 * self.suspendedSediment[:, :, 0]
         depositedSediment[depositedSediment < minDepos] = minDepos[depositedSediment < minDepos]
 
 
@@ -317,7 +318,7 @@ class HydrolicErosion():
         #self.water[:, :, 1] -= depositedSediment
 
     def SedimentTransportation(self):
-        '''
+
         self.sedimentFlow = self.sedimentFlowSpeed * self.flow.copy()
 
         flowScaling = self.suspendedSediment[:, :, 1] / ((self.sedimentFlow[:, :, 0] + self.sedimentFlow[:, :, 1] + self.sedimentFlow[:, :,
@@ -369,7 +370,7 @@ class HydrolicErosion():
 
         interpolatedValues = interpolate.interpn(points, self.suspendedSediment[:, :, 1], samplePoints)
         self.suspendedSediment[:, :, 0] = np.reshape(interpolatedValues, (self.NRows, self.NColons))
-
+        '''
 
     def Evaporation(self):
         self.water[:, :, 0] = self.water[:, :, 1]*(1 - self.evaporationRate*self.deltaT)

@@ -284,6 +284,8 @@ class Main():
 
         #self.heightMap = self.heightMap[:, :, 0:2]
 
+        print('Amount of material before simulation: ', np.sum(np.sum(np.sum(self.heightMap))))
+
         Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
         Erosion.HydrolicErosion2.InitializeRainDropTemplates(maximumRainDropRadius=20)
         if True:
@@ -448,6 +450,18 @@ class Main():
             ps.print_stats()
             print(s.getvalue())
             quit()
+
+        print('Amount of material after simulation: ', np.sum(np.sum(np.sum(self.heightMap))) + np.sum(np.sum(self.hydrolicErosion.suspendedSediment[:, :, 0])) )
+
+        plt.figure()
+        plt.imshow(self.hydrolicErosion.terrain[:, :, 0])
+
+        plt.figure()
+        plt.imshow(self.hydrolicErosion.terrain[:, :, 1])
+
+        plt.figure()
+        plt.imshow(self.hydrolicErosion.suspendedSediment[:, :, 0])
+        plt.show()
 
         toc = time.time()
         print('Total erosion time: ', toc-tic)
