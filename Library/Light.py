@@ -4,7 +4,7 @@ from direct.showbase.ShowBase import ShowBase
 class LightClass():
     def __init__(self, shadowsEnabled = False):
         ambientLight = AmbientLight("ambientLight")
-        ambientLight.setColor((0.2, 0.2, .2, 1))
+        ambientLight.setColor((0.1, 0.1, .15, 1))
         directionalLight = DirectionalLight("directionalLight")
         directionalLight.setDirection(LVector3(25, 25, -45))
         directionalLight.setColor((0.1, 0.1, 0.2, 1))
@@ -25,13 +25,12 @@ class LightClass():
         directionalLight4.setColor((0.1, 0.1, 0.2, 1))
         #directionalLight4.setColor((0, 0, 0.05, 1))
 
-        render.setLight(render.attachNewNode(directionalLight))
-        render.setLight(render.attachNewNode(directionalLight2))
-        render.setLight(render.attachNewNode(directionalLight3))
-        render.setLight(render.attachNewNode(directionalLight4))
+        #render.setLight(render.attachNewNode(directionalLight))
+        #render.setLight(render.attachNewNode(directionalLight2))
+        #render.setLight(render.attachNewNode(directionalLight3))
+        #render.setLight(render.attachNewNode(directionalLight4))
 
-
-        #render.setLight(render.attachNewNode(ambientLight))
+        render.setLight(render.attachNewNode(ambientLight))
 
 
 
@@ -69,8 +68,13 @@ class LightClass():
         else:
             directionalLightSun = DirectionalLight("directionalLight")
             directionalLightSun.setDirection(LVector3(-25, 25, -45))
-            directionalLightSun.setColor((1, 1, 0.8, 1))
+            directionalLightSun.setColor((0.9, 0.9, 0.8, 1))
             render.setLight(render.attachNewNode(directionalLightSun))
+
+            directionalLightSunReverse = DirectionalLight("directionalLight")
+            directionalLightSunReverse.setDirection(LVector3(25, -25, 45))
+            directionalLightSunReverse.setColor((0.1, 0.1, 0.2, 1))
+            render.setLight(render.attachNewNode(directionalLightSunReverse))
 
 
 

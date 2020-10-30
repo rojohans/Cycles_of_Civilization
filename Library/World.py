@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
+import noise
 
 import Library.Noise as Noise
 
@@ -419,6 +420,22 @@ class SphericalWorld():
 
         self.v = self.NormalizeVertices(self.v)
 
+        n = self.PerlinNoise(self.v)
+
+        print(np.shape(self.v))
+        print(np.shape(n))
+        n *= 20
+        n += 100
+        self.v[:, 0] *= n[:, 0]
+        self.v[:, 1] *= n[:, 0]
+        self.v[:, 2] *= n[:, 0]
+
+
+
+
+
+
+
 
     @staticmethod
     def GetIcosahedron():
@@ -516,6 +533,27 @@ class SphericalWorld():
         vertices[:, 1] /= r
         vertices[:, 2] /= r
         return vertices
+
+    def PerlinNoise(self, vertices):
+        scale = 1.0
+        octaves = 10
+        persistence = 0.65
+        lacunarity = 3.0
+        seed = np.random.randint(0, 100)
+
+        noiseArray = np.empty((np.size(vertices, 0), 1))
+
+        for i, vertex in enumerate(vertices):
+            noiseArray[i, 0] = noise.pnoise3(vertex[0] / scale,
+                                            vertex[1] / scale,
+                                            vertex[2] / scale,
+                                            octaves=octaves,
+                                            persistence=persistence,
+                                            lacunarity=lacunarity,
+                                            base=seed)
+        noiseArray -= np.min(noiseArray)
+        noiseArray /= np.max(noiseArray)
+        return noiseArray
 
 
 
