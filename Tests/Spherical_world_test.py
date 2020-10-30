@@ -24,8 +24,8 @@ class Game(ShowBase):
         ShowBase.__init__(self)
 
         p3d.PStatClient.connect()
-
         base.setFrameRateMeter(True)
+        base.setBackgroundColor(1, 1, 1)
 
         texture = Texture.Texture()
         self.lightObject = Light.LightClass(shadowsEnabled=False)
@@ -47,6 +47,7 @@ class Game(ShowBase):
             pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
 
             r = np.random.choice(['water', 'grass', 'rock', 'snow'])
+            r = 'rock'
             rIndices = texture.textureIndices[r]
             tex_writer.addData2f(rIndices[0], 0)
             tex_writer.addData2f(rIndices[1], 0)
@@ -82,12 +83,10 @@ class Game(ShowBase):
 
         node = p3d.GeomNode("Tile")
         node.add_geom(geom)
-        tile = p3d.NodePath(node)
+        self.planet = p3d.NodePath(node)
 
-        tile.reparentTo(render)
-
-        base.setBackgroundColor(1, 1, 1)
-        tile.setTexture(texture.stitchedTexture)
+        self.planet.reparentTo(render)
+        self.planet.setTexture(texture.stitchedTexture)
 
 
 game = Game()

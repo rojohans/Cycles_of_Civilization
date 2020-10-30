@@ -298,7 +298,7 @@ class HydrolicErosion():
     def Deposit(self):
         depositedSediment = self.deltaT*self.depositionRate * (self.suspendedSediment[:, :, 0] - self.carryCapacity)
         #depositedSediment[depositedSediment < 0] = 0
-        minDepos = 0.7 * self.suspendedSediment[:, :, 0]
+        minDepos = 0.2 * self.suspendedSediment[:, :, 0]
         depositedSediment[depositedSediment < minDepos] = minDepos[depositedSediment < minDepos]
 
 

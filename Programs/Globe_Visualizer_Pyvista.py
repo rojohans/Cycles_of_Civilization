@@ -11,8 +11,3 @@ plotter.add_mesh(terrainMesh, scalars=world.faceRadius, smooth_shading=True)
 
 plotter.enable_eye_dome_lighting()
 plotter.show(auto_close=False)
-
-
-
-
-

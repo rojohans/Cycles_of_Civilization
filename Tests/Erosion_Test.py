@@ -427,10 +427,10 @@ class Main():
 
                 plotter.update_coordinates(points=terrainPoints, mesh=terrainMesh)
                 plotter.update_coordinates(points=sedimentPoints, mesh=sedimentMesh)
-                #plotter.update_coordinates(points=waterPoints, mesh = waterMesh)
+                plotter.update_coordinates(points=waterPoints, mesh = waterMesh)
 
                 #plotter.update_scalars(sedimentDepth[:, 0], mesh=sedimentMesh, render=False)
-                #plotter.update_scalars(waterDepth[:, 0], mesh=waterMesh, render=False)
+                plotter.update_scalars(waterDepth[:, 0], mesh=waterMesh, render=False)
 
                 terrainMesh.compute_normals(point_normals=True, inplace=True)
                 sedimentMesh.compute_normals(point_normals=True, inplace=True)

@@ -405,7 +405,7 @@ class SphericalWorld():
     def __init__(self):
         self.icosahedronVertices, self.icosahedronFaces = self.GetIcosahedron()
 
-        d = 100
+        d = 50
 
         for i in range(20):
             if i == 0:
@@ -420,17 +420,19 @@ class SphericalWorld():
 
         self.v = self.NormalizeVertices(self.v)
 
-        n = self.PerlinNoise(self.v)
+        n = self.PerlinNoise(self.v, octaves=10, persistence=0.7)
 
         print(np.shape(self.v))
         print(np.shape(n))
-        n *= 20
+        n *= 50
         n += 100
         self.v[:, 0] *= n[:, 0]
         self.v[:, 1] *= n[:, 0]
         self.v[:, 2] *= n[:, 0]
 
 
+        self.vertexRadius = self.CalculateVertexRadius(self.v)
+        self.faceRadius = self.CalculateFaceRadius(self.v, self.f)
 
 
 
@@ -534,11 +536,15 @@ class SphericalWorld():
         vertices[:, 2] /= r
         return vertices
 
-    def PerlinNoise(self, vertices):
+    def PerlinNoise(self, vertices, octaves = 10, persistence = 0.5, lacunarity = 2.0):
+        '''
+        :param vertices:
+        :param octaves: Determines the maximum resolution
+        :param persistence: Determines the amplitude impact of each layer
+        :param lacunarity:
+        :return:
+        '''
         scale = 1.0
-        octaves = 10
-        persistence = 0.65
-        lacunarity = 3.0
         seed = np.random.randint(0, 100)
 
         noiseArray = np.empty((np.size(vertices, 0), 1))
@@ -554,6 +560,13 @@ class SphericalWorld():
         noiseArray -= np.min(noiseArray)
         noiseArray /= np.max(noiseArray)
         return noiseArray
+
+    def CalculateVertexRadius(self, vertices):
+        return np.sqrt(vertices[:, 0]**2 + vertices[:, 1]**2 + vertices[:, 2]**2)
+
+    def CalculateFaceRadius(self, vertices, faces):
+        vertexRadius = np.sqrt(vertices[:, 0] ** 2 + vertices[:, 1] ** 2 + vertices[:, 2] ** 2)
+        return np.sum(vertexRadius[faces[:, 1:]], axis = 1)/3
 
 
 
