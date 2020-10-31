@@ -405,7 +405,7 @@ class SphericalWorld():
     def __init__(self):
         self.icosahedronVertices, self.icosahedronFaces = self.GetIcosahedron()
 
-        d = 50
+        d = 100
 
         for i in range(20):
             if i == 0:
