@@ -405,7 +405,7 @@ class SphericalWorld():
     def __init__(self):
         self.icosahedronVertices, self.icosahedronFaces = self.GetIcosahedron()
 
-        d = 100
+        d = 50
 
         for i in range(20):
             if i == 0:
@@ -536,7 +536,8 @@ class SphericalWorld():
         vertices[:, 2] /= r
         return vertices
 
-    def PerlinNoise(self, vertices, octaves = 10, persistence = 0.5, lacunarity = 2.0):
+    @staticmethod
+    def PerlinNoise(vertices, octaves = 10, persistence = 0.5, lacunarity = 2.0):
         '''
         :param vertices:
         :param octaves: Determines the maximum resolution
