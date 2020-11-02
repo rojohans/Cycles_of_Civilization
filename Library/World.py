@@ -439,6 +439,8 @@ class SphericalWorld():
 
 
 
+
+
     @staticmethod
     def GetIcosahedron():
         #https: // en.wikipedia.org / wiki / Regular_icosahedron
@@ -569,6 +571,15 @@ class SphericalWorld():
         vertexRadius = np.sqrt(vertices[:, 0] ** 2 + vertices[:, 1] ** 2 + vertices[:, 2] ** 2)
         return np.sum(vertexRadius[faces[:, 1:]], axis = 1)/3
 
+    def CalculateFaceNormals(self, vertices, faces):
+        normals = np.empty((np.size(faces, 0), 3))
+        for iFace in range(np.size(faces, 0)):
+            #normal_writer.add_data3(p3d.Vec3(self.normals[y, x, 0], self.normals[y, x, 1], self.normals[y, x, 2]))
+            v = vertices[faces[iFace, 1:]]
+            v0 = v[1, :] - v[0, :]
+            v1 = v[2, :] - v[0, :]
+            normals[iFace, :] = [v0[1]*v1[2] - v1[1]*v0[2], v0[0]*v1[2] - v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
+        return normals
 
 
 

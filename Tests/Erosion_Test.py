@@ -360,6 +360,7 @@ class Main():
         # http: // www - cg.cis.iwate - u.ac.jp / lab / graphite06.pdf
         # https://matthias-research.github.io/pages/publications/SPHShallow.pdf
         # https://dl.acm.org/doi/pdf/10.1145/97880.97884
+        # https: // hal.inria.fr / hal - 01262376 / document
         #
 
 

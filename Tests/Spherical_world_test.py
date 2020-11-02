@@ -15,6 +15,7 @@ import Library.Texture as Texture
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 import Data.Templates.Vegetation_Templates as Vegetation_Templates
 import Data.Templates.Animal_Templates as Animal_Templates
+import pickle
 
 import Settings
 import Root_Directory
@@ -29,7 +30,12 @@ class Game(ShowBase):
 
         texture = Texture.Texture()
         self.lightObject = Light.LightClass(shadowsEnabled=False)
-        world = World.SphericalWorld()
+        if False:
+            world = World.SphericalWorld()
+        else:
+            world = pickle.load(open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldRock.pkl', "rb"))
+
+        world.faceNormals = world.CalculateFaceNormals(world.v, world.f)
 
         # v3n3t2 : vertices3, normals3, textureCoordinates2
         vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
@@ -46,8 +52,24 @@ class Game(ShowBase):
             pos_writer.add_data3(vertices[1, 0], vertices[1, 1], vertices[1, 2])
             pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
 
-            r = np.random.choice(['water', 'grass', 'rock', 'snow'])
-            r = 'rock'
+            vertices = vertices[0, :]
+
+            #vertices /= np.sqrt(vertices[0]**2 + vertices[1]**2 + vertices[2]**2)
+            normal = world.faceNormals[iFace, :]
+            #normal /= np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
+
+            #print(np.sqrt(vertices[0]**2 + vertices[1]**2 + vertices[2]**2))
+            #print(np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2))
+            #print('  ')
+
+            angle = 180/np.pi*np.arccos( (vertices[0]*normal[0] + vertices[1]*normal[1] + vertices[2]*normal[2])/(np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)*np.sqrt(vertices[0]**2 + vertices[1]**2 + vertices[2]**2))  )
+            if angle >50:
+                r = 'rock'
+            else:
+                r = 'grass'
+
+            #r = np.random.choice(['water', 'grass', 'rock', 'snow'])
+            r = 'grass'
             rIndices = texture.textureIndices[r]
             tex_writer.addData2f(rIndices[0], 0)
             tex_writer.addData2f(rIndices[1], 0)
@@ -66,10 +88,12 @@ class Game(ShowBase):
         for iFace in range(np.size(world.f, 0)):
             #normal_writer.add_data3(p3d.Vec3(self.normals[y, x, 0], self.normals[y, x, 1], self.normals[y, x, 2]))
 
-            vertices = world.v[world.f[iFace, 1:]]
-            v0 = vertices[1, :] - vertices[0, :]
-            v1 = vertices[2, :] - vertices[0, :]
-            normal = [v0[1]*v1[2] - v1[1]*v0[2], v0[0]*v1[2] - v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
+            #vertices = world.v[world.f[iFace, 1:]]
+            #v0 = vertices[1, :] - vertices[0, :]
+            #v1 = vertices[2, :] - vertices[0, :]
+            #normal = [v0[1]*v1[2] - v1[1]*v0[2], v0[0]*v1[2] - v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
+
+            normal = world.faceNormals[iFace, :]
 
             #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
             #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
@@ -89,6 +113,71 @@ class Game(ShowBase):
         self.planet.setTexture(texture.stitchedTexture)
         #self.planet.setTag('iFace', 'THE PLANET')
 
+        #-------------------------------------------------------------
+
+        if False:
+            worldWater = World.SphericalWorld()
+        else:
+            worldWater = pickle.load(open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldWater.pkl', "rb"))
+
+        # v3n3t2 : vertices3, normals3, textureCoordinates2
+        vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
+        # vertex_format = p3d.GeomVertexFormat.get_v3t2()
+        vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
+
+        pos_writer = p3d.GeomVertexWriter(vertex_data, "vertex")
+        normal_writer = p3d.GeomVertexWriter(vertex_data, "normal")
+        tex_writer = p3d.GeomVertexWriter(vertex_data, 'texcoord')
+
+        for iFace in range(np.size(worldWater.f, 0)):
+            vertices = worldWater.v[worldWater.f[iFace, 1:]]
+            pos_writer.add_data3(vertices[0, 0], vertices[0, 1], vertices[0, 2])
+            pos_writer.add_data3(vertices[1, 0], vertices[1, 1], vertices[1, 2])
+            pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
+
+            r = np.random.choice(['water', 'grass', 'rock', 'snow'])
+            r = 'water'
+            rIndices = texture.textureIndices[r]
+            tex_writer.addData2f(rIndices[0], 0)
+            tex_writer.addData2f(rIndices[1], 0)
+            tex_writer.addData2f((rIndices[0] + rIndices[1])/2, np.sqrt(3)/2)
+
+        tri = p3d.GeomTriangles(p3d.Geom.UH_static)
+
+        # Creates the triangles.
+        n = 0
+        for iFace in range(np.size(worldWater.f, 0)):
+            #tri.add_vertices(world.f[iFace, 0], world.f[iFace, 1], world.f[iFace, 2])
+            tri.add_vertices(n, n+1, n+2)
+            n += 3
+
+        # Assigns a normal to each vertex.
+        for iFace in range(np.size(worldWater.f, 0)):
+            #normal_writer.add_data3(p3d.Vec3(self.normals[y, x, 0], self.normals[y, x, 1], self.normals[y, x, 2]))
+
+            vertices = worldWater.v[worldWater.f[iFace, 1:]]
+            v0 = vertices[1, :] - vertices[0, :]
+            v1 = vertices[2, :] - vertices[0, :]
+            normal = [v0[1]*v1[2] - v1[1]*v0[2], v0[0]*v1[2] - v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
+
+            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
+            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
+            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
+            normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
+            normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
+            normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
+
+        geom = p3d.Geom(vertex_data)
+        geom.add_primitive(tri)
+
+        node = p3d.GeomNode("Water")
+        node.add_geom(geom)
+        self.water = p3d.NodePath(node)
+
+        self.water.reparentTo(render)
+        self.water.setTexture(texture.stitchedTexture)
+
+        # ------------------------------------------------------------------
         # Since we are using collision detection to do picking, we set it up like
         # any other collision detection system with a traverser and a handler
         self.picker = p3d.CollisionTraverser()  # Make a traverser
@@ -111,13 +200,6 @@ class Game(ShowBase):
 
         base.cTrav = p3d.CollisionTraverser()
         collisionHandler = p3d.CollisionHandlerQueue()
-
-        # ** This is where we define the heart collider that will trig the collision event against the smiley ball, therefore it is who'll stir up the event, named FROM object. The major difference from this object and the other, called INTO object. is that we'll going to put it in the main traverser list, making it automatically figure as a FROM object just because of this. Any other object in the scene instead, is automatically considered as INTO by the system - the FROM either.
-
-        #smileyCollider = self.planet.attachNewNode(p3d.CollisionNode('smileycnode'))
-        #smileyCollider.node().addSolid(p3d.CollisionSphere(0, 0, 0, 70))
-        #self.planet.reparentTo(render)
-        #smileyCollider.show()
 
         self.collidableRoot = render.attachNewNode('collidableRoot')
         collisionNodes = []
@@ -172,13 +254,10 @@ class Game(ShowBase):
 
             if task: return task.cont
 
+
         # ** let start the collision check loop
-        taskMgr.add(traverseTask, "tsk_traverse")
-
-
-
-
-        self.add_task(self.PickTask, 'picking')
+        #taskMgr.add(traverseTask, "tsk_traverse")
+        #self.add_task(self.PickTask, 'picking')
 
     def PickTask(self, Task):
         #print('picking')

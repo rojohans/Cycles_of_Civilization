@@ -73,7 +73,7 @@ class LightClass():
 
             directionalLightSunReverse = DirectionalLight("directionalLight")
             directionalLightSunReverse.setDirection(LVector3(25, -25, 45))
-            directionalLightSunReverse.setColor((0.1, 0.1, 0.2, 1))
+            directionalLightSunReverse.setColor((0.3, 0.3, 0.4, 1))
             render.setLight(render.attachNewNode(directionalLightSunReverse))
 
 

@@ -9,7 +9,7 @@ import Library.Erosion as Erosion
 
 class Main():
     def __init__(self):
-        shape = {'latitude':256, 'longitude':256}
+        shape = {'latitude':256, 'longitude':512}
 
         longitude = np.linspace(0, 2*np.pi*(1-1/shape['longitude']), shape['longitude'])
         latitude = np.linspace(-np.pi/2 + np.pi/(2*shape['latitude']),np.pi/2 - np.pi/(2*shape['latitude']), shape['latitude'])
@@ -140,14 +140,14 @@ class Main():
                                                            flowSpeed=1,
                                                            sedimentFlowSpeed=1,
                                                            gridLength=1,
-                                                           carryCapacityLimit=0.5,
-                                                           erosionRate=[0.05, 0.5],
+                                                           carryCapacityLimit=2.5,
+                                                           erosionRate=[0.5, 0.5],
                                                            depositionRate=0.1,
                                                            maximumErosionDepth=10,
                                                                  deltaLatitude=deltaLatitudeScaled,
                                                                  deltaLongitude=deltaLongitudeScaled)
             self.thermalErosion = Erosion.ThermalErosionScaled(terrain=self.elevation,
-                                                         maximumSlope=[90, 30],
+                                                         maximumSlope=[30, 30],
                                                          flowSpeed=1,
                                                          deltaT=0.1,
                                                                deltaLatitude=deltaLatitudeScaled,
@@ -260,23 +260,68 @@ class Main():
 
             print('Amount of material after simulation: ', np.sum(np.sum(np.sum(self.elevation))) + np.sum(
                 np.sum(self.hydrolicErosion.suspendedSediment[:, :, 0])))
-
-            plt.figure()
-            plt.imshow(self.hydrolicErosion.terrain[:, :, 0])
-
-            plt.figure()
-            plt.imshow(self.hydrolicErosion.terrain[:, :, 1])
-
-            plt.figure()
-            plt.imshow(self.hydrolicErosion.suspendedSediment[:, :, 0])
-            plt.show()
-
             toc = time.time()
             print('Total erosion time: ', toc - tic)
+
+
+            # ---------------------------------------------------------------------------------------------------------
+            # Save topography to file.
+            world = World.SphericalWorld()
+
+            from scipy import interpolate
+
+            elevationTotal = np.reshape(np.sum(self.elevation, axis=2), (shape['latitude'] * shape['longitude'], 1))
+
+            interpolator = interpolate.NearestNDInterpolator(vertices, elevationTotal)
+
+            v = world.v.copy()
+            v[:, 0] /= world.vertexRadius
+            v[:, 1] /= world.vertexRadius
+            v[:, 2] /= world.vertexRadius
+
+            a = interpolator(v)
+
+            v[:, 0] *= a[:, 0]
+            v[:, 1] *= a[:, 0]
+            v[:, 2] *= a[:, 0]
+
+            world.v = v
+            world.vertexRadius = world.CalculateVertexRadius(world.v)
+            world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
+
+            import pickle
+            pickle.dump(world, open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldRock.pkl', "wb"))
+
+            # Save water to file.
+            world = World.SphericalWorld()
+
+
+            elevationTotal += np.reshape(self.hydrolicErosion.water[:, :, 0], (shape['latitude'] * shape['longitude'], 1))-0.1
+
+            interpolator = interpolate.NearestNDInterpolator(vertices, elevationTotal)
+
+            v = world.v.copy()
+            v[:, 0] /= world.vertexRadius
+            v[:, 1] /= world.vertexRadius
+            v[:, 2] /= world.vertexRadius
+
+            a = interpolator(v)
+
+            v[:, 0] *= a[:, 0]
+            v[:, 1] *= a[:, 0]
+            v[:, 2] *= a[:, 0]
+
+            world.v = v
+            world.vertexRadius = world.CalculateVertexRadius(world.v)
+            world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
+
+            pickle.dump(world, open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldWater.pkl', "wb"))
+            # ---------------------------------------------------------------------------------------------------------
+
             if pyvistaVisualization:
                 plotter.show(auto_close=False)
 
-                elevationRock = np.reshape(np.sum(self.elevation, axis=2), (shape['latitude'] * shape['longitude'], 1))
+                elevationRock = np.reshape(self.elevation[:, :, 0], (shape['latitude'] * shape['longitude'], 1))
                 elevationTotal = np.reshape(np.sum(self.elevation, axis = 2), (shape['latitude']*shape['longitude'], 1))
                 water = np.reshape(self.hydrolicErosion.water[:, :, 0], (shape['latitude']*shape['longitude'], 1))
 
