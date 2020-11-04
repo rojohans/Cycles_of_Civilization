@@ -26,16 +26,29 @@ class Game(ShowBase):
 
         p3d.PStatClient.connect()
         base.setFrameRateMeter(True)
-        base.setBackgroundColor(1, 1, 1)
+        base.setBackgroundColor(0.1, 0.1, 0.15)
+
+        self.camera = Camera.GlobeCamera(mainProgram = self)
 
         texture = Texture.Texture()
         self.lightObject = Light.LightClass(shadowsEnabled=False)
         if False:
             world = World.SphericalWorld()
         else:
-            world = pickle.load(open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldRock.pkl', "rb"))
+            world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock.pkl', "rb"))
+            world.v[:, 0] /= world.vertexRadius
+            world.v[:, 1] /= world.vertexRadius
+            world.v[:, 2] /= world.vertexRadius
+            world.vertexRadius = world.Smooth(world.v, world.f, world.vertexRadius, world.faceRadius)
+            world.v[:, 0] *= world.vertexRadius
+            world.v[:, 1] *= world.vertexRadius
+            world.v[:, 2] *= world.vertexRadius
+
+        print('# faces : ', np.size(world.f, 0))
 
         world.faceNormals = world.CalculateFaceNormals(world.v, world.f)
+        world.faceTemperature = world.CalculateFaceTemperature(world.v, world.f, world.faceRadius)
+
 
         # v3n3t2 : vertices3, normals3, textureCoordinates2
         vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
@@ -52,24 +65,42 @@ class Game(ShowBase):
             pos_writer.add_data3(vertices[1, 0], vertices[1, 1], vertices[1, 2])
             pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
 
-            vertices = vertices[0, :]
-
             #vertices /= np.sqrt(vertices[0]**2 + vertices[1]**2 + vertices[2]**2)
             normal = world.faceNormals[iFace, :]
-            #normal /= np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
+            normal /= np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)
+
+
+
+            vertices = np.sum(vertices, axis=0) / 3
+            vertices /= np.sqrt(vertices[0] ** 2 + vertices[1] ** 2 + vertices[2] ** 2)
+
+            #print(normal)
+            #print(vertices)
 
             #print(np.sqrt(vertices[0]**2 + vertices[1]**2 + vertices[2]**2))
             #print(np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2))
             #print('  ')
 
-            angle = 180/np.pi*np.arccos( (vertices[0]*normal[0] + vertices[1]*normal[1] + vertices[2]*normal[2])/(np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2)*np.sqrt(vertices[0]**2 + vertices[1]**2 + vertices[2]**2))  )
-            if angle >50:
-                r = 'rock'
+            angle = 180/np.pi*np.arccos( (vertices[0]*normal[0] + vertices[1]*normal[1] + vertices[2]*normal[2]))
+            #print(angle)
+            temperature = world.faceTemperature[iFace, 0]
+
+            if angle >30:
+                if temperature < 0.1:
+                    r = 'snow'
+                else:
+                    r = 'rock'
             else:
-                r = 'grass'
+                if temperature < 0.3:
+                    r = 'snow'
+                elif temperature < 0.4:
+                    r = 'tundra'
+                else:
+                    r = 'grass'
+            #print('  ')
 
             #r = np.random.choice(['water', 'grass', 'rock', 'snow'])
-            r = 'grass'
+            #r = 'grass'
             rIndices = texture.textureIndices[r]
             tex_writer.addData2f(rIndices[0], 0)
             tex_writer.addData2f(rIndices[1], 0)
@@ -118,7 +149,9 @@ class Game(ShowBase):
         if False:
             worldWater = World.SphericalWorld()
         else:
-            worldWater = pickle.load(open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldWater.pkl', "rb"))
+            worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "rb"))
+        worldWater.v *= 0.994 #0.9955
+        worldWater.faceRadius *= 0.994 #0.9955
 
         # v3n3t2 : vertices3, normals3, textureCoordinates2
         vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
@@ -158,7 +191,7 @@ class Game(ShowBase):
             vertices = worldWater.v[worldWater.f[iFace, 1:]]
             v0 = vertices[1, :] - vertices[0, :]
             v1 = vertices[2, :] - vertices[0, :]
-            normal = [v0[1]*v1[2] - v1[1]*v0[2], v0[0]*v1[2] - v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
+            normal = [v0[1]*v1[2] - v1[1]*v0[2], -v0[0]*v1[2] + v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
 
             #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
             #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
@@ -174,8 +207,15 @@ class Game(ShowBase):
         node.add_geom(geom)
         self.water = p3d.NodePath(node)
 
+        # This material adds some shine to the water surface.
+        waterMaterial = p3d.Material()
+        waterMaterial.setShininess(128.0)
+        waterMaterial.setSpecular((0.2, 0.2, 0.2, 1))
+
         self.water.reparentTo(render)
+        #self.water.setMaterial(waterMaterial)
         self.water.setTexture(texture.stitchedTexture)
+        self.water.setShaderAuto()
 
         # ------------------------------------------------------------------
         # Since we are using collision detection to do picking, we set it up like
@@ -258,6 +298,18 @@ class Game(ShowBase):
         # ** let start the collision check loop
         #taskMgr.add(traverseTask, "tsk_traverse")
         #self.add_task(self.PickTask, 'picking')
+
+        self.sunAngle = 0
+        self.sunOrbitTime = 30
+        self.add_task(self.RotateSun, 'sunRotation')
+
+    def RotateSun(self, Task):
+        dt = globalClock.get_dt()
+        self.sunAngle = self.sunAngle+dt%self.sunOrbitTime
+        sunx = np.cos(-2 * np.pi * self.sunAngle / self.sunOrbitTime)
+        suny = np.sin(-2 * np.pi * self.sunAngle / self.sunOrbitTime)
+        self.lightObject.sun.node().setDirection(p3d.LVector3(sunx, suny, 0))
+        return Task.cont
 
     def PickTask(self, Task):
         #print('picking')

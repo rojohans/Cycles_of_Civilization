@@ -10,6 +10,7 @@ class Texture():
         self.textures = {'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water.png"),
                          'grass': image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
                          'rock': image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png"),
+                         'tundra': image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra.png"),
                          'snow': image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png")}
 
         self.textureIndices = {}

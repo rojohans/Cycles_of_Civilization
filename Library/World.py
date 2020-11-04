@@ -420,11 +420,11 @@ class SphericalWorld():
 
         self.v = self.NormalizeVertices(self.v)
 
-        n = self.PerlinNoise(self.v, octaves=10, persistence=0.7)
+        n = self.PerlinNoise(self.v, octaves=8, persistence=0.6)
 
-        print(np.shape(self.v))
-        print(np.shape(n))
-        n *= 50
+        #print(np.shape(self.v))
+        #print(np.shape(n))
+        n *= 10
         n += 100
         self.v[:, 0] *= n[:, 0]
         self.v[:, 1] *= n[:, 0]
@@ -578,8 +578,33 @@ class SphericalWorld():
             v = vertices[faces[iFace, 1:]]
             v0 = v[1, :] - v[0, :]
             v1 = v[2, :] - v[0, :]
-            normals[iFace, :] = [v0[1]*v1[2] - v1[1]*v0[2], v0[0]*v1[2] - v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
+            normals[iFace, :] = [v0[1]*v1[2] - v1[1]*v0[2], v1[0]*v0[2] - v0[0]*v1[2], v0[0]*v1[1] - v1[0]*v0[1]]
         return normals
+
+    def CalculateFaceTemperature(self, vertices, faces, faceRadius):
+        temperatures = np.empty((np.size(faces, 0), 1))
+        minRadius = np.min(faceRadius)
+        faceRadiusScaled = faceRadius.copy() - minRadius
+        faceRadiusScaled /= np.max(faceRadiusScaled)
+        for iFace in range(np.size(faces, 0)):
+            v = vertices[faces[iFace, 1:]]
+            v = np.sum(v, axis = 0)/3
+            latitudeAngle = np.arcsin( v[2]/faceRadius[iFace] )
+            temperatures[iFace, 0] = np.cos(latitudeAngle)**2 - 3*faceRadiusScaled[iFace]**2
+        return temperatures
+
+    def Smooth(self, vertices, faces, vertexRadius, faceRadius):
+        vertexRadiusSmoothed =vertexRadius.copy()
+        l = 0.8
+        for iFace in range(np.size(faces, 0)):
+            tris = faces[iFace, 1:]
+            r = vertexRadiusSmoothed[faces[iFace, 1:]]
+            vertexRadiusSmoothed[tris[0]] = faceRadius[iFace]*l + (1-l)*r[0]
+            vertexRadiusSmoothed[tris[1]] = faceRadius[iFace]*l + (1-l)*r[1]
+            vertexRadiusSmoothed[tris[2]] = faceRadius[iFace]*l + (1-l)*r[2]
+        return vertexRadiusSmoothed
+
+
 
 
 

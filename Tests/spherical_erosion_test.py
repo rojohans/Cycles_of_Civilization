@@ -135,12 +135,12 @@ class Main():
             Erosion.HydrolicErosion.InitializeRainDropTemplates(maximumRainDropRadius=20)
             Erosion.HydrolicErosionScaled.InitializeRainDropTemplates(maximumRainDropRadius=20)
             self.hydrolicErosion = Erosion.HydrolicErosionScaled(terrain=self.elevation,
-                                                           evaporationRate=0.1,
+                                                           evaporationRate=0.02,
                                                            deltaT=0.1,
                                                            flowSpeed=1,
                                                            sedimentFlowSpeed=1,
                                                            gridLength=1,
-                                                           carryCapacityLimit=2.5,
+                                                           carryCapacityLimit=3.5,
                                                            erosionRate=[0.5, 0.5],
                                                            depositionRate=0.1,
                                                            maximumErosionDepth=10,
@@ -195,7 +195,7 @@ class Main():
                     # else:
                     #    rainAmount = 0
                     # rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
-                    rainAmount = 0.01 * (1 + np.sin(2*np.pi*(i / 40))) / 2
+                    rainAmount = 0.005 * (1 + np.sin(2*np.pi*(i / 40))) / 2
                     #rainAmount = 0.01 * (1 + np.sin(i / 15)) / 2
                     # rainAmount = 0.02 * (1 + np.sin(i / 15)) / 2
                     # self.hydrolicErosion.Rain(numberOfDrops=1, radius=3, dropSize=10000, application='drop')
@@ -290,7 +290,8 @@ class Main():
             world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
 
             import pickle
-            pickle.dump(world, open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldRock.pkl', "wb"))
+            import Root_Directory
+            pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock.pkl', "wb"))
 
             # Save water to file.
             world = World.SphericalWorld()
@@ -315,7 +316,7 @@ class Main():
             world.vertexRadius = world.CalculateVertexRadius(world.v)
             world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
 
-            pickle.dump(world, open('/Users/robinjohansson/Desktop/Cycles_of_Industry/Data/tmp_Data/worldWater.pkl', "wb"))
+            pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "wb"))
             # ---------------------------------------------------------------------------------------------------------
 
             if pyvistaVisualization:

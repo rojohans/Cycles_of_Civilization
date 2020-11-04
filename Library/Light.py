@@ -1,4 +1,4 @@
-from panda3d.core import AmbientLight, DirectionalLight, LightAttrib, LVector3, Spotlight, Vec4, Point3
+from panda3d.core import AmbientLight, DirectionalLight, LightAttrib, LVector3, Spotlight, Vec4, Point3, PointLight
 from direct.showbase.ShowBase import ShowBase
 
 class LightClass():
@@ -30,7 +30,7 @@ class LightClass():
         #render.setLight(render.attachNewNode(directionalLight3))
         #render.setLight(render.attachNewNode(directionalLight4))
 
-        render.setLight(render.attachNewNode(ambientLight))
+        #render.setLight(render.attachNewNode(ambientLight))
 
 
 
@@ -67,14 +67,17 @@ class LightClass():
             render.setLight(dLightNP)
         else:
             directionalLightSun = DirectionalLight("directionalLight")
-            directionalLightSun.setDirection(LVector3(-25, 25, -45))
-            directionalLightSun.setColor((0.9, 0.9, 0.8, 1))
-            render.setLight(render.attachNewNode(directionalLightSun))
+            directionalLightSun.setDirection(LVector3(-0, 1, 0))
+            directionalLightSun.setColor((0.7, 0.7, 0.5, 1))
+            self.sun = render.attachNewNode(directionalLightSun)
+            render.setLight(self.sun)
 
-            directionalLightSunReverse = DirectionalLight("directionalLight")
-            directionalLightSunReverse.setDirection(LVector3(25, -25, 45))
-            directionalLightSunReverse.setColor((0.3, 0.3, 0.4, 1))
-            render.setLight(render.attachNewNode(directionalLightSunReverse))
+            directionalLightSunReverse = PointLight('plight')
+            #directionalLightSunReverse = DirectionalLight("directionalLight")
+            #directionalLightSunReverse.setDirection(LVector3(25, -25, 45))
+            directionalLightSunReverse.setColor((0.3, 0.3, 0.5, 1))
+            #render.setLight(render.attachNewNode(directionalLightSunReverse))
+            render.setLight(camera.attachNewNode(directionalLightSunReverse))
 
 
 

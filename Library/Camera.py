@@ -210,3 +210,45 @@ class CameraClass():
                 #self.mainProgram.tileList[tileToRemove].features[0].node.removeNode()
         return task.cont
 
+class GlobeCamera():
+    def __init__(self, mainProgram):
+        self.mainProgram = mainProgram
+
+        self.camera_node = render.attach_new_node('camera_node')
+        self.camera_focal_node = self.camera_node.attach_new_node('gimbal')
+
+        camera_offset = (0, -3, 3)
+        camera.set_pos(self.camera_focal_node, camera_offset)
+        camera.look_at(self.camera_focal_node)
+        camera.wrt_reparent_to(self.camera_node)
+        self.camera_node.set_pos(10, 10, 5)
+
+        self.camera_direction_angle = 0
+        self.camera_forward_vector = p3d.Vec3(np.sin(self.camera_direction_angle), np.cos(self.camera_direction_angle),
+                                              0)
+        self.camera_right_vector = p3d.Vec3(np.cos(self.camera_direction_angle), np.sin(self.camera_direction_angle), 0)
+
+        self.camera_rotation_speed = 100.0
+        self.camera_move_speed = 10.0
+        self.camera_zoom_speed = 10.0
+        self.camera_zoom_damping = 2.0
+        self.camera_p_limit = p3d.Vec2(-65, 10)
+        self.zoom_limit = [3, 20]
+        self.zoom = 0
+        #self.mainProgram.accept('wheel_up', self.zoom_control, [-0.55])
+        #self.mainProgram.accept('wheel_down', self.zoom_control, [0.55])
+
+        self.camera_zoom_limit = (0, 30)
+        self.camera_zoom_value = 0.5
+        camera.look_at(self.camera_focal_node)
+
+        self.last_mouse_pos = None
+
+        #self.mainProgram.add_task(self.camera_update, 'camera_update')
+
+        self.mainProgram.disableMouse()
+
+        self.cameraUpdateFunctions = []
+
+        self.timeSinceFeatureUpdate = 0
+        self.featureUpdateInterval = 1
