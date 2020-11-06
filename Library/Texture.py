@@ -7,7 +7,8 @@ import Root_Directory
 
 class Texture():
     def __init__(self):
-        self.textures = {'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water.png"),
+        self.textures = {'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_2.png"),
+                         'shallow_water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_shallow.png"),
                          'grass': image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
                          'rock': image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png"),
                          'tundra': image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra.png"),

@@ -28,14 +28,13 @@ class Game(ShowBase):
         base.setFrameRateMeter(True)
         base.setBackgroundColor(0.1, 0.1, 0.15)
 
-        self.camera = Camera.GlobeCamera(mainProgram = self)
-
         texture = Texture.Texture()
         self.lightObject = Light.LightClass(shadowsEnabled=False)
         if False:
             world = World.SphericalWorld()
         else:
             world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock.pkl', "rb"))
+            '''
             world.v[:, 0] /= world.vertexRadius
             world.v[:, 1] /= world.vertexRadius
             world.v[:, 2] /= world.vertexRadius
@@ -43,6 +42,11 @@ class Game(ShowBase):
             world.v[:, 0] *= world.vertexRadius
             world.v[:, 1] *= world.vertexRadius
             world.v[:, 2] *= world.vertexRadius
+            '''
+            world.minRadius = np.min(world.faceRadius)
+        self.camera = Camera.GlobeCamera(mainProgram=self, zoomRange = [1.1*world.minRadius, 5*world.minRadius], minRadius = world.minRadius, rotationSpeedRange=[np.pi/500, np.pi/80])
+        print(self.camera.focalPoint.getPos())
+        print(self.camera.camera.getPos())
 
         print('# faces : ', np.size(world.f, 0))
 
@@ -150,8 +154,8 @@ class Game(ShowBase):
             worldWater = World.SphericalWorld()
         else:
             worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "rb"))
-        worldWater.v *= 0.994 #0.9955
-        worldWater.faceRadius *= 0.994 #0.9955
+        #worldWater.v *= 0.994 #0.9955
+        #worldWater.faceRadius *= 0.994 #0.9955
 
         # v3n3t2 : vertices3, normals3, textureCoordinates2
         vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
@@ -169,7 +173,12 @@ class Game(ShowBase):
             pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
 
             r = np.random.choice(['water', 'grass', 'rock', 'snow'])
-            r = 'water'
+            #r = 'water'
+            waterHeight = worldWater.faceRadius[iFace] - world.faceRadius[iFace]
+            if waterHeight < 0.5:
+                r = 'shallow_water'
+            else:
+                r = 'water'
             rIndices = texture.textureIndices[r]
             tex_writer.addData2f(rIndices[0], 0)
             tex_writer.addData2f(rIndices[1], 0)

@@ -211,44 +211,165 @@ class CameraClass():
         return task.cont
 
 class GlobeCamera():
-    def __init__(self, mainProgram):
+    def __init__(self, mainProgram, zoomRange = [1.1, 2], minRadius = 1, rotationSpeedRange = [np.pi/50, np.pi/10]):
         self.mainProgram = mainProgram
+        self.zoomRange = zoomRange
+        self.minRadius = minRadius
+        self.rotationSpeedRange = rotationSpeedRange
 
-        self.camera_node = render.attach_new_node('camera_node')
-        self.camera_focal_node = self.camera_node.attach_new_node('gimbal')
+        #self.camera = render.attach_new_node('camera_node')
+        #self.focalPoint = self.camera.attach_new_node('gimbal')
 
-        camera_offset = (0, -3, 3)
-        camera.set_pos(self.camera_focal_node, camera_offset)
-        camera.look_at(self.camera_focal_node)
-        camera.wrt_reparent_to(self.camera_node)
-        self.camera_node.set_pos(10, 10, 5)
+        self.focalPoint = render.attach_new_node('gimbal')
+        self.camera = render.attach_new_node('camera_node')
 
-        self.camera_direction_angle = 0
-        self.camera_forward_vector = p3d.Vec3(np.sin(self.camera_direction_angle), np.cos(self.camera_direction_angle),
-                                              0)
-        self.camera_right_vector = p3d.Vec3(np.cos(self.camera_direction_angle), np.sin(self.camera_direction_angle), 0)
+        self.zoom = 1
 
-        self.camera_rotation_speed = 100.0
-        self.camera_move_speed = 10.0
-        self.camera_zoom_speed = 10.0
-        self.camera_zoom_damping = 2.0
-        self.camera_p_limit = p3d.Vec2(-65, 10)
-        self.zoom_limit = [3, 20]
-        self.zoom = 0
+        self.focalPosition = {'longitude':np.pi/2, 'latitude':0, 'x':0, 'y':self.minRadius, 'z':0}
+        self.cameraPosition = {'x':self.focalPosition['x']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius,
+                               'y':self.focalPosition['y']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius,
+                               'z':self.focalPosition['z']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius}
+
+        #camera_offset = (0, -3, 3)
+        self.focalPoint.set_pos(self.focalPosition['x'], self.focalPosition['y'], self.focalPosition['z'])
+        #self.camera.set_pos(100, 0, 0)
+        #camera.set_pos(self.focalPoint, camera_offset)
+        #camera.set_pos(self.focalPoint, (0, self.zoomRange[1]-self.zoomRange[0], 0))
+        #camera.look_at(self.focalPoint)
+        camera.wrt_reparent_to(self.camera)
+        self.camera.set_pos(self.cameraPosition['x'], self.cameraPosition['y'], self.cameraPosition['z'])
+        self.camera.look_at(self.focalPoint)
+
+        #self.camera_direction_angle = 0
+        #self.camera_forward_vector = p3d.Vec3(np.sin(self.camera_direction_angle), np.cos(self.camera_direction_angle),0)
+        #self.camera_right_vector = p3d.Vec3(np.cos(self.camera_direction_angle), np.sin(self.camera_direction_angle), 0)
+
+        #self.camera_rotation_speed = 100.0
+        #self.camera_move_speed = 10.0
+        #self.camera_zoom_speed = 10.0
+        #self.camera_zoom_damping = 2.0
+        #self.camera_p_limit = p3d.Vec2(-65, 10)
+        #self.zoom_limit = [3, 20]
+
         #self.mainProgram.accept('wheel_up', self.zoom_control, [-0.55])
         #self.mainProgram.accept('wheel_down', self.zoom_control, [0.55])
 
-        self.camera_zoom_limit = (0, 30)
-        self.camera_zoom_value = 0.5
-        camera.look_at(self.camera_focal_node)
+        #self.camera_zoom_limit = (0, 30)
+        #self.camera_zoom_value = 0.5
+        camera.look_at(self.focalPoint)
 
-        self.last_mouse_pos = None
+        #self.last_mouse_pos = None
 
         #self.mainProgram.add_task(self.camera_update, 'camera_update')
 
         self.mainProgram.disableMouse()
 
-        self.cameraUpdateFunctions = []
+        #self.cameraUpdateFunctions = []
 
-        self.timeSinceFeatureUpdate = 0
-        self.featureUpdateInterval = 1
+        #self.timeSinceFeatureUpdate = 0
+        #self.featureUpdateInterval = 1
+
+
+        self.key_down = {}
+        # mouse1 : left mouse button
+        # mouse2 : middle mouse button
+        # mouse3 : right mouse button
+        self.inputDictionary = {'arrow_left': False,
+                                'arrow_down': False,
+                                'arrow_right': False,
+                                'arrow_up': False,
+                                'a': False,
+                                's': False,
+                                'd': False,
+                                'w': False,
+                                'mouse1': False,
+                                'mouse2': False,
+                                'mouse3': False,
+                                'escape': False,
+                                'mouse4': False}
+
+        for key, value in self.inputDictionary.items():
+            self.mainProgram.accept(key, self.UpdateKeyDictionary, [key, True])
+            self.mainProgram.accept(key + '-up', self.UpdateKeyDictionary, [key, False])
+
+
+
+        self.mainProgram.accept('wheel_up', self.zoom_control, [-0.03])
+        self.mainProgram.accept('wheel_down', self.zoom_control, [0.03])
+
+        self.mainProgram.add_task(self.CameraTask, 'camera_update')
+
+    def zoom_control(self, amount):
+        self.zoom += amount
+        self.zoom = np.max((0, self.zoom))
+        self.zoom = np.min((1, self.zoom))
+
+    def UpdateKeyDictionary(self, key, status):
+        self.inputDictionary[key] = status
+
+    def CameraTask(self, Task):
+        dt = globalClock.get_dt()
+
+        # camera zoom
+        if self.zoom != 0.0:
+            pass
+            #print(self.zoom)
+
+        dAngle = self.rotationSpeedRange[0] + self.zoom * (self.rotationSpeedRange[1]-self.rotationSpeedRange[0])
+        if self.inputDictionary['arrow_up'] or self.inputDictionary['w']:
+            self.focalPosition['latitude'] += dAngle
+            self.focalPosition['latitude'] = np.min((np.pi/2, self.focalPosition['latitude']))
+        elif self.inputDictionary['arrow_down'] or self.inputDictionary['s']:
+            self.focalPosition['latitude'] -= dAngle
+            self.focalPosition['latitude'] = np.max((-np.pi/2, self.focalPosition['latitude']))
+        if self.inputDictionary['arrow_left'] or self.inputDictionary['a']:
+            self.focalPosition['longitude'] -= dAngle
+            self.focalPosition['longitude'] = (self.focalPosition['longitude']+2*np.pi)%(2*np.pi)
+        elif self.inputDictionary['arrow_right'] or self.inputDictionary['d']:
+            self.focalPosition['longitude'] += dAngle
+            self.focalPosition['longitude'] = (self.focalPosition['longitude'] + 2*np.pi) % (2*np.pi)
+        #print(self.focalPosition['latitude'])
+        self.focalPosition['x'] = self.minRadius*np.cos(self.focalPosition['longitude'])*np.cos(self.focalPosition['latitude'])
+        self.focalPosition['y'] = self.minRadius*np.sin(self.focalPosition['longitude'])*np.cos(self.focalPosition['latitude'])
+        self.focalPosition['z'] = self.minRadius*np.sin(self.focalPosition['latitude'])
+        self.focalPoint.set_pos(self.focalPosition['x'], self.focalPosition['y'], self.focalPosition['z'])
+
+        self.cameraPosition['x'] = self.focalPosition['x']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
+        self.cameraPosition['y'] = self.focalPosition['y']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
+        self.cameraPosition['z'] = self.focalPosition['z']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
+        self.camera.set_pos(self.cameraPosition['x'], self.cameraPosition['y'], self.cameraPosition['z'])
+
+        self.camera.look_at(self.focalPoint)
+
+        #print('===============================================================')
+
+        #self.focalPoint.set_pos(self.focalPoint, self.camera_right_vector * 0.01 * self.camera_move_speed * dt / 0.03)
+
+
+        '''
+        #distance = camera.get_distance(self.camera_node)
+
+        #self.zoom *= 0.1
+
+        # self.camera_zoom_value = min(max(self.camera_zoom_value + self.zoom, self.camera_zoom_limit[0]), self.camera_zoom_limit[1])
+        self.camera_zoom_value = min(max(self.camera_zoom_value + 30 * dt * self.zoom, 0), 1)
+
+        # self.camera_node.set_pos(self.camera_focal_node, 0, -self.Camera_Zoom_Scaling('y', self.camera_zoom_value), self.Camera_Zoom_Scaling('z', self.camera_zoom_value))
+
+        self.camera_focal_node.set_pos(self.camera_node, 0,
+                                       self.Camera_Zoom_Scaling('y', self.camera_zoom_value),
+                                       -self.Camera_Zoom_Scaling('z', self.camera_zoom_value))
+        cameraPositon = self.camera_node.get_pos()
+        self.camera_node.set_pos(cameraPositon[0], cameraPositon[1],
+                                 self.Camera_Zoom_Scaling('z', self.camera_zoom_value))
+
+        self.mainProgram.camera.look_at(self.camera_focal_node)
+
+        if self.zoom >= 0.0:
+            self.zoom -= dt * self.camera_zoom_damping
+            if self.zoom < 0: self.zoom = 0
+        else:
+            self.zoom += dt * self.camera_zoom_damping
+            if self.zoom > 0: self.zoom = 0
+        '''
+        return Task.cont

@@ -402,17 +402,17 @@ class WorldClass():
         cls.mainProgram = mainProgram
 
 class SphericalWorld():
-    def __init__(self):
+    def __init__(self, nDivisions = 0):
         self.icosahedronVertices, self.icosahedronFaces = self.GetIcosahedron()
 
-        d = 50
+        self.nDivisions = nDivisions
 
         for i in range(20):
             if i == 0:
                 self.v, self.f = self.SubdivideTriangle(self.icosahedronVertices[self.icosahedronFaces[0, :]],
-                                                        divisions=d)
+                                                        divisions=self.nDivisions)
             else:
-                v, f = self.SubdivideTriangle(self.icosahedronVertices[self.icosahedronFaces[i, :]], divisions=d)
+                v, f = self.SubdivideTriangle(self.icosahedronVertices[self.icosahedronFaces[i, :]], divisions=self.nDivisions)
                 f[:, 1:] += np.size(self.v, 0)
 
                 self.v = np.concatenate((self.v, v), axis = 0)
@@ -420,7 +420,10 @@ class SphericalWorld():
 
         self.v = self.NormalizeVertices(self.v)
 
-        n = self.PerlinNoise(self.v, octaves=8, persistence=0.6)
+        n = self.PerlinNoise(self.v, octaves=10, persistence=0.9)**2
+        n -= 0.3
+        n[n<0] = 0
+        n /= np.max(n)
 
         #print(np.shape(self.v))
         #print(np.shape(n))
@@ -430,16 +433,12 @@ class SphericalWorld():
         self.v[:, 1] *= n[:, 0]
         self.v[:, 2] *= n[:, 0]
 
-
         self.vertexRadius = self.CalculateVertexRadius(self.v)
         self.faceRadius = self.CalculateFaceRadius(self.v, self.f)
+        self.minRadius = np.min(self.faceRadius)
 
-
-
-
-
-
-
+        self.faceCoordinates = self.CalculateFaceCoordinates(self.v, self.f)
+        self.faceConnections = self.CalculateFaceConnections(self.faceCoordinates)
 
     @staticmethod
     def GetIcosahedron():
@@ -604,7 +603,29 @@ class SphericalWorld():
             vertexRadiusSmoothed[tris[2]] = faceRadius[iFace]*l + (1-l)*r[2]
         return vertexRadiusSmoothed
 
+    def CalculateFaceCoordinates(self, vertices, faces):
+        faceCoordinates = np.empty((np.size(faces, 0), 3))
 
+        for iFace in range(np.size(faces, 0)):
+            v = vertices[faces[iFace, 1:]]
+            v = np.sum(v, axis = 0)/3
+            faceCoordinates[iFace, :] = v
+        return faceCoordinates
 
+    def CalculateFaceConnections(self, faceCoordinates):
+        faceConnections = np.empty((np.size(faceCoordinates, 0), 3), dtype=int)
 
+        from scipy.spatial import cKDTree
+
+        data = faceCoordinates.copy()
+        r = np.sqrt(data[:, 0]**2 + data[:, 1]**2 + data[:, 2]**2)
+        data[:, 0] /= r
+        data[:, 1] /= r
+        data[:, 2] /= r
+
+        faceTree = cKDTree(data=data)
+        for iFace in range(np.size(faceCoordinates, 0)):
+            r, id = faceTree.query(data[iFace, :], 4)
+            faceConnections[iFace, :] = id[1:]
+        return faceConnections
 
