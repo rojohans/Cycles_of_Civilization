@@ -11,6 +11,7 @@ import os
 #os.environ['PYOPENCL_COMPILER_OUTPUT'] = '1'
 #os.environ['PYOPENCL_CTX'] = '1'
 
+animate = True
 
 world = World.SphericalWorld(nDivisions=100)
 
@@ -31,9 +32,10 @@ for iFace in range(np.size(world.faceConnections, 0)):
 
 nIterations = 1000
 
-deltaT = np.array(0.01)
+#deltaT = np.array(0.05)
+deltaT = np.array(0.03)
 deltaT = deltaT.astype(np.float32)
-flowParameter = np.array(50)
+flowParameter = np.array(100)
 flowParameter = flowParameter.astype(np.float32)
 
 jTarget = faceConnectionsIndices[:, 0].astype(np.int)
@@ -54,8 +56,11 @@ flowUpdatedj = np.zeros_like(world.faceRadius, dtype=np.float32)
 flowUpdatedk = np.zeros_like(world.faceRadius, dtype=np.float32)
 flowUpdatedl = np.zeros_like(world.faceRadius, dtype=np.float32)
 
-height = world.faceRadius - np.min(world.faceRadius)
-height = height.astype(np.float32)
+terrainHeight = world.PerlinNoise(world.faceCoordinates, octaves=10, persistence=0.5)
+terrainHeight = terrainHeight.astype(np.float32)
+
+waterHeight = world.faceRadius - np.min(world.faceRadius)
+waterHeight = waterHeight.astype(np.float32)
 heightUpdated = world.faceRadius - np.min(world.faceRadius)
 heightUpdated = heightUpdated.astype(np.float32)
 #heightUpdated = np.zeros_like(world.faceRadius, dtype=
@@ -77,7 +82,8 @@ flowUpdatedj_buf = cl.Buffer(ctx, mf.WRITE_ONLY, flowUpdatedj.nbytes)
 flowUpdatedk_buf = cl.Buffer(ctx, mf.WRITE_ONLY, flowUpdatedk.nbytes)
 flowUpdatedl_buf = cl.Buffer(ctx, mf.WRITE_ONLY, flowUpdatedl.nbytes)
 
-height_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=height)
+terrainHeight_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=terrainHeight)
+waterHeight_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=waterHeight)
 #heightUpdated_buf = cl.Buffer(ctx, mf.WRITE_ONLY, heightUpdated.nbytes)
 heightUpdated_buf = cl.Buffer(ctx, mf.READ_WRITE, heightUpdated.nbytes)
 
@@ -169,40 +175,16 @@ prg = cl.Program(ctx, """
     }
     """).build()
 
-
 #heightUpdated[j[i]] = heightUpdated[j[i]] + fj;
 #heightUpdated[k[i]] = heightUpdated[k[i]] + fk;
 #heightUpdated[l[i]] = heightUpdated[l[i]] + fl;
 #heightUpdated[i] = heightUpdated[i] - fj - fk - fl;
 
-'''
-fc = world.faceConnections
-print(fc)
-print(np.shape(fc))
-print(type(fc))
-print(fc.dtype)
-f = np.zeros((np.size(fc, 0), 1))
-
-
-
-for i in range(np.size(fc, 0)):
-    #f[i] -= 3
-    f[fc[i, 0:1]] += 1
-    f[fc[i, 1:2]] += 1
-    f[fc[i, 2:3]] += 1
-
-print(np.min(f))
-print(np.max(f))
-print(np.sum(f))
-#for i in range(np.size(fc, 0)):
-#    print(f[i])
-quit()
-'''
 
 
 terrainMesh = pv.PolyData(world.v, np.hstack(world.f))
 plotter = pv.Plotter()
-plotter.add_mesh(terrainMesh, scalars=height, smooth_shading=True, clim=[0, 5])
+plotter.add_mesh(terrainMesh, scalars=waterHeight, smooth_shading=True, clim=[0, 3])
 
 #plotter.enable_eye_dome_lighting()
 plotter.show(auto_close=False)
@@ -211,7 +193,7 @@ ticTotalSimulation = time.time()
 
 for i in range(nIterations):
 
-    #height[np.random.randint(0, np.size(world.f, 0))] += 10
+    waterHeight[np.random.randint(0, np.size(world.f, 0))] += 10
 
     heightUpdated = np.zeros_like(world.faceRadius, dtype=np.float32)
     #heightUpdated = height.copy()
@@ -240,78 +222,47 @@ for i in range(nIterations):
     flowInl_buf = cl.Buffer(ctx, mf.WRITE_ONLY, flowInl.nbytes)
     flowOut_buf = cl.Buffer(ctx, mf.WRITE_ONLY, flowOut.nbytes)
 
-    height_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=height)
+    waterHeight_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=waterHeight)
     #heightUpdated_buf = cl.Buffer(ctx, mf.WRITE_ONLY, heightUpdated.nbytes)
     heightUpdated_buf = cl.Buffer(ctx, mf.READ_WRITE, heightUpdated.nbytes)
     #heightUpdated_buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=heightUpdated)
 
-    #print(np.min(height))
-    #print(np.max(height))
-    #print(np.sum(height))
-
-    #, jTarget_buf, kTarget_buf, lTarget_buf
-
     tic = time.time()
     prg.multiply(queue, heightUpdated.shape, None, flowParameter, deltaT, jTarget_buf, kTarget_buf, lTarget_buf,
                  j_buf, k_buf, l_buf, flowj_buf, flowk_buf, flowl_buf, flowUpdatedj_buf, flowUpdatedk_buf, flowUpdatedl_buf,
-                 flowInj_buf, flowInk_buf, flowInl_buf, flowOut_buf, height_buf, heightUpdated_buf)
+                 flowInj_buf, flowInk_buf, flowInl_buf, flowOut_buf, waterHeight_buf, heightUpdated_buf)
     toc = time.time()
     print('pyopencl simulation time : ', toc-tic)
 
     tic = time.time()
     prg.UpdateWaterHeight(queue, heightUpdated.shape, None, deltaT, flowInj_buf, flowInk_buf, flowInl_buf, flowOut_buf,
-                          height_buf, heightUpdated_buf)
+                          waterHeight_buf, heightUpdated_buf)
     toc = time.time()
     print('pyopencl water update time : ', toc-tic)
 
-    #cl.enqueue_copy(queue, heightUpdated, height_buf)
-    cl.enqueue_copy(queue, heightUpdated, heightUpdated_buf)
+    #cl.enqueue_copy(queue, heightUpdated, heightUpdated_buf)
+    cl.enqueue_copy(queue, waterHeight, heightUpdated_buf)
     cl.enqueue_copy(queue, flowj, flowUpdatedj_buf)
     cl.enqueue_copy(queue, flowk, flowUpdatedk_buf)
     cl.enqueue_copy(queue, flowl, flowUpdatedl_buf)
 
-    cl.enqueue_copy(queue, flowInj, flowInj_buf)
-    cl.enqueue_copy(queue, flowInk, flowInk_buf)
-    cl.enqueue_copy(queue, flowInl, flowInl_buf)
-    cl.enqueue_copy(queue, flowOut, flowOut_buf)
+    #cl.enqueue_copy(queue, flowInj, flowInj_buf)
+    #cl.enqueue_copy(queue, flowInk, flowInk_buf)
+    #cl.enqueue_copy(queue, flowInl, flowInl_buf)
+    #cl.enqueue_copy(queue, flowOut, flowOut_buf)
 
-    height = heightUpdated
+    #height = heightUpdated
 
-    '''
-    tic = time.time()
-    flowj *= deltaT
-    flowk *= deltaT
-    flowl *= deltaT
-    for i in range(np.size(flowj, 0)):
-        height[i] += deltaT*(flowInj[i] + flowInk[i] + flowInl[i] - flowOut[i])
+    #print('------------------------------------------------------------------')
 
-        #height[i] -= flowj[i] + flowk[i] + flowl[i]
-        #height[j[i]] += flowj[i]
-        #height[k[i]] += flowk[i]
-        #height[l[i]] += flowl[i]
-    print(np.sum(height))
-    flowj /= deltaT
-    flowk /= deltaT
-    flowl /= deltaT
-    toc = time.time()
-    print('height update time : ', toc-tic)
-    '''
-
-    #height += heightUpdated
-    #height += heightUpdated
-    #height = 5*heightUpdated.copy()
-
-    #print(np.min(height))
-    #print(np.max(height))
-    #print(np.sum(height))
-    print('------------------------------------------------------------------')
-
-
-    plotter.update_scalars(height, mesh=terrainMesh, render=False)
-    plotter.render()
+    if animate:
+        plotter.update_scalars(waterHeight, mesh=terrainMesh, render=False)
+        plotter.render()
 tocTotalSimulation = time.time()
 print('Total simulation time : ', tocTotalSimulation-ticTotalSimulation)
 print('Simulation done')
+plotter.update_scalars(waterHeight, mesh=terrainMesh, render=False)
+plotter.render()
 plotter.show(auto_close=False)
 
 #print(np.min(a_mul_b))

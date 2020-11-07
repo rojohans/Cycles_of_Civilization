@@ -53,7 +53,7 @@ class Game(ShowBase):
         world.faceNormals = world.CalculateFaceNormals(world.v, world.f)
         world.faceTemperature = world.CalculateFaceTemperature(world.v, world.f, world.faceRadius)
 
-
+        # getV3n3c4t2() : vertices3, normals3, colours4, textureCoordinates2
         # v3n3t2 : vertices3, normals3, textureCoordinates2
         vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
         # vertex_format = p3d.GeomVertexFormat.get_v3t2()
