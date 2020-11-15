@@ -419,6 +419,10 @@ class SphericalWorld():
                 self.f = np.concatenate((self.f, f), axis = 0)
 
         self.v = self.NormalizeVertices(self.v)
+        self.unscaledVertices = self.v.copy()
+
+        self.faceCoordinates = self.CalculateFaceCoordinates(self.v, self.f)
+        self.unscaledFaceCoordinates = self.faceCoordinates.copy()
 
         n = self.PerlinNoise(self.v, octaves=10, persistence=0.9)**2
         n -= 0.3
@@ -428,7 +432,7 @@ class SphericalWorld():
         #print(np.shape(self.v))
         #print(np.shape(n))
         n *= 10
-        n += 100
+        n += 10
         self.v[:, 0] *= n[:, 0]
         self.v[:, 1] *= n[:, 0]
         self.v[:, 2] *= n[:, 0]
@@ -437,7 +441,10 @@ class SphericalWorld():
         self.faceRadius = self.CalculateFaceRadius(self.v, self.f)
         self.minRadius = np.min(self.faceRadius)
 
-        self.faceCoordinates = self.CalculateFaceCoordinates(self.v, self.f)
+        self.faceCoordinates[:, 0] *= self.faceRadius
+        self.faceCoordinates[:, 1] *= self.faceRadius
+        self.faceCoordinates[:, 2] *= self.faceRadius
+
         self.faceConnections = self.CalculateFaceConnections(self.faceCoordinates)
 
     @staticmethod
@@ -538,7 +545,7 @@ class SphericalWorld():
         return vertices
 
     @staticmethod
-    def PerlinNoise(vertices, octaves = 10, persistence = 0.5, lacunarity = 2.0):
+    def PerlinNoise(vertices, octaves = 10, persistence = 0.5, lacunarity = 2.0, seed = None):
         '''
         :param vertices:
         :param octaves: Determines the maximum resolution
@@ -547,7 +554,8 @@ class SphericalWorld():
         :return:
         '''
         scale = 1.0
-        seed = np.random.randint(0, 100)
+        if seed == None:
+            seed = np.random.randint(0, 100)
 
         noiseArray = np.empty((np.size(vertices, 0), 1))
 
@@ -589,7 +597,7 @@ class SphericalWorld():
             v = vertices[faces[iFace, 1:]]
             v = np.sum(v, axis = 0)/3
             latitudeAngle = np.arcsin( v[2]/faceRadius[iFace] )
-            temperatures[iFace, 0] = np.cos(latitudeAngle)**2 - 3*faceRadiusScaled[iFace]**2
+            temperatures[iFace, 0] = np.cos(latitudeAngle)**2 - 1*faceRadiusScaled[iFace]**2
         return temperatures
 
     def Smooth(self, vertices, faces, vertexRadius, faceRadius):
