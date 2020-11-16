@@ -201,9 +201,9 @@ class Main():
                     # self.hydrolicErosion.Rain(numberOfDrops=1, radius=3, dropSize=10000, application='drop')
                 #self.hydrolicErosion.Rain(numberOfDrops=1, radius=3, dropSize=10000, application='drop')
                 #self.hydrolicErosion.Rain(numberOfDrops=1, radius=3, dropSize=1000, application='drop')
-                self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
+                #    self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, dropSize=rainAmount, application='even')
                 #self.hydrolicErosion.Rain(numberOfDrops=1, radius=10, rainMap=2*rainAmount * np.random.rand(shape['latitude'], shape['longitude']), application='map')
-                self.hydrolicErosion()
+                #    self.hydrolicErosion()
 
                 #self.hydrolicErosion.UpdateFlow()
                 #self.hydrolicErosion.UpdateWaterHeight()

@@ -11,7 +11,6 @@ animateTopography = True
 animationUpdateInterval = 1
 
 suspendedSedimentMinimumVisualDepth = 0.1
-
 waterMinimumVisualDepth = 0.1
 waterVisibilityDepth = 1
 
@@ -35,7 +34,7 @@ for iFace in range(np.size(world.faceConnections, 0)):
                 faceConnectionsIndices[iFace, iConnection] = i
                 break
 
-nIterations = 1000
+nIterations = 700
 
 #deltaT = np.array(0.05)
 deltaT = np.array(0.03)
@@ -57,20 +56,20 @@ triangleLength = triangleLength.astype(np.float32)
 sqrt3_2 = np.array(np.sqrt(3) / 2)
 sqrt3_2 = sqrt3_2.astype(np.float32)
 
-carryCapacityParameter = np.array( 1.0 )
+carryCapacityParameter = np.array( 0.1 )
 carryCapacityParameter = carryCapacityParameter.astype(np.float32)
 
 erosionRate = np.array( 0.1 )
 erosionRate = erosionRate.astype(np.float32)
-depositionRate = np.array( 0.1 )
+depositionRate = np.array( 0.5 )
 depositionRate = depositionRate.astype(np.float32)
 
-sedimentFlowParameter = np.array(10)
+sedimentFlowParameter = np.array(100)
 sedimentFlowParameter = sedimentFlowParameter.astype(np.float32)
 
-slippageParameter = np.array(0.1)
+slippageParameter = np.array(10.0)
 slippageParameter = slippageParameter.astype(np.float32)
-talusAngle = np.array(30*np.pi/180)
+talusAngle = np.array(10*np.pi/180)
 talusAngle = talusAngle.astype(np.float32)
 
 jTarget = faceConnectionsIndices[:, 0].astype(np.int)
@@ -111,14 +110,14 @@ terrainHeight -= cutOffHeight
 terrainHeight[terrainHeight < 0] = 0
 #terrainHeight[terrainHeight > 0] = 1
 terrainHeight /= 1-cutOffHeight
-terrainHeight = np.sqrt(terrainHeight)
+#terrainHeight = np.sqrt(terrainHeight)
 
 #terrainHeight *= 5
 #   terrainHeight = 0+10*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
 #terrainHeight = 0+5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3, seed=seed)**1
-terrainHeight *= 0+3*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)**3+\
-                 2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.6, seed=seed**2)
-terrainHeight += 0.5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.9, seed=seed)**2
+terrainHeight *= 0+2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)**3+\
+                 4*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed**2)
+terrainHeight += 0.5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.9)**2
 terrainHeight = terrainHeight.astype(np.float32)
 
 #waterHeight = world.faceRadius - np.min(world.faceRadius)
@@ -351,25 +350,21 @@ prg = cl.Program(ctx, """
         float slopek = atan((0.00001+dHk)/(triangleLength * (minRadius+height[i])));
         float slopel = atan((0.00001+dHl)/(triangleLength * (minRadius+height[i])));
         
+        float fj = 0.0;
+        float fk = 0.0;
+        float fl = 0.0;
+        
         if (slopej > talusAngle){
-            float fj = deltaT * slippageParameter * (dHj - triangleLength * (minRadius+height[i]) * tan(talusAngle));
-        }
-        if (slopej <= talusAngle){
-            float fj = 0.0;
+            fj = deltaT * slippageParameter * (dHj - triangleLength * (minRadius+height[i]) * tan(talusAngle));
         }
         
         if (slopek > talusAngle){
-            float fk = deltaT * slippageParameter * (dHk - triangleLength * (minRadius+height[i]) * tan(talusAngle));
-        } else {
-            float fk = 0.0;
+            fk = deltaT * slippageParameter * (dHk - triangleLength * (minRadius+height[i]) * tan(talusAngle));
         }
         
         if (slopel > talusAngle){
-            float fl = deltaT * slippageParameter * (dHl - triangleLength * (minRadius+height[i]) * tan(talusAngle));
-        } else {
-            float fl = 0.0;
-        }
-        
+            fl = deltaT * slippageParameter * (dHl - triangleLength * (minRadius+height[i]) * tan(talusAngle));
+        } 
         
         switch(jTarget[i]) {
         case 0:
@@ -483,10 +478,10 @@ prg = cl.Program(ctx, """
     {
         int i = get_global_id(0);
 
-        carryCapacity[i] = 0.1*carryCapacityParameter * sin(slope[i]) * velocity[i];
-        //if (carryCapacity[i] > 1.0*water[i]){
-        //    carryCapacity[i] = 1.0*water[i];
-        //}
+        carryCapacity[i] = carryCapacityParameter * sin(slope[i]) * velocity[i];
+        if (carryCapacity[i] > 1.0*water[i]){
+            carryCapacity[i] = 1.0*water[i];
+        }
     }
     
     __kernel void ErodeDeposit(float deltaT, float erosionRate, float depositionRate,
@@ -526,9 +521,9 @@ prg = cl.Program(ctx, """
         
         if (suspendedSediment[i] > carryCapacity[i]){
             //Deposit
-            float depositionAmount = 10.0*depositionRate * (suspendedSediment[i] - carryCapacity[i]);
+            float depositionAmount = depositionRate * (suspendedSediment[i] - carryCapacity[i]);
             
-            depositionAmount = 0.6*suspendedSediment[i];
+            //depositionAmount = 0.6*suspendedSediment[i];
             
             float Hj = terrainPrevious[j[i]];
             float Hk = terrainPrevious[k[i]];
@@ -620,7 +615,7 @@ for i in range(nIterations):
     #waterHeight[np.random.randint(0, np.size(world.f, 0))] += 10
 
 
-    if i>800:
+    if i>400:
         #carryCapacityParameter = np.array(0.0)
         #carryCapacityParameter = carryCapacityParameter.astype(np.float32)
         rainAmount = 0
@@ -728,6 +723,8 @@ for i in range(nIterations):
     prg.TerrainSlippageCalculation(queue, heightUpdated.shape, None, deltaT, slippageParameter, talusAngle, triangleLength, minRadius,
                                    jTarget_buf, kTarget_buf, lTarget_buf, j_buf, k_buf, l_buf,
                                    sedimentFlowInj_buf, sedimentFlowInk_buf, sedimentFlowInl_buf, sedimentFlowOut_buf, terrainHeight_buf)
+    prg.UpdateSuspendedSedimentHeight(queue, heightUpdated.shape, None, deltaT, sedimentFlowInj_buf, sedimentFlowInk_buf, sedimentFlowInl_buf, sedimentFlowOut_buf,
+                            terrainHeight_buf, heightUpdated_buf)
     #prg.TerrainSlippageUpdate(queue, heightUpdated.shape, None, deltaT, sedimentFlowInj_buf, sedimentFlowInk_buf, sedimentFlowInl_buf, sedimentFlowOut_buf,
     #                          terrainHeight_buf)
     toc = time.time()
@@ -779,7 +776,7 @@ for i in range(nIterations):
 
     tic = time.time()
     # Evaporation
-    evaporationRate = 0.05
+    evaporationRate = 0.02
     waterHeight *= (1 - evaporationRate * deltaT)
     toc = time.time()
     print('water evaporation time : ', toc-tic)
@@ -822,7 +819,7 @@ for i in range(nIterations):
 
             rWater = waterHeight[queryResult]
             r = 10 + np.sum(rTerrain[:, :, 0] + rSuspendedSediment + rWater, axis=1)/6 -\
-                waterMinimumVisualDepth
+                waterMinimumVisualDepth-5
             waterVertices[:, 0] = r * world.unscaledVertices[:, 0]
             waterVertices[:, 1] = r * world.unscaledVertices[:, 1]
             waterVertices[:, 2] = r * world.unscaledVertices[:, 2]
@@ -893,12 +890,12 @@ import Root_Directory
 world.v = 10*terrainVertices
 world.vertexRadius = world.CalculateVertexRadius(world.v)
 world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
-pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_09.pkl', "wb"))
+pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_10.pkl', "wb"))
 
 world.v = 10*waterVertices
 world.vertexRadius = world.CalculateVertexRadius(world.v)
 world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
-pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_09.pkl', "wb"))
+pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_10.pkl', "wb"))
 
 plotter.render()
 plotter.show(auto_close=False)

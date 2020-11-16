@@ -33,7 +33,7 @@ class Game(ShowBase):
         if False:
             world = World.SphericalWorld()
         else:
-            world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_08.pkl', "rb"))
+            world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_10.pkl', "rb"))
             '''
             world.v[:, 0] /= world.vertexRadius
             world.v[:, 1] /= world.vertexRadius
@@ -153,7 +153,7 @@ class Game(ShowBase):
         if False:
             worldWater = World.SphericalWorld()
         else:
-            worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_08.pkl', "rb"))
+            worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_10.pkl', "rb"))
         #worldWater.v *= 0.994 #0.9955
         #worldWater.faceRadius *= 0.994 #0.9955
 
@@ -175,7 +175,7 @@ class Game(ShowBase):
             r = np.random.choice(['water', 'grass', 'rock', 'snow'])
             #r = 'water'
             waterHeight = worldWater.faceRadius[iFace] - world.faceRadius[iFace]
-            if waterHeight < 1.0:
+            if waterHeight < 1.2:
                 r = 'shallow_water'
             else:
                 r = 'water'
