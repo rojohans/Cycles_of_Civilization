@@ -42,3 +42,18 @@ class Texture():
         #tex.setMinfilter(p3d.Texture.FT_nearest)
 
         self.stitchedTexture = tex
+
+        # Creates a white texture useful for debugging.
+        whiteTextureArray = image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png")
+        textureArray = np.zeros((shape[0], shape[0], 3), dtype=np.uint8)
+        textureArray[:, :, 0] = np.uint8(255 * whiteTextureArray[:, :, 2])
+        textureArray[:, :, 1] = np.uint8(255 * whiteTextureArray[:, :, 1])
+        textureArray[:, :, 2] = np.uint8(255 * whiteTextureArray[:, :, 0])
+
+        tex = p3d.Texture()
+        tex.setup2dTexture(shape[0], shape[0], p3d.Texture.T_unsigned_byte, p3d.Texture.F_rgb)
+        buf = textureArray[:, :, :].tostring()
+        tex.setRamImage(buf) # np.array -> texture
+        self.whiteTexture = tex
+
+

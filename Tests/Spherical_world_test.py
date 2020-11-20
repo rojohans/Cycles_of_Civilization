@@ -1,5 +1,7 @@
 from direct.showbase.ShowBase import ShowBase
 import panda3d.core as p3d
+from direct.gui.DirectGui import *
+from panda3d.core import TransparencyAttrib
 import numpy as np
 import time
 
@@ -28,12 +30,16 @@ class Game(ShowBase):
         base.setFrameRateMeter(True)
         base.setBackgroundColor(0.1, 0.1, 0.15)
 
+        fileToOpen = '08'
+
         texture = Texture.Texture()
+        self.texture = texture
         self.lightObject = Light.LightClass(shadowsEnabled=False)
         if False:
             world = World.SphericalWorld()
         else:
-            world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_10.pkl', "rb"))
+            world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_' + fileToOpen + '.pkl', "rb"))
+            #world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock.pkl', "rb"))
             '''
             world.v[:, 0] /= world.vertexRadius
             world.v[:, 1] /= world.vertexRadius
@@ -44,6 +50,7 @@ class Game(ShowBase):
             world.v[:, 2] *= world.vertexRadius
             '''
             world.minRadius = np.min(world.faceRadius)
+
         self.camera = Camera.GlobeCamera(mainProgram=self, zoomRange = [1.1*world.minRadius, 5*world.minRadius], minRadius = world.minRadius, rotationSpeedRange=[np.pi/500, np.pi/80])
         print(self.camera.focalPoint.getPos())
         print(self.camera.camera.getPos())
@@ -146,6 +153,7 @@ class Game(ShowBase):
 
         self.planet.reparentTo(render)
         self.planet.setTexture(texture.stitchedTexture)
+        #self.planet.setTexture(texture.whiteTexture)
         #self.planet.setTag('iFace', 'THE PLANET')
 
         #-------------------------------------------------------------
@@ -153,9 +161,8 @@ class Game(ShowBase):
         if False:
             worldWater = World.SphericalWorld()
         else:
-            worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_10.pkl', "rb"))
-        #worldWater.v *= 0.994 #0.9955
-        #worldWater.faceRadius *= 0.994 #0.9955
+            worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_' + fileToOpen +'.pkl', "rb"))
+            #worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "rb"))
 
         # v3n3t2 : vertices3, normals3, textureCoordinates2
         vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
@@ -309,8 +316,39 @@ class Game(ShowBase):
         #self.add_task(self.PickTask, 'picking')
 
         self.sunAngle = 0
-        self.sunOrbitTime = 30
+        self.sunOrbitTime = 40
         self.add_task(self.RotateSun, 'sunRotation')
+
+
+
+
+        # Adds a GUI button for toggling of terrain textures
+        self.windowSize = (base.win.getXSize(), base.win.getYSize())
+        self.windowRatio = self.windowSize[0] / self.windowSize[1]
+        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+
+        self.displayFeaturesPositionRelative = [1.95, 0, 0.1]#[1.85, 0, 0.45]
+        self.displayFeaturesPosition = (self.displayFeaturesPositionRelative[0]*self.windowRatio,
+                                        0,
+                                        self.displayFeaturesPositionRelative[2]*self.windowRatio)
+        self.displayFeaturesButton = DirectCheckButton(boxImage=(GUIDataDirectoryPath + "feature_toggle.png",
+                                                           GUIDataDirectoryPath + "feature_toggle_pressed.png",
+                                                           GUIDataDirectoryPath + "feature_toggle.png",
+                                                           GUIDataDirectoryPath + "feature_toggle.png"),
+                                                 scale=0.1,
+                                                 pos=self.displayFeaturesPosition,
+                                                 relief=None,
+                                                 boxRelief=None,
+                                                 boxPlacement='right',
+                                                 parent=base.a2dBottomLeft,
+                                                 command=self.TextureToggleCallback)
+        self.displayFeaturesButton.setTransparency(TransparencyAttrib.MAlpha)
+
+    def TextureToggleCallback(self, value):
+        if value == 1:
+            self.planet.setTexture(self.texture.whiteTexture)
+        elif value == 0:
+            self.planet.setTexture(self.texture.stitchedTexture)
 
     def RotateSun(self, Task):
         dt = globalClock.get_dt()
