@@ -14,7 +14,7 @@ suspendedSedimentMinimumVisualDepth = 0.1
 waterMinimumVisualDepth = 0.1
 waterVisibilityDepth = 1
 
-world = World.SphericalWorld(nDivisions=100)
+world = World.SphericalWorld(nDivisions=50)
 
 print('Number of triangles: ', np.size(world.f, 0))
 
@@ -34,7 +34,9 @@ for iFace in range(np.size(world.faceConnections, 0)):
                 faceConnectionsIndices[iFace, iConnection] = i
                 break
 
-nIterations = 700
+nIterations = 2000
+stopRainIteration = 1600
+maxRainAmount = 0.01
 
 #deltaT = np.array(0.05)
 deltaT = np.array(0.03)
@@ -56,20 +58,20 @@ triangleLength = triangleLength.astype(np.float32)
 sqrt3_2 = np.array(np.sqrt(3) / 2)
 sqrt3_2 = sqrt3_2.astype(np.float32)
 
-carryCapacityParameter = np.array( 0.1 )
+carryCapacityParameter = np.array( 10.0 )
 carryCapacityParameter = carryCapacityParameter.astype(np.float32)
 
-erosionRate = np.array( 0.1 )
+erosionRate = np.array( 0.5 )
 erosionRate = erosionRate.astype(np.float32)
 depositionRate = np.array( 0.5 )
 depositionRate = depositionRate.astype(np.float32)
 
-sedimentFlowParameter = np.array(100)
+sedimentFlowParameter = np.array(10)
 sedimentFlowParameter = sedimentFlowParameter.astype(np.float32)
 
-slippageParameter = np.array(10.0)
+slippageParameter = np.array(50.0)
 slippageParameter = slippageParameter.astype(np.float32)
-talusAngle = np.array(10*np.pi/180)
+talusAngle = np.array(30*np.pi/180)
 talusAngle = talusAngle.astype(np.float32)
 
 jTarget = faceConnectionsIndices[:, 0].astype(np.int)
@@ -100,24 +102,37 @@ faceCoordinatesNormalized[:, 1] /= world.faceRadius
 faceCoordinatesNormalized[:, 2] /= world.faceRadius
 
 # Terrain initialization.
-cutOffHeight = 0.4
+cutOffHeight = 0.5
 seed = np.random.randint(0, 100)
-terrainHeight = world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
+#terrainHeight = world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
+#terrainHeight = world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
 
 #terrainHeight[terrainHeight < cutOffHeight] = 0
 
-terrainHeight -= cutOffHeight
-terrainHeight[terrainHeight < 0] = 0
+
+#terrainHeight -= cutOffHeight
+#terrainHeight[terrainHeight < 0] = 0
 #terrainHeight[terrainHeight > 0] = 1
-terrainHeight /= 1-cutOffHeight
+#terrainHeight /= 1-cutOffHeight
+
 #terrainHeight = np.sqrt(terrainHeight)
 
 #terrainHeight *= 5
 #   terrainHeight = 0+10*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
 #terrainHeight = 0+5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3, seed=seed)**1
-terrainHeight *= 0+2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)**3+\
-                 4*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed**2)
-terrainHeight += 0.5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.9)**2
+
+#terrainHeight *= 0+2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)**3+\
+#                 4*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed)**2
+#terrainHeight += 0.5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.9)**2
+terrainHeight = 3.5*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)-0.5))**2 +\
+                1*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed)-0.5))
+terrainHeight *= np.sqrt(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3))
+terrainHeight -= cutOffHeight
+terrainHeight[terrainHeight < 0] = 0
+#terrainHeight[terrainHeight > 0] = 1
+#terrainHeight /= 1-cutOffHeight
+
+
 terrainHeight = terrainHeight.astype(np.float32)
 
 #waterHeight = world.faceRadius - np.min(world.faceRadius)
@@ -479,8 +494,8 @@ prg = cl.Program(ctx, """
         int i = get_global_id(0);
 
         carryCapacity[i] = carryCapacityParameter * sin(slope[i]) * velocity[i];
-        if (carryCapacity[i] > 1.0*water[i]){
-            carryCapacity[i] = 1.0*water[i];
+        if (carryCapacity[i] > 2.0*water[i]){
+            carryCapacity[i] = 2.0*water[i];
         }
     }
     
@@ -615,12 +630,14 @@ for i in range(nIterations):
     #waterHeight[np.random.randint(0, np.size(world.f, 0))] += 10
 
 
-    if i>400:
+    if i>stopRainIteration:
         #carryCapacityParameter = np.array(0.0)
         #carryCapacityParameter = carryCapacityParameter.astype(np.float32)
         rainAmount = 0
+        carryCapacityParameter = np.array(0.0)
+        carryCapacityParameter = carryCapacityParameter.astype(np.float32)
     else:
-        rainAmount = 0.03 * np.sin(2*np.pi*i/200)**2
+        rainAmount = maxRainAmount * np.sin(2*np.pi*i/200)**2
     waterHeight += deltaT*rainAmount
 
     heightUpdated = np.zeros_like(world.faceRadius, dtype=np.float32)
@@ -890,12 +907,12 @@ import Root_Directory
 world.v = 10*terrainVertices
 world.vertexRadius = world.CalculateVertexRadius(world.v)
 world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
-pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_10.pkl', "wb"))
+pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_11.pkl', "wb"))
 
 world.v = 10*waterVertices
 world.vertexRadius = world.CalculateVertexRadius(world.v)
 world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
-pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_10.pkl', "wb"))
+pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_11.pkl', "wb"))
 
 plotter.render()
 plotter.show(auto_close=False)

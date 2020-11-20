@@ -30,7 +30,7 @@ class Game(ShowBase):
         base.setFrameRateMeter(True)
         base.setBackgroundColor(0.1, 0.1, 0.15)
 
-        fileToOpen = '08'
+        fileToOpen = '11'
 
         texture = Texture.Texture()
         self.texture = texture
@@ -39,6 +39,8 @@ class Game(ShowBase):
             world = World.SphericalWorld()
         else:
             world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_' + fileToOpen + '.pkl', "rb"))
+            world.nTriangles = np.size(world.f, 0)
+            self.world = world
             #world = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldRock.pkl', "rb"))
             '''
             world.v[:, 0] /= world.vertexRadius
@@ -51,7 +53,13 @@ class Game(ShowBase):
             '''
             world.minRadius = np.min(world.faceRadius)
 
-        self.camera = Camera.GlobeCamera(mainProgram=self, zoomRange = [1.1*world.minRadius, 5*world.minRadius], minRadius = world.minRadius, rotationSpeedRange=[np.pi/500, np.pi/80])
+        self.world.faceCoordinates[:, 0] = self.world.unscaledFaceCoordinates[:, 0]*self.world.faceRadius
+        self.world.faceCoordinates[:, 1] = self.world.unscaledFaceCoordinates[:, 1]*self.world.faceRadius
+        self.world.faceCoordinates[:, 2] = self.world.unscaledFaceCoordinates[:, 2]*self.world.faceRadius
+
+        self.terrainAngles = np.zeros((self.world.nTriangles, 1))
+
+        self.camera = Camera.GlobeCamera(mainProgram=self, zoomRange = [1.1*world.minRadius, 7*world.minRadius], zoomSpeed=0.03, minRadius = world.minRadius, rotationSpeedRange=[np.pi/1000, np.pi/120])
         print(self.camera.focalPoint.getPos())
         print(self.camera.camera.getPos())
 
@@ -92,11 +100,11 @@ class Game(ShowBase):
             #print(np.sqrt(normal[0]**2 + normal[1]**2 + normal[2]**2))
             #print('  ')
 
-            angle = 180/np.pi*np.arccos( (vertices[0]*normal[0] + vertices[1]*normal[1] + vertices[2]*normal[2]))
+            self.terrainAngles[iFace] = 180/np.pi*np.arccos( (vertices[0]*normal[0] + vertices[1]*normal[1] + vertices[2]*normal[2]))
             #print(angle)
             temperature = world.faceTemperature[iFace, 0]
 
-            if angle >40:
+            if self.terrainAngles[iFace] >30:
                 if temperature < 0.1:
                     r = 'snow'
                 else:
@@ -163,6 +171,7 @@ class Game(ShowBase):
         else:
             worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_' + fileToOpen +'.pkl', "rb"))
             #worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "rb"))
+        self.worldWater = worldWater
 
         # v3n3t2 : vertices3, normals3, textureCoordinates2
         vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
@@ -344,6 +353,12 @@ class Game(ShowBase):
                                                  command=self.TextureToggleCallback)
         self.displayFeaturesButton.setTransparency(TransparencyAttrib.MAlpha)
 
+
+        tic = time.time()
+        self.InitializeForest()
+        toc = time.time()
+        print('Initialize forest: ', toc-tic)
+
     def TextureToggleCallback(self, value):
         if value == 1:
             self.planet.setTexture(self.texture.whiteTexture)
@@ -390,6 +405,34 @@ class Game(ShowBase):
                 #if int(pickedObj.getNetTag('iFace')) == 'tile':
                 #    tileID = int(pickedObj.getNetTag('square'))
         return Task.cont
+
+    def InitializeForest(self):
+        import Library.Feature as Feature
+
+        self.featureRoot = render.attachNewNode("featureRoot")
+        self.forestRoot = self.featureRoot.attachNewNode("forestRoot")
+
+        self.featureList = [[] for i in range(self.world.nTriangles)]
+
+        model = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/pine_1.bam")
+
+        for iFace in range(self.world.nTriangles):
+            if self.world.faceRadius[iFace] > self.worldWater.faceRadius[iFace]:
+                if self.terrainAngles[iFace] < 50:
+                    r = np.random.rand()
+                    if r < 0.01:
+
+                        theta = 180*np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(self.world.faceCoordinates[iFace, 0]**2 + self.world.faceCoordinates[iFace, 1]**2))/np.pi
+                        phi = 180*np.arctan(self.world.faceCoordinates[iFace, 1]/self.world.faceCoordinates[iFace, 0])/np.pi
+                        if self.world.faceCoordinates[iFace, 0] > 0:
+                            phi += 180
+
+                        self.featureList[iFace].append(Feature.SingleFeature(parentNode=self.forestRoot,
+                                                                             model=model,
+                                                                             position=self.world.faceCoordinates[iFace, :],
+                                                                             rotation=[90+phi, theta, 0],
+                                                                             scale=10))
+        self.forestRoot.flattenStrong()
 
 game = Game()
 game.run()

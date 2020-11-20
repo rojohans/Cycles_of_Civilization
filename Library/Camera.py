@@ -211,7 +211,7 @@ class CameraClass():
         return task.cont
 
 class GlobeCamera():
-    def __init__(self, mainProgram, zoomRange = [1.1, 2], minRadius = 1, rotationSpeedRange = [np.pi/50, np.pi/10]):
+    def __init__(self, mainProgram, zoomRange = [1.1, 2], zoomSpeed = 0.05, minRadius = 1, rotationSpeedRange = [np.pi/50, np.pi/10]):
         self.mainProgram = mainProgram
         self.zoomRange = zoomRange
         self.minRadius = minRadius
@@ -294,8 +294,8 @@ class GlobeCamera():
 
 
 
-        self.mainProgram.accept('wheel_up', self.zoom_control, [-0.03])
-        self.mainProgram.accept('wheel_down', self.zoom_control, [0.03])
+        self.mainProgram.accept('wheel_up', self.zoom_control, [-zoomSpeed])
+        self.mainProgram.accept('wheel_down', self.zoom_control, [zoomSpeed])
 
         self.mainProgram.add_task(self.CameraTask, 'camera_update')
 
@@ -315,7 +315,7 @@ class GlobeCamera():
             pass
             #print(self.zoom)
 
-        dAngle = self.rotationSpeedRange[0] + self.zoom * (self.rotationSpeedRange[1]-self.rotationSpeedRange[0])
+        dAngle = self.rotationSpeedRange[0] + self.zoom * (self.rotationSpeedRange[1]-self.rotationSpeedRange[0]) * 60*dt
         if self.inputDictionary['arrow_up'] or self.inputDictionary['w']:
             self.focalPosition['latitude'] += dAngle
             self.focalPosition['latitude'] = np.min((np.pi/2, self.focalPosition['latitude']))
