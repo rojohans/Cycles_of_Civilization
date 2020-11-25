@@ -2,7 +2,9 @@ from direct.showbase.ShowBase import ShowBase
 import panda3d.core as p3d
 from direct.gui.DirectGui import *
 from panda3d.core import TransparencyAttrib
+from matplotlib import image
 import numpy as np
+import scipy as sp
 import time
 
 import Library.TileClass as TileClass
@@ -30,11 +32,27 @@ class Game(ShowBase):
         base.setFrameRateMeter(True)
         base.setBackgroundColor(0.1, 0.1, 0.15)
 
+        self.settings = Settings.GlobeSettings()
+
         fileToOpen = '11'
 
-        texture = Texture.Texture()
-        self.texture = texture
-        self.lightObject = Light.LightClass(shadowsEnabled=False)
+        self.closeTexture = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_2.png"),
+                                     'shallow_water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_shallow.png"),
+                                     'grass': image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
+                                     'forest': image.imread(Root_Directory.Path() + "/Data/Tile_Data/forest_floor_terrain.png"),
+                                     'rock': image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png"),
+                                     'tundra': image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra.png"),
+                                     'snow': image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png")})
+        self.farTexture = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_2.png"),
+                                     'shallow_water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_shallow.png"),
+                                     'grass': image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
+                                     'forest': image.imread(Root_Directory.Path() + "/Data/Tile_Data/forest_canopy_terrain.png"),
+                                     'rock': image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png"),
+                                     'tundra': image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra.png"),
+                                     'snow': image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png")})
+        #self.lightObject = Light.LightClass(shadowsEnabled=False)
+        self.sunLight = Light.Sun(shadowsEnabled=False)
+        self.cameraLight = Light.CameraLight()
         if False:
             world = World.SphericalWorld()
         else:
@@ -59,30 +77,53 @@ class Game(ShowBase):
 
         self.terrainAngles = np.zeros((self.world.nTriangles, 1))
 
-        self.camera = Camera.GlobeCamera(mainProgram=self, zoomRange = [1.1*world.minRadius, 7*world.minRadius], zoomSpeed=0.03, minRadius = world.minRadius, rotationSpeedRange=[np.pi/1000, np.pi/120])
-        print(self.camera.focalPoint.getPos())
-        print(self.camera.camera.getPos())
-
         print('# faces : ', np.size(world.f, 0))
 
         world.faceNormals = world.CalculateFaceNormals(world.v, world.f)
         world.faceTemperature = world.CalculateFaceTemperature(world.v, world.f, world.faceRadius)
 
+        self.farDistance = 3 * self.world.minRadius
+
+        if False:
+            worldWater = World.SphericalWorld()
+        else:
+            worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_' + fileToOpen +'.pkl', "rb"))
+            #worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "rb"))
+            worldWater.minRadius = np.min(worldWater.faceRadius)
+        self.waterWorld = worldWater
+
+        forestPerlin = World.SphericalWorld.PerlinNoise(self.world.unscaledFaceCoordinates, octaves=6, persistence=1.1)
+        self.isForest = [] # Determines which tiles got forests
+        self.temperature = world.faceTemperature.copy()
+
+        h = self.world.faceRadius - self.waterWorld.minRadius
+        w = self.waterWorld.faceRadius - self.waterWorld.minRadius
+        self.elevation = h.copy()
+        self.elevation[w > h] = w[w > h]
+
+
         # getV3n3c4t2() : vertices3, normals3, colours4, textureCoordinates2
         # v3n3t2 : vertices3, normals3, textureCoordinates2
-        vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
-        # vertex_format = p3d.GeomVertexFormat.get_v3t2()
-        vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
+        #vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
+        vertex_format = p3d.GeomVertexFormat.getV3n3c4t2()
 
-        pos_writer = p3d.GeomVertexWriter(vertex_data, "vertex")
-        normal_writer = p3d.GeomVertexWriter(vertex_data, "normal")
-        tex_writer = p3d.GeomVertexWriter(vertex_data, 'texcoord')
+        # vertex_format = p3d.GeomVertexFormat.get_v3t2()
+        self.planet_vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
+
+        pos_writer = p3d.GeomVertexWriter(self.planet_vertex_data, "vertex")
+        normal_writer = p3d.GeomVertexWriter(self.planet_vertex_data, "normal")
+        colour_writer = p3d.GeomVertexWriter(self.planet_vertex_data, 'color')
+        tex_writer = p3d.GeomVertexWriter(self.planet_vertex_data, 'texcoord')
 
         for iFace in range(np.size(world.f, 0)):
             vertices = world.v[world.f[iFace, 1:]]
             pos_writer.add_data3(vertices[0, 0], vertices[0, 1], vertices[0, 2])
             pos_writer.add_data3(vertices[1, 0], vertices[1, 1], vertices[1, 2])
             pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
+
+            colour_writer.add_data4(1, 1, 1, 1)
+            colour_writer.add_data4(1, 1, 1, 1)
+            colour_writer.add_data4(1, 1, 1, 1)
 
             #vertices /= np.sqrt(vertices[0]**2 + vertices[1]**2 + vertices[2]**2)
             normal = world.faceNormals[iFace, :]
@@ -101,7 +142,15 @@ class Game(ShowBase):
             #print('  ')
 
             self.terrainAngles[iFace] = 180/np.pi*np.arccos( (vertices[0]*normal[0] + vertices[1]*normal[1] + vertices[2]*normal[2]))
-            #print(angle)
+            isForest = False
+            if self.world.faceRadius[iFace] > self.waterWorld.faceRadius[iFace]:
+                if self.terrainAngles[iFace] <= 30 and self.world.faceTemperature[iFace, 0] >= 0.4:
+                    #r = np.random.rand()
+                    #if r < 0.5:
+                    if forestPerlin[iFace] < self.settings.forestPerlinThreshold:
+                        isForest = True
+            self.isForest.append(isForest)
+
             temperature = world.faceTemperature[iFace, 0]
 
             if self.terrainAngles[iFace] >30:
@@ -115,12 +164,15 @@ class Game(ShowBase):
                 elif temperature < 0.4:
                     r = 'tundra'
                 else:
-                    r = 'grass'
+                    if self.isForest[iFace]:
+                        r = 'forest'
+                    else:
+                        r = 'grass'
             #print('  ')
 
             #r = np.random.choice(['water', 'grass', 'rock', 'snow'])
             #r = 'grass'
-            rIndices = texture.textureIndices[r]
+            rIndices = self.closeTexture.textureIndices[r]
             tex_writer.addData2f(rIndices[0], 0)
             tex_writer.addData2f(rIndices[1], 0)
             tex_writer.addData2f((rIndices[0] + rIndices[1])/2, np.sqrt(3)/2)
@@ -152,7 +204,7 @@ class Game(ShowBase):
             normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
             normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
 
-        geom = p3d.Geom(vertex_data)
+        geom = p3d.Geom(self.planet_vertex_data)
         geom.add_primitive(tri)
 
         node = p3d.GeomNode("Planet")
@@ -160,27 +212,24 @@ class Game(ShowBase):
         self.planet = p3d.NodePath(node)
 
         self.planet.reparentTo(render)
-        self.planet.setTexture(texture.stitchedTexture)
+        self.planet.setTexture(self.closeTexture.stitchedTexture)
+        self.planet.setTransparency(p3d.TransparencyAttrib.MAlpha)
         #self.planet.setTexture(texture.whiteTexture)
         #self.planet.setTag('iFace', 'THE PLANET')
 
+
+
         #-------------------------------------------------------------
 
-        if False:
-            worldWater = World.SphericalWorld()
-        else:
-            worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_' + fileToOpen +'.pkl', "rb"))
-            #worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "rb"))
-        self.worldWater = worldWater
-
         # v3n3t2 : vertices3, normals3, textureCoordinates2
-        vertex_format = p3d.GeomVertexFormat.get_v3n3t2()
+        vertex_format = p3d.GeomVertexFormat.get_v3n3c4t2()
         # vertex_format = p3d.GeomVertexFormat.get_v3t2()
-        vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
+        self.water_vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
 
-        pos_writer = p3d.GeomVertexWriter(vertex_data, "vertex")
-        normal_writer = p3d.GeomVertexWriter(vertex_data, "normal")
-        tex_writer = p3d.GeomVertexWriter(vertex_data, 'texcoord')
+        pos_writer = p3d.GeomVertexWriter(self.water_vertex_data, "vertex")
+        normal_writer = p3d.GeomVertexWriter(self.water_vertex_data, "normal")
+        colour_writer = p3d.GeomVertexWriter(self.water_vertex_data, 'color')
+        tex_writer = p3d.GeomVertexWriter(self.water_vertex_data, 'texcoord')
 
         for iFace in range(np.size(worldWater.f, 0)):
             vertices = worldWater.v[worldWater.f[iFace, 1:]]
@@ -188,14 +237,23 @@ class Game(ShowBase):
             pos_writer.add_data3(vertices[1, 0], vertices[1, 1], vertices[1, 2])
             pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
 
+            colour_writer.add_data4(1, 1, 1, 1)
+            colour_writer.add_data4(1, 1, 1, 1)
+            colour_writer.add_data4(1, 1, 1, 1)
+
             r = np.random.choice(['water', 'grass', 'rock', 'snow'])
             #r = 'water'
             waterHeight = worldWater.faceRadius[iFace] - world.faceRadius[iFace]
-            if waterHeight < 1.2:
-                r = 'shallow_water'
+
+            temperature = world.faceTemperature[iFace, 0]
+            if temperature < 0.1:
+                r = 'snow'
             else:
-                r = 'water'
-            rIndices = texture.textureIndices[r]
+                if waterHeight < 1.2:
+                    r = 'shallow_water'
+                else:
+                    r = 'water'
+            rIndices = self.closeTexture.textureIndices[r]
             tex_writer.addData2f(rIndices[0], 0)
             tex_writer.addData2f(rIndices[1], 0)
             tex_writer.addData2f((rIndices[0] + rIndices[1])/2, np.sqrt(3)/2)
@@ -225,7 +283,7 @@ class Game(ShowBase):
             normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
             normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
 
-        geom = p3d.Geom(vertex_data)
+        geom = p3d.Geom(self.water_vertex_data)
         geom.add_primitive(tri)
 
         node = p3d.GeomNode("Water")
@@ -239,93 +297,26 @@ class Game(ShowBase):
 
         self.water.reparentTo(render)
         #self.water.setMaterial(waterMaterial)
-        self.water.setTexture(texture.stitchedTexture)
+        self.water.setTexture(self.closeTexture.stitchedTexture)
+        self.water.setTransparency(p3d.TransparencyAttrib.MAlpha)
         self.water.setShaderAuto()
 
-        # ------------------------------------------------------------------
-        # Since we are using collision detection to do picking, we set it up like
-        # any other collision detection system with a traverser and a handler
-        self.picker = p3d.CollisionTraverser()  # Make a traverser
-        self.pq = p3d.CollisionHandlerQueue()  # Make a handler
-        # Make a collision node for our picker ray
-        self.pickerNode = p3d.CollisionNode('mouseRay')
-        # Attach that node to the camera since the ray will need to be positioned
-        # relative to it
-        self.pickerNP = camera.attachNewNode(self.pickerNode)
-        # Everything to be picked will use bit 1. This way if we were doing other
-        # collision we could separate it
-        self.pickerNode.setFromCollideMask(p3d.GeomNode.getDefaultCollideMask())
-        self.pickerRay = p3d.CollisionRay()  # Make our ray
-        # Add it to the collision node
-        self.pickerNode.addSolid(self.pickerRay)
-        # Register the ray as something that can cause collisions
-        self.picker.addCollider(self.pickerNP, self.pq)
 
 
+        import Library.Collision_Detection as Collision_Detection
+        self.tilePicker = Collision_Detection.TilePicker(mainProgram=self)
+        self.selectedTile = None
 
-        base.cTrav = p3d.CollisionTraverser()
-        collisionHandler = p3d.CollisionHandlerQueue()
 
-        self.collidableRoot = render.attachNewNode('collidableRoot')
-        collisionNodes = []
-        for iFace in range(np.size(world.f, 0)):
-            vertices = world.v[world.f[iFace, 1:]]
-
-            collisionNodes.append(self.collidableRoot.attachNewNode(p3d.CollisionNode('cnode')))
-            #collisionNodes.append(self.planet.attachNewNode(p3d.CollisionNode('cnode')))
-            collisionNodes[-1].node().addSolid(p3d.CollisionPolygon(p3d.Point3(vertices[0, 0], vertices[0, 1], vertices[0, 2]),
-                                                                    p3d.Point3(vertices[1, 0], vertices[1, 1], vertices[1, 2]),
-                                                                    p3d.Point3(vertices[2, 0], vertices[2, 1], vertices[2, 2])))
-            collisionNodes[-1].node().setIntoCollideMask(p3d.GeomNode.getDefaultCollideMask())
-            collisionNodes[-1].node().setTag('iFace', str(iFace))
-            #collisionNodes[-1].node().setTag('iFace', 'test_text_here')
-            #collisionNodes[-1].show()
-
-        # ** This is the frowney model that will intereact with the smiley - it is shaped and settled exactly as smiley so there isn't much to say here, other than this time we won't add this object to the main traverser. This makes him an INTO object.
-        # first we load the model as usual...
-        self.pickerNode = p3d.CollisionNode('mouseRay')
-        # Attach that node to the camera since the ray will need to be positioned
-        # relative to it
-        self.pickerNP = camera.attachNewNode(self.pickerNode)
-        # Everything to be picked will use bit 1. This way if we were doing other
-        # collision we could separate it
-        self.pickerNode.setFromCollideMask(p3d.GeomNode.getDefaultCollideMask())
-        self.pickerRay = p3d.CollisionRay()  # Make our ray
-        # Add it to the collision node
-        self.pickerNode.addSolid(self.pickerRay)
-        # Register the ray as something that can cause collisions
-        base.cTrav.addCollider(self.pickerNP, collisionHandler)
+        import Library.GUI as GUI
+        self.interface = GUI.Interface(base=base, mainProgram=self)
 
 
 
 
-        # ** This is the loop periodically checked to find out if the have been collisions - it is fired by the taskMgr.add function set below.
-        def traverseTask(task=None):
-            # as soon as a collison is detected, the collision queue handler will contain all the objects taking part in the collison, but we must sort that list first, so to have the first INTO object collided then the second and so on. Of course here it is pretty useless 'cos there is just one INTO object to collide with in the scene but this is the way to go when there are many other.
-            collisionHandler.sortEntries()
-            for i in range(collisionHandler.getNumEntries()):
-                # we get here the n-th object collided (we know it is frowney for sure) - it is a CollisionEntry object (look into the manual to see its methods)
-                entry = collisionHandler.getEntry(i)
-                # we'll turn on the lights, to visually show this happy event
-                #print('HIT DETECTION')
-                a = entry.getIntoNodePath()
-
-                if a.node().hasTags():
-                    print(a.getNetTag('iFace'))
-                    # and we skip out cos we ain't other things to do here.
-                    if task: return task.cont
-
-            # If there are no collisions the collision queue will be empty so the program flow arrives here and we'll shut down the lights and clear the text message
-
-            if task: return task.cont
-
-
-        # ** let start the collision check loop
-        #taskMgr.add(traverseTask, "tsk_traverse")
-        #self.add_task(self.PickTask, 'picking')
 
         self.sunAngle = 0
-        self.sunOrbitTime = 40
+        self.sunOrbitTime = 100
         self.add_task(self.RotateSun, 'sunRotation')
 
 
@@ -354,85 +345,122 @@ class Game(ShowBase):
         self.displayFeaturesButton.setTransparency(TransparencyAttrib.MAlpha)
 
 
+        profile = False
         tic = time.time()
-        self.InitializeForest()
+        if profile:
+            import cProfile, pstats, io
+            from pstats import SortKey
+            pr = cProfile.Profile()
+            pr.enable()
+        self.InitializeForest(farDistance = self.farDistance)
+        if profile:
+            pr.disable()
+            s = io.StringIO()
+            sortby = SortKey.CUMULATIVE
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
+            quit()
         toc = time.time()
         print('Initialize forest: ', toc-tic)
 
+        self.camera = Camera.GlobeCamera(mainProgram=self,
+                                         zoomRange = [1.1*world.minRadius, 7*world.minRadius],
+                                         zoomSpeed=0.03,
+                                         minRadius = world.minRadius,
+                                         rotationSpeedRange=[np.pi/1000, np.pi/120])
+        print(self.camera.focalPoint.getPos())
+        print(self.camera.camera.getPos())
+
     def TextureToggleCallback(self, value):
         if value == 1:
-            self.planet.setTexture(self.texture.whiteTexture)
+            self.planet.setTexture(self.closeTexture.whiteTexture)
         elif value == 0:
-            self.planet.setTexture(self.texture.stitchedTexture)
+            self.planet.setTexture(self.closeTexture.stitchedTexture)
 
     def RotateSun(self, Task):
         dt = globalClock.get_dt()
-        self.sunAngle = self.sunAngle+dt%self.sunOrbitTime
-        sunx = np.cos(-2 * np.pi * self.sunAngle / self.sunOrbitTime)
-        suny = np.sin(-2 * np.pi * self.sunAngle / self.sunOrbitTime)
-        self.lightObject.sun.node().setDirection(p3d.LVector3(sunx, suny, 0))
+        self.sunAngle += dt%self.sunOrbitTime
+        sunx = 5*self.world.minRadius*np.cos(-2 * np.pi * self.sunAngle / self.sunOrbitTime)
+        suny = 5*self.world.minRadius*np.sin(-2 * np.pi * self.sunAngle / self.sunOrbitTime)
+        #self.sunLight.light.setDirection(p3d.LVector3(sunx, suny, 0))
+        self.sunLight.SetPosition(sunx, suny, 0)
+        #self.sunLight.sun.setPos(sunx, suny, 0)
         return Task.cont
 
-    def PickTask(self, Task):
-        #print('picking')
-        if self.mouseWatcherNode.hasMouse():
-            # get the mouse position
-            mpos = self.mouseWatcherNode.getMouse()
-
-            # Set the position of the ray based on the mouse position
-            self.pickerRay.setFromLens(self.camNode, mpos.getX(), mpos.getY())
-
-            #self.picker.traverse(self.collidableRoot)
-            self.picker.traverse(render)
-            #print(self.pq.getNumEntries())
-            if self.pq.getNumEntries() > 0:
-                # if we have hit something, sort the hits so that the closest
-                # is first, and highlight that node
-                self.pq.sortEntries()
-                pickedObj = self.pq.getEntry(0).getIntoNodePath()
-
-                #print('hit')
-
-                for entry in self.pq.get_entries():
-                    print(entry.getIntoNodePath())
-                    #print(entry.getIntoNodePath().getNetTag('iFace'))
-
-                    print(entry.getIntoNodePath().getTag('iFace'))
-                    print(entry.getIntoNodePath().node().hasTags())
-
-                #print('   ')
-
-                #if int(pickedObj.getNetTag('iFace')) == 'tile':
-                #    tileID = int(pickedObj.getNetTag('square'))
-        return Task.cont
-
-    def InitializeForest(self):
+    def InitializeForest(self, farDistance):
         import Library.Feature as Feature
+
+        self.nodeWorld = World.SphericalWorld(nDivisions=8)
+        self.nForestNodes = np.size(self.nodeWorld.v, axis=0)
+        self.nodeWorld.v = self.nodeWorld.unscaledVertices * self.world.minRadius
 
         self.featureRoot = render.attachNewNode("featureRoot")
         self.forestRoot = self.featureRoot.attachNewNode("forestRoot")
 
         self.featureList = [[] for i in range(self.world.nTriangles)]
 
-        model = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/pine_1.bam")
+        pineModel = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/pine_1.bam")
+        kapokModel = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/kapok_2.bam")
+        palmModel = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/palm_2.bam")
+
+        #self.forestRootNodes = [self.forestRoot.attachNewNode("forestRootNode") for i in range(self.nForestNodes)]
+
+        self.forestNodeClusters = []
+        for iNode in range(self.nForestNodes):
+            #nodePos = np.mean(
+            #    self.world.faceCoordinates[int(np.floor(iNode * self.world.nTriangles / self.nForestNodes)):
+            #                               int(np.floor((iNode + 1) * self.world.nTriangles / self.nForestNodes) - 1),
+            #    :], axis=0)
+            nodePos = self.nodeWorld.v[iNode, :]
+            self.forestNodeClusters.append(Feature.FeatureCluster(parent=self.forestRoot, position=nodePos, renderDistance=farDistance))
+
+        kdTree = sp.spatial.cKDTree(self.nodeWorld.v)
+
+        r, featureiNode = kdTree.query(self.world.faceCoordinates)
 
         for iFace in range(self.world.nTriangles):
-            if self.world.faceRadius[iFace] > self.worldWater.faceRadius[iFace]:
-                if self.terrainAngles[iFace] < 50:
-                    r = np.random.rand()
-                    if r < 0.01:
+            if self.isForest[iFace]:
+                theta = 180*np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(self.world.faceCoordinates[iFace, 0]**2 + self.world.faceCoordinates[iFace, 1]**2))/np.pi
+                phi = 180*np.arctan(self.world.faceCoordinates[iFace, 1]/self.world.faceCoordinates[iFace, 0])/np.pi
+                if self.world.faceCoordinates[iFace, 0] > 0:
+                    phi += 180
 
-                        theta = 180*np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(self.world.faceCoordinates[iFace, 0]**2 + self.world.faceCoordinates[iFace, 1]**2))/np.pi
-                        phi = 180*np.arctan(self.world.faceCoordinates[iFace, 1]/self.world.faceCoordinates[iFace, 0])/np.pi
-                        if self.world.faceCoordinates[iFace, 0] > 0:
-                            phi += 180
+                iNode = featureiNode[iFace]
 
-                        self.featureList[iFace].append(Feature.SingleFeature(parentNode=self.forestRoot,
-                                                                             model=model,
-                                                                             position=self.world.faceCoordinates[iFace, :],
-                                                                             rotation=[90+phi, theta, 0],
-                                                                             scale=10))
-        self.forestRoot.flattenStrong()
+                #iNode = int(np.floor(iFace * self.nForestNodes / self.world.nTriangles))
+                #self.featureList[iFace].append(Feature.SingleFeature(parentNode=forestNodeClusters[iNode].node,
+                #                                                     model=model,
+                #                                                     position=self.world.faceCoordinates[iFace, :]-forestNodeClusters[iNode].position,
+                #                                                     rotation=[90+phi, theta, 0],
+                #                                                     scale=10))
+
+                temperature = self.world.faceTemperature[iFace, 0]
+                if temperature < 0.8:
+                    model = pineModel
+                    scale = 3.5
+                elif temperature < 1.2:
+                    model = kapokModel
+                    scale = 1.5
+                else:
+                    model = palmModel
+                    scale = 4.5
+
+                self.featureList[iFace].append(Feature.TileFeature(parentNode=self.forestNodeClusters[iNode].node,
+                                                                   model=model,
+                                                                   positionOffset=-self.forestNodeClusters[iNode].position,
+                                                                   rotation=[90+phi, theta, 0],
+                                                                   scale=scale,
+                                                                   triangleCorners=self.world.v[self.world.f[iFace, 1:]],
+                                                                   triangleDivisions=2,
+                                                                   nFeatures=5))# 2# 7
+
+        for iNode in range(self.nForestNodes):
+            self.forestNodeClusters[iNode].node.clearModelNodes()
+            self.forestNodeClusters[iNode].node.flattenStrong()
+            self.forestNodeClusters[iNode].node.reparentTo(self.forestNodeClusters[iNode].LODNodePath)
+
+        #render.analyze()
 
 game = Game()
 game.run()

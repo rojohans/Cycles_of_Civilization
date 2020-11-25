@@ -6,13 +6,8 @@ import numpy as np
 import Root_Directory
 
 class Texture():
-    def __init__(self):
-        self.textures = {'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_2.png"),
-                         'shallow_water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_shallow.png"),
-                         'grass': image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
-                         'rock': image.imread(Root_Directory.Path() + "/Data/Tile_Data/rock_terrain.png"),
-                         'tundra': image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra.png"),
-                         'snow': image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png")}
+    def __init__(self, textures):
+        self.textures = textures
 
         self.textureIndices = {}
         indices = np.linspace(0, 1, len(self.textures) + 1)
@@ -44,7 +39,7 @@ class Texture():
         self.stitchedTexture = tex
 
         # Creates a white texture useful for debugging.
-        whiteTextureArray = image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png")
+        whiteTextureArray = image.imread(Root_Directory.Path() + "/Data/Tile_Data/white_terrain.png")
         textureArray = np.zeros((shape[0], shape[0], 3), dtype=np.uint8)
         textureArray[:, :, 0] = np.uint8(255 * whiteTextureArray[:, :, 2])
         textureArray[:, :, 1] = np.uint8(255 * whiteTextureArray[:, :, 1])

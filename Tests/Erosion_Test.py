@@ -361,6 +361,7 @@ class Main():
         # https://matthias-research.github.io/pages/publications/SPHShallow.pdf
         # https://dl.acm.org/doi/pdf/10.1145/97880.97884
         # https: // hal.inria.fr / hal - 01262376 / document
+        # http://experilous.com/1/blog/post/procedural-planet-generation
         #
 
 

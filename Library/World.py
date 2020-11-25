@@ -489,7 +489,8 @@ class SphericalWorld():
         ])
         return vertices, faces
 
-    def SubdivideTriangle(self, cornerTriangles, divisions = 1, onlyGetSize = False):
+    @staticmethod
+    def SubdivideTriangle(cornerTriangles, divisions = 1, onlyGetSize = False):
         #xCorner = baseVertices[baseFaces[0, :]]
         v0 = cornerTriangles[1, :] - cornerTriangles[0, :]
         v1 = cornerTriangles[2, :] - cornerTriangles[0, :]
@@ -597,7 +598,7 @@ class SphericalWorld():
             v = vertices[faces[iFace, 1:]]
             v = np.sum(v, axis = 0)/3
             latitudeAngle = np.arcsin( v[2]/faceRadius[iFace] )
-            temperatures[iFace, 0] = np.cos(latitudeAngle)**2 - 1*faceRadiusScaled[iFace]**2
+            temperatures[iFace, 0] = 0 + 1.5*np.cos(latitudeAngle)**2 - 1.5*faceRadiusScaled[iFace]**2
         return temperatures
 
     def Smooth(self, vertices, faces, vertexRadius, faceRadius):
@@ -611,7 +612,8 @@ class SphericalWorld():
             vertexRadiusSmoothed[tris[2]] = faceRadius[iFace]*l + (1-l)*r[2]
         return vertexRadiusSmoothed
 
-    def CalculateFaceCoordinates(self, vertices, faces):
+    @staticmethod
+    def CalculateFaceCoordinates(vertices, faces):
         faceCoordinates = np.empty((np.size(faces, 0), 3))
 
         for iFace in range(np.size(faces, 0)):

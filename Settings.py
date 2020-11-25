@@ -134,4 +134,24 @@ class SettingsClass():
         self.MINIMAP_SELECTION_BUTTON_SCALE = 0.8 # A percentage of the frame width
         self.MINIMAP_RESOLUTION = [256, 256]
 
+class GlobeSettings:
+    def __init__(self):
+
+        self.forestPerlinThreshold = 0.05
+
+
+        # =============================================================================================================
+        # ==================================================== GUI ====================================================
+        # =============================================================================================================
+        self.buttonSize = 0.1
+
+        self.quitButtonPosition = (0.9, 0, 0.9)
+
+        self.tileInformationFramePosition = (-0.85, 0, -0.7)
+        self.tileInformationFrameSize = (-0.15, 0.15, -0.3, 0.3)
+        self.tileInformationMargin = 0.03
+
+        self.tileActionFramePosition = (-0.55, 0, -0.85)
+        self.tileActionFrameSize = (-0.15, 0.15, -0.15, 0.15)
+
 

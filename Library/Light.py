@@ -1,5 +1,6 @@
 from panda3d.core import AmbientLight, DirectionalLight, LightAttrib, LVector3, Spotlight, Vec4, Point3, PointLight
 from direct.showbase.ShowBase import ShowBase
+import numpy as np
 
 class LightClass():
     def __init__(self, shadowsEnabled = False):
@@ -95,4 +96,43 @@ class LightClass():
         #directionalLight.setShadowCaster(True, 512, 512)
         render.setShaderAuto()
 
+class CameraLight():
+    def __init__(self):
+        self.cameraLight = PointLight('camera light')
+        # directionalLightSunReverse = DirectionalLight("directionalLight")
+        # directionalLightSunReverse.setDirection(LVector3(25, -25, 45))
+        self.cameraLight.setColor((0.3, 0.3, 0.5, 1))
+        # render.setLight(render.attachNewNode(directionalLightSunReverse))
+        render.setLight(camera.attachNewNode(self.cameraLight))
 
+class Sun():
+    def __init__(self, position = [1, 0, 0], shadowsEnabled = False):
+        self.position = position
+        self.shadowsEnabled = shadowsEnabled
+
+        # point
+        #self.light = PointLight('camera light')
+        #self.light.setColor((0.7, 0.7, 0.5, 1))
+
+        # direction
+        self.light = DirectionalLight("directionalLight")
+        self.light.setDirection(LVector3(-self.position[0], -self.position[1], -self.position[2]))
+        self.light.setColor((0.7, 0.7, 0.5, 1))
+
+        if self.shadowsEnabled:
+            #self.light.setShadowCaster(True, 16384, 16384)
+            #self.light.setShadowCaster(True, 8192, 8192)
+            self.light.setShadowCaster(True, 4096, 4096)
+
+            #self.light.showFrustum()
+            #self.light.getLens().setFilmSize(64, 16)
+            #self.light.getLens().setNearFar(1, 500.0)
+            #render.setShaderAuto()
+        self.sun = render.attachNewNode(self.light)
+        self.sun.setPos(position[0], position[1], position[2])
+        render.setLight(self.sun)
+
+    def SetPosition(self, x, y, z):
+        self.position = [x, y, z]
+        #self.sun.setPos(self.position[0], self.position[1], self.position[2])
+        self.light.setDirection(LVector3(-self.position[0], -self.position[1], -self.position[2]))

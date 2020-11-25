@@ -216,6 +216,10 @@ class GlobeCamera():
         self.zoomRange = zoomRange
         self.minRadius = minRadius
         self.rotationSpeedRange = rotationSpeedRange
+        self.zoomSpeed = zoomSpeed
+        self.zoomAmount = 0
+
+        self.featureNodeUpdateTimer = 0
 
         #self.camera = render.attach_new_node('camera_node')
         #self.focalPoint = self.camera.attach_new_node('gimbal')
@@ -292,7 +296,8 @@ class GlobeCamera():
             self.mainProgram.accept(key, self.UpdateKeyDictionary, [key, True])
             self.mainProgram.accept(key + '-up', self.UpdateKeyDictionary, [key, False])
 
-
+        self.mainProgram.accept('mouse1', self.LeftMouseClick)
+        self.mainProgram.accept('mouse3', self.RightMouseClick)
 
         self.mainProgram.accept('wheel_up', self.zoom_control, [-zoomSpeed])
         self.mainProgram.accept('wheel_down', self.zoom_control, [zoomSpeed])
@@ -300,9 +305,10 @@ class GlobeCamera():
         self.mainProgram.add_task(self.CameraTask, 'camera_update')
 
     def zoom_control(self, amount):
-        self.zoom += amount
-        self.zoom = np.max((0, self.zoom))
-        self.zoom = np.min((1, self.zoom))
+        #self.zoom += (0.1+np.sqrt(self.zoom))*amount#(self.zoom+0.1)/1.1*amount
+        #self.zoom = np.max((0, self.zoom))
+        #self.zoom = np.min((1, self.zoom))
+        self.zoomAmount = amount
 
     def UpdateKeyDictionary(self, key, status):
         self.inputDictionary[key] = status
@@ -315,61 +321,133 @@ class GlobeCamera():
             pass
             #print(self.zoom)
 
+        updateCamera = False
+
+        if self.zoomAmount != 0:
+            self.zoom += (0.1 + np.sqrt(self.zoom)) * self.zoomAmount  # (self.zoom+0.1)/1.1*amount
+            self.zoom = np.max((0, self.zoom))
+            self.zoom = np.min((1, self.zoom))
+            self.zoomAmount = 0
+            updateCamera = True
+
         dAngle = self.rotationSpeedRange[0] + self.zoom * (self.rotationSpeedRange[1]-self.rotationSpeedRange[0]) * 60*dt
+
         if self.inputDictionary['arrow_up'] or self.inputDictionary['w']:
             self.focalPosition['latitude'] += dAngle
             self.focalPosition['latitude'] = np.min((np.pi/2, self.focalPosition['latitude']))
+            updateCamera = True
         elif self.inputDictionary['arrow_down'] or self.inputDictionary['s']:
             self.focalPosition['latitude'] -= dAngle
             self.focalPosition['latitude'] = np.max((-np.pi/2, self.focalPosition['latitude']))
+            updateCamera = True
         if self.inputDictionary['arrow_left'] or self.inputDictionary['a']:
             self.focalPosition['longitude'] -= dAngle
             self.focalPosition['longitude'] = (self.focalPosition['longitude']+2*np.pi)%(2*np.pi)
+            updateCamera = True
         elif self.inputDictionary['arrow_right'] or self.inputDictionary['d']:
             self.focalPosition['longitude'] += dAngle
             self.focalPosition['longitude'] = (self.focalPosition['longitude'] + 2*np.pi) % (2*np.pi)
-        #print(self.focalPosition['latitude'])
-        self.focalPosition['x'] = self.minRadius*np.cos(self.focalPosition['longitude'])*np.cos(self.focalPosition['latitude'])
-        self.focalPosition['y'] = self.minRadius*np.sin(self.focalPosition['longitude'])*np.cos(self.focalPosition['latitude'])
-        self.focalPosition['z'] = self.minRadius*np.sin(self.focalPosition['latitude'])
-        self.focalPoint.set_pos(self.focalPosition['x'], self.focalPosition['y'], self.focalPosition['z'])
+            updateCamera = True
+        if updateCamera:
+            self.focalPosition['x'] = self.minRadius*np.cos(self.focalPosition['longitude'])*np.cos(self.focalPosition['latitude'])
+            self.focalPosition['y'] = self.minRadius*np.sin(self.focalPosition['longitude'])*np.cos(self.focalPosition['latitude'])
+            self.focalPosition['z'] = self.minRadius*np.sin(self.focalPosition['latitude'])
+            self.focalPoint.set_pos(self.focalPosition['x'], self.focalPosition['y'], self.focalPosition['z'])
 
-        self.cameraPosition['x'] = self.focalPosition['x']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
-        self.cameraPosition['y'] = self.focalPosition['y']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
-        self.cameraPosition['z'] = self.focalPosition['z']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
-        self.camera.set_pos(self.cameraPosition['x'], self.cameraPosition['y'], self.cameraPosition['z'])
+            self.cameraPosition['x'] = self.focalPosition['x']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
+            self.cameraPosition['y'] = self.focalPosition['y']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
+            self.cameraPosition['z'] = self.focalPosition['z']*(self.zoomRange[0] + self.zoom*(self.zoomRange[1]-self.zoomRange[0]))/self.minRadius
+            self.camera.set_pos(self.cameraPosition['x'], self.cameraPosition['y'], self.cameraPosition['z'])
 
-        self.camera.look_at(self.focalPoint)
+            self.camera.look_at(self.focalPoint)
 
-        #print('===============================================================')
+        self.featureNodeUpdateTimer += dt
+        if self.featureNodeUpdateTimer >= 1:
+            self.featureNodeUpdateTimer -= 1
+            # Updates the visible/hidden state of the feature nodes depending on angle.
+            for featureNode in self.mainProgram.forestNodeClusters:
+                #print(np.abs(featureNode.longitude - self.focalPosition['longitude']))
+                #if np.abs(featureNode.longitude - self.focalPosition['longitude']) < 0.5:
 
-        #self.focalPoint.set_pos(self.focalPoint, self.camera_right_vector * 0.01 * self.camera_move_speed * dt / 0.03)
+
+                longitudeDifference = abs((featureNode.longitude + 2 * np.pi) % (2 * np.pi) - (
+                            self.focalPosition['longitude'] + 2 * np.pi) % (2 * np.pi))
+                longitudeDifference = np.min([longitudeDifference, 2*np.pi-longitudeDifference])
+                latitudeDifference = abs(featureNode.latitude - self.focalPosition['latitude'])
+
+                totalAngleDifference = np.sqrt(longitudeDifference**2 + latitudeDifference**2)
+
+                if totalAngleDifference < np.pi/3:
+                    featureNode.LODNodePath.show()
+                else:
+                    featureNode.LODNodePath.hide()
 
 
-        '''
-        #distance = camera.get_distance(self.camera_node)
+            # Updates visible/hidden state of the features nodes depending on distance. Textures are also updated.
+            if np.sqrt(self.cameraPosition['x']**2 + self.cameraPosition['y']**2 + self.cameraPosition['z']**2) < self.mainProgram.farDistance:
+                # CLOSE
+                self.mainProgram.planet.setTexture(self.mainProgram.closeTexture.stitchedTexture)
+                self.mainProgram.water.setTexture(self.mainProgram.closeTexture.stitchedTexture)
+                self.mainProgram.featureRoot.show()
+            else:
+                # FAR
+                self.mainProgram.planet.setTexture(self.mainProgram.farTexture.stitchedTexture)
+                self.mainProgram.water.setTexture(self.mainProgram.farTexture.stitchedTexture)
+                self.mainProgram.featureRoot.hide()
 
-        #self.zoom *= 0.1
-
-        # self.camera_zoom_value = min(max(self.camera_zoom_value + self.zoom, self.camera_zoom_limit[0]), self.camera_zoom_limit[1])
-        self.camera_zoom_value = min(max(self.camera_zoom_value + 30 * dt * self.zoom, 0), 1)
-
-        # self.camera_node.set_pos(self.camera_focal_node, 0, -self.Camera_Zoom_Scaling('y', self.camera_zoom_value), self.Camera_Zoom_Scaling('z', self.camera_zoom_value))
-
-        self.camera_focal_node.set_pos(self.camera_node, 0,
-                                       self.Camera_Zoom_Scaling('y', self.camera_zoom_value),
-                                       -self.Camera_Zoom_Scaling('z', self.camera_zoom_value))
-        cameraPositon = self.camera_node.get_pos()
-        self.camera_node.set_pos(cameraPositon[0], cameraPositon[1],
-                                 self.Camera_Zoom_Scaling('z', self.camera_zoom_value))
-
-        self.mainProgram.camera.look_at(self.camera_focal_node)
-
-        if self.zoom >= 0.0:
-            self.zoom -= dt * self.camera_zoom_damping
-            if self.zoom < 0: self.zoom = 0
-        else:
-            self.zoom += dt * self.camera_zoom_damping
-            if self.zoom > 0: self.zoom = 0
-        '''
         return Task.cont
+
+    def LeftMouseClick(self):
+        '''
+        A tile is selected and highlighted.
+        :return:
+        '''
+
+        iTile = self.mainProgram.tilePicker()
+
+        planetColor = p3d.GeomVertexWriter(self.mainProgram.planet_vertex_data, 'color')
+        waterColor = p3d.GeomVertexWriter(self.mainProgram.water_vertex_data, 'color')
+
+        if iTile != None:
+            i = 0
+            while not planetColor.isAtEnd():
+                #if i < 3 * 5000:
+                if i >= 3*iTile and i <= 3*iTile+2:
+                    planetColor.setData4(1, 0, 0, 1)
+                    waterColor.setData4(1, 0, 0, 1)
+                else:
+                    planetColor.setData4(1, 1, 1, 1)
+                    waterColor.setData4(1, 1, 1, 1)
+                i += 1
+            self.mainProgram.selectedTile = iTile
+
+            self.mainProgram.interface.frames['tileInformation'].node.show()
+            self.mainProgram.interface.frames['tileAction'].node.show()
+
+            tileInformationText = ""
+            tileInformationText += 'ID : ' + str(iTile) + '\n'
+            tileInformationText += 'Elevation : ' + "{:.3f}".format(self.mainProgram.elevation[iTile]) + '\n'
+            tileInformationText += 'Temperature : ' + "{:.3f}".format(self.mainProgram.temperature[iTile, 0]) + '\n'
+            if self.mainProgram.isForest[iTile]:
+                tileInformationText += 'Features : ' + 'FOREST' + '\n'
+
+            self.mainProgram.interface.labels['tileInformation'].node.setText(tileInformationText)
+
+        print('Tile clicked : ', iTile)
+
+    def RightMouseClick(self):
+        '''
+        Deselects the selected tile, removing the highlight.
+        :return:
+        '''
+        if self.mainProgram.selectedTile != None:
+            planetColor = p3d.GeomVertexWriter(self.mainProgram.planet_vertex_data, 'color')
+            waterColor = p3d.GeomVertexWriter(self.mainProgram.water_vertex_data, 'color')
+            while not planetColor.isAtEnd():
+                planetColor.setData4(1, 1, 1, 1)
+                waterColor.setData4(1, 1, 1, 1)
+            self.mainProgram.selectedTile = None
+
+            self.mainProgram.interface.frames['tileInformation'].node.hide()
+            self.mainProgram.interface.frames['tileAction'].node.hide()
+
