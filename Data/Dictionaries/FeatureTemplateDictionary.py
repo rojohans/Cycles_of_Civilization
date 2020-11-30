@@ -202,7 +202,8 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=1,
     orientationMode = 'random',
         GUILabel = 'STORAGE HALL',
-    textureKey = None)
+    textureKey = None,
+    buildingTemplate = Building_Templates.Stockpile)
     featureTemplateDictionary['lumbermill'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/lumbermill_1.bam")],
         weights  = [1],
@@ -211,7 +212,8 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=1,
     orientationMode = 'random',
         GUILabel = 'LUMBER MILL',
-    textureKey = None)
+    textureKey = None,
+    buildingTemplate = Building_Templates.Lumbermill)
 
     featureTemplateDictionary['pine_forest'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam")],

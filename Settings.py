@@ -137,7 +137,7 @@ class SettingsClass():
 class GlobeSettings:
     def __init__(self):
 
-        self.forestPerlinThreshold = 0.3
+        self.forestPerlinThreshold = 0.1
 
 
         # =============================================================================================================

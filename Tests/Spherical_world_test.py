@@ -35,7 +35,7 @@ class Game(ShowBase):
 
         self.settings = Settings.GlobeSettings()
 
-        fileToOpen = '12'
+        fileToOpen = '11' # 11: ca 50 000,     12: ca 200 000
 
         self.closeTexture = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_2.png"),
                                      'shallow_water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_shallow.png"),
@@ -223,7 +223,7 @@ class Game(ShowBase):
         self.buildingList = [None for i in range(self.world.nTriangles)]
 
         import Library.Transport as Transport
-        self.transport = Transport.Transport(mainProgram=self, resources=['labor', 'spent_labor', 'grain'])
+        self.transport = Transport.Transport(mainProgram=self, resources=['labor', 'spent_labor', 'grain', 'wood'])
 
         tic = time.time()
         self.InitializeForest(farDistance = self.farDistance)
