@@ -194,6 +194,24 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
     orientationMode = 'random',
         GUILabel = 'FIELD',
     textureKey = 'farm_field')
+    featureTemplateDictionary['storage_hall'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/storage_hall_1.bam")],
+        weights  = [1],
+        scaleRange = [[1.2, 1.2]],
+        triangleDivisions=0,
+        nObjects=1,
+    orientationMode = 'random',
+        GUILabel = 'STORAGE HALL',
+    textureKey = None)
+    featureTemplateDictionary['lumbermill'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/lumbermill_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.2, 0.2]],
+        triangleDivisions=0,
+        nObjects=1,
+    orientationMode = 'random',
+        GUILabel = 'LUMBER MILL',
+    textureKey = None)
 
     featureTemplateDictionary['pine_forest'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam")],
