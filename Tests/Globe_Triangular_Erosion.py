@@ -34,9 +34,10 @@ for iFace in range(np.size(world.faceConnections, 0)):
                 faceConnectionsIndices[iFace, iConnection] = i
                 break
 
-nIterations = 2000
-stopRainIteration = 1600
-maxRainAmount = 0.01
+nIterations = 1500
+stopRainIteration = 1000#1000
+maxRainAmount = 0.03#0.03
+evaporationRate = 0.05#0.04
 
 #deltaT = np.array(0.05)
 deltaT = np.array(0.03)
@@ -58,18 +59,18 @@ triangleLength = triangleLength.astype(np.float32)
 sqrt3_2 = np.array(np.sqrt(3) / 2)
 sqrt3_2 = sqrt3_2.astype(np.float32)
 
-carryCapacityParameter = np.array( 10.0 )
+carryCapacityParameter = np.array( 0.1 )
 carryCapacityParameter = carryCapacityParameter.astype(np.float32)
 
-erosionRate = np.array( 0.5 )
+erosionRate = np.array( 0.05 )
 erosionRate = erosionRate.astype(np.float32)
-depositionRate = np.array( 0.5 )
+depositionRate = np.array( 0.1 )
 depositionRate = depositionRate.astype(np.float32)
 
-sedimentFlowParameter = np.array(10)
+sedimentFlowParameter = np.array(100)
 sedimentFlowParameter = sedimentFlowParameter.astype(np.float32)
 
-slippageParameter = np.array(50.0)
+slippageParameter = np.array(100.0)#np.array(10.0)
 slippageParameter = slippageParameter.astype(np.float32)
 talusAngle = np.array(30*np.pi/180)
 talusAngle = talusAngle.astype(np.float32)
@@ -121,14 +122,26 @@ seed = np.random.randint(0, 100)
 #   terrainHeight = 0+10*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
 #terrainHeight = 0+5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3, seed=seed)**1
 
-#terrainHeight *= 0+2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)**3+\
-#                 4*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed)**2
-#terrainHeight += 0.5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.9)**2
-terrainHeight = 3.5*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)-0.5))**2 +\
-                1*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed)-0.5))
-terrainHeight *= np.sqrt(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3))
-terrainHeight -= cutOffHeight
-terrainHeight[terrainHeight < 0] = 0
+terrainHeight = 2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.2, seed=seed)**2+\
+                1*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=1.1)+\
+                1*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4)-0.5))**2
+terrainHeight -= 1.5
+terrainHeight[terrainHeight < 0] = -0.2
+#terrainHeight = -terrainHeight
+#terrainHeight += 1.5
+#terrainHeight[terrainHeight<0] = 0
+
+#terrainHeight = 2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.6)**2+\
+#                1*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=1.2)**2
+
+
+
+#terrainHeight = 3.5*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)-0.5))**2 +\
+#                1*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed)-0.5))
+#terrainHeight *= np.sqrt(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3))
+#terrainHeight -= cutOffHeight
+#terrainHeight[terrainHeight < 0] = 0
+
 #terrainHeight[terrainHeight > 0] = 1
 #terrainHeight /= 1-cutOffHeight
 
@@ -494,8 +507,8 @@ prg = cl.Program(ctx, """
         int i = get_global_id(0);
 
         carryCapacity[i] = carryCapacityParameter * sin(slope[i]) * velocity[i];
-        if (carryCapacity[i] > 2.0*water[i]){
-            carryCapacity[i] = 2.0*water[i];
+        if (carryCapacity[i] > 5.0*water[i]){
+            carryCapacity[i] = 5.0*water[i];
         }
     }
     
@@ -538,7 +551,9 @@ prg = cl.Program(ctx, """
             //Deposit
             float depositionAmount = depositionRate * (suspendedSediment[i] - carryCapacity[i]);
             
-            //depositionAmount = 0.6*suspendedSediment[i];
+            //if (depositionAmount < 0.1*suspendedSediment[i]){
+            //    depositionAmount = 0.1*suspendedSediment[i];
+            //}
             
             float Hj = terrainPrevious[j[i]];
             float Hk = terrainPrevious[k[i]];
@@ -793,7 +808,6 @@ for i in range(nIterations):
 
     tic = time.time()
     # Evaporation
-    evaporationRate = 0.02
     waterHeight *= (1 - evaporationRate * deltaT)
     toc = time.time()
     print('water evaporation time : ', toc-tic)

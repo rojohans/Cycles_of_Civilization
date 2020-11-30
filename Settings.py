@@ -137,7 +137,7 @@ class SettingsClass():
 class GlobeSettings:
     def __init__(self):
 
-        self.forestPerlinThreshold = 0.05
+        self.forestPerlinThreshold = 0.3
 
 
         # =============================================================================================================
@@ -154,4 +154,8 @@ class GlobeSettings:
         self.tileActionFramePosition = (-0.55, 0, -0.85)
         self.tileActionFrameSize = (-0.15, 0.15, -0.15, 0.15)
 
+        self.addFeatureFramePosition = (0, 0, 0)
+        self.addFeatureFrameSize = (-1, -0.6, -0.4, 0.7)
+        self.addFeatureFrameCanvasSize = (0, 0.4, -1.6, 0)
+        self.addFeatureFrameChildrenGap = 0.1
 

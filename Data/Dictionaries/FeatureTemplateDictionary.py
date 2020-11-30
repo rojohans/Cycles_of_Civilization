@@ -112,5 +112,128 @@ def GetFeatureTemplateDictionary():
 
     return featureTemplateDictionary
 
+class GlobeFeatureProperties():
+    def __init__(self, models, weights, scaleRange, triangleDivisions, nObjects, orientationMode, GUILabel, textureKey, buildingTemplate = None):
+        '''
+        N : Number of models
+        :param models: nodes containing 3d models. [N long list of nodes]
+        :param weights: Determines in what proportion the different models are used. [N long list of floats]
+        :param scaleRange: Used when randomly scaling teh models. [N long list of [float ,float]]
 
+        Attributes to add:
+                            movement cost
+                            resources
+        '''
+        self.models = models
+        self.weights = weights
+        self.NormalizeWeights(self.weights)
+        self.scaleRange = scaleRange
+        self.triangleDivisions = triangleDivisions
+        self.nObjects = nObjects # Determines how many models will be placed on the tile.
+        self.orientationMode = orientationMode
+        self.GUILabel = GUILabel
+        self.textureKey = textureKey
 
+        self.buildingTemplate  = buildingTemplate
+
+        self.numberOfComponents = len(models)
+    def NormalizeWeights(self, weights):
+        weightsSummed = 0
+        for weight in weights:
+            weightsSummed += weight
+        for i, weight in enumerate(weights):
+            weights[i] = weight/weightsSummed
+
+def GetFeatureTemplateDictionaryGlobe(mainProgram):
+    '''
+    This dictionary should contain an item for every feature in the game. Each dictionary entry should contain the
+    properties of that features; for example: 3d models to use, movement cost and resource occurance. When a feature is
+    to be places on the map all feature specific information should be contained within this dictionary.
+    :return:
+    '''
+    featureTemplateDictionary = {}
+
+    import Data.Templates.Building_Templates as Building_Templates
+    import Library.Industry as Industry
+
+    featureTemplateDictionary['town'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/house_1.bam")],
+        weights  = [1],
+        scaleRange = [[1.3, 1.3]],
+        triangleDivisions=4,
+        nObjects=15,
+        orientationMode='uniform',
+        GUILabel = 'TOWN',
+        textureKey = None,
+        buildingTemplate = Building_Templates.Household)
+    featureTemplateDictionary['farm'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/farm_1.bam")],
+        weights  = [1],
+        scaleRange = [[1.6, 1.6]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'FARM',
+        textureKey = 'farm_field',
+        buildingTemplate = Building_Templates.GrainFarm)
+    featureTemplateDictionary['road'] = GlobeFeatureProperties(
+        models = [],
+        weights  = [1],
+        scaleRange = [[1.6, 1.6]],
+        triangleDivisions=0,
+        nObjects=1,
+    orientationMode = 'random',
+        GUILabel = 'ROAD',
+    textureKey = 'road')
+    featureTemplateDictionary['field'] = GlobeFeatureProperties(
+        models = [],
+        weights  = [1],
+        scaleRange = [[1.6, 1.6]],
+        triangleDivisions=0,
+        nObjects=1,
+    orientationMode = 'random',
+        GUILabel = 'FIELD',
+    textureKey = 'farm_field')
+
+    featureTemplateDictionary['pine_forest'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam")],
+        weights  = [1],
+        scaleRange = [[3.4, 3.6]],
+        triangleDivisions=2,
+        nObjects=5,
+    orientationMode = 'random',
+        GUILabel = 'PINE FOREST',
+    textureKey = 'forest')
+    featureTemplateDictionary['conifer_forest'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam"),
+         loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/spruce_1.bam")],
+        weights = [2, 1],
+        scaleRange = [[3.4, 3.6], [3.4, 3.6]],
+        triangleDivisions=2,
+        nObjects=5,
+    orientationMode = 'random',
+        GUILabel = 'CONIFER FOREST',
+    textureKey = 'forest')
+    featureTemplateDictionary['temperate_forest'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_2.bam")],
+        weights  = [1],
+        scaleRange = [[1.4, 1.6]],
+        triangleDivisions=2,
+        nObjects=5,
+    orientationMode = 'random',
+        GUILabel = 'TEMPERATE FOREST',
+    textureKey = 'forest')
+    featureTemplateDictionary['jungle'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_2.bam")],
+        weights  = [1],
+        scaleRange = [[4.3, 4.7]],
+        triangleDivisions=2,
+        nObjects=5,
+    orientationMode = 'random',
+        GUILabel = 'JUNGLE',
+    textureKey = 'forest')
+
+    return featureTemplateDictionary
+
+#loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_2.bam")
+#loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_2.bam")

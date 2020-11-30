@@ -220,6 +220,7 @@ class GlobeCamera():
         self.zoomAmount = 0
 
         self.featureNodeUpdateTimer = 0
+        self.worldNodeUpdateTimer = 0
 
         #self.camera = render.attach_new_node('camera_node')
         #self.focalPoint = self.camera.attach_new_node('gimbal')
@@ -365,7 +366,7 @@ class GlobeCamera():
         if self.featureNodeUpdateTimer >= 1:
             self.featureNodeUpdateTimer -= 1
             # Updates the visible/hidden state of the feature nodes depending on angle.
-            for featureNode in self.mainProgram.forestNodeClusters:
+            for featureNode in self.mainProgram.featureNodeClusters:
                 #print(np.abs(featureNode.longitude - self.focalPosition['longitude']))
                 #if np.abs(featureNode.longitude - self.focalPosition['longitude']) < 0.5:
 
@@ -386,14 +387,29 @@ class GlobeCamera():
             # Updates visible/hidden state of the features nodes depending on distance. Textures are also updated.
             if np.sqrt(self.cameraPosition['x']**2 + self.cameraPosition['y']**2 + self.cameraPosition['z']**2) < self.mainProgram.farDistance:
                 # CLOSE
-                self.mainProgram.planet.setTexture(self.mainProgram.closeTexture.stitchedTexture)
+                self.mainProgram.planet.node.setTexture(self.mainProgram.closeTexture.stitchedTexture)
                 self.mainProgram.water.setTexture(self.mainProgram.closeTexture.stitchedTexture)
                 self.mainProgram.featureRoot.show()
             else:
                 # FAR
-                self.mainProgram.planet.setTexture(self.mainProgram.farTexture.stitchedTexture)
+                self.mainProgram.planet.node.setTexture(self.mainProgram.farTexture.stitchedTexture)
                 self.mainProgram.water.setTexture(self.mainProgram.farTexture.stitchedTexture)
                 self.mainProgram.featureRoot.hide()
+
+        self.worldNodeUpdateTimer += dt
+        if self.worldNodeUpdateTimer >= 10:
+            self.worldNodeUpdateTimer -= 10
+            if self.mainProgram.planet.textureUpdatedStatus == False:
+                # Recalculate texture coordinates of the globe.
+                textureCoordinates = p3d.GeomVertexWriter(self.mainProgram.planet.vertexData, 'texcoord')
+                for iTile in range(np.size(self.mainProgram.world.f, axis=0)):
+                    textureKey = self.mainProgram.planet.DetermineTextureKey(iTile)
+
+                    rIndices = self.mainProgram.closeTexture.textureIndices[textureKey]
+                    textureCoordinates.addData2f(rIndices[0], 0)
+                    textureCoordinates.addData2f(rIndices[1], 0)
+                    textureCoordinates.addData2f((rIndices[0] + rIndices[1]) / 2, np.sqrt(3) / 2)
+                self.mainProgram.planet.textureUpdatedStatus = True
 
         return Task.cont
 
@@ -405,7 +421,7 @@ class GlobeCamera():
 
         iTile = self.mainProgram.tilePicker()
 
-        planetColor = p3d.GeomVertexWriter(self.mainProgram.planet_vertex_data, 'color')
+        planetColor = p3d.GeomVertexWriter(self.mainProgram.planet.vertexData, 'color')
         waterColor = p3d.GeomVertexWriter(self.mainProgram.water_vertex_data, 'color')
 
         if iTile != None:
@@ -423,13 +439,25 @@ class GlobeCamera():
 
             self.mainProgram.interface.frames['tileInformation'].node.show()
             self.mainProgram.interface.frames['tileAction'].node.show()
+            #self.mainProgram.interface.frames['addFeatureMenu'].node.hide()
+
+            self.mainProgram.interface.buttons['addFeature'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
 
             tileInformationText = ""
             tileInformationText += 'ID : ' + str(iTile) + '\n'
             tileInformationText += 'Elevation : ' + "{:.3f}".format(self.mainProgram.elevation[iTile]) + '\n'
             tileInformationText += 'Temperature : ' + "{:.3f}".format(self.mainProgram.temperature[iTile, 0]) + '\n'
-            if self.mainProgram.isForest[iTile]:
-                tileInformationText += 'Features : ' + 'FOREST' + '\n'
+            tileInformationText += 'Slope : ' + "{:.3f}".format(self.mainProgram.worldProperties.slope[iTile, 0]) + '\n'
+            for i, feature in enumerate(self.mainProgram.featureList[iTile]):
+                if i == 0:
+                    tileInformationText += 'Features : '
+                else:
+                    tileInformationText += '         : '
+                tileInformationText += feature.template.GUILabel + '\n'
+
+            if self.mainProgram.buildingList[iTile] != None:
+                tileInformationText += str(self.mainProgram.buildingList[iTile])
 
             self.mainProgram.interface.labels['tileInformation'].node.setText(tileInformationText)
 
@@ -441,7 +469,7 @@ class GlobeCamera():
         :return:
         '''
         if self.mainProgram.selectedTile != None:
-            planetColor = p3d.GeomVertexWriter(self.mainProgram.planet_vertex_data, 'color')
+            planetColor = p3d.GeomVertexWriter(self.mainProgram.planet.vertexData, 'color')
             waterColor = p3d.GeomVertexWriter(self.mainProgram.water_vertex_data, 'color')
             while not planetColor.isAtEnd():
                 planetColor.setData4(1, 1, 1, 1)
@@ -450,4 +478,8 @@ class GlobeCamera():
 
             self.mainProgram.interface.frames['tileInformation'].node.hide()
             self.mainProgram.interface.frames['tileAction'].node.hide()
+            self.mainProgram.interface.frames['addFeatureMenu'].node.hide()
+
+            self.mainProgram.interface.buttons['addFeature'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
 

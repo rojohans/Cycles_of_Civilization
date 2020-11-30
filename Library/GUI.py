@@ -663,35 +663,72 @@ class Interface():
         GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
 
         self.frames = {}
+        self.labels = {}
+        self.buttons = {}
+
         self.frames['tileInformation'] = CustomFrame(position=self.mainProgram.settings.tileInformationFramePosition,
                                                      size=self.mainProgram.settings.tileInformationFrameSize,
                                                      color=(1, 1, 1, 1))
         self.frames['tileInformation'].node.hide()
-
-        self.frames['tileAction'] = CustomFrame(position=self.mainProgram.settings.tileActionFramePosition,
-                                                     size=self.mainProgram.settings.tileActionFrameSize,
-                                                     color=(1, 1, 1, 1))
-        self.frames['tileAction'].node.hide()
-
-
-        self.labels = {}
         self.labels['tileInformation'] = CustomLabel(position=(self.mainProgram.settings.tileInformationFrameSize[0] + self.mainProgram.settings.tileInformationMargin,
                                                                0,
                                                                self.mainProgram.settings.tileInformationFrameSize[3] - self.mainProgram.settings.tileInformationMargin-0.05),
                                                      text="iTile : 0 \nElevation : 0 \nTemperature : 0\nForest coverage : None\nForest coverage : None\nForest coverage : None\nForest coverage : None\nForest coverage : None\nForest coverage : None\nForest coverage : None\nForest coverage : None",
                                                      parent=self.frames['tileInformation'].node)
 
-        self.buttons = {}
-        self.buttons['addFeature'] = CustomButton(parent=self.frames['tileAction'].node,
+
+        self.frames['tileAction'] = CustomFrame(position=self.mainProgram.settings.tileActionFramePosition,
+                                                     size=self.mainProgram.settings.tileActionFrameSize,
+                                                     color=(1, 1, 1, 1))
+        self.frames['tileAction'].node.hide()
+        self.buttons['addFeature'] = CustomCheckButton(parent=self.frames['tileAction'].node,
                                                   images=['add_feature.png', 'add_feature_pressed.png'],
+                                                  callbackFunction=self.mainProgram.featureInteractivity.AddFeature,
+                                                  position=(-0.08, 0, 0),
+                                                  scale = 0.07)
+        self.buttons['infoFeature'] = CustomCheckButton(parent=self.frames['tileAction'].node,
+                                                  images=['info_feature.png', 'info_feature_pressed.png'],
                                                   callbackFunction=None,
-                                                  position=(-0.06, 0, 0),
-                                                  scale = 0.08)
-        self.buttons['removeFeature'] = CustomButton(parent=self.frames['tileAction'].node,
+                                                  position=(0, 0, 0),
+                                                  scale = 0.07)
+        self.buttons['removeFeature'] = CustomCheckButton(parent=self.frames['tileAction'].node,
                                                     images=['remove_feature.png', 'remove_feature_pressed.png'],
-                                                    callbackFunction=None,
-                                                    position=(0.06, 0, 0),
-                                                    scale = 0.08)
+                                                    callbackFunction=self.mainProgram.featureInteractivity.RemoveFeature,
+                                                    position=(0.08, 0, 0),
+                                                    scale = 0.07)
+
+        self.frames['addFeatureMenu'] = CustomScrolledFrame(position=self.mainProgram.settings.addFeatureFramePosition,
+                                                            canvasSize=self.mainProgram.settings.addFeatureFrameCanvasSize,
+                                                            size=self.mainProgram.settings.addFeatureFrameSize,
+                                                            color=(1, 1, 1, 1),
+                                                            childrenGap=self.mainProgram.settings.addFeatureFrameChildrenGap)
+        self.frames['addFeatureMenu'].node.hide()
+
+
+        for key in self.mainProgram.featureTemplate:
+            feature = self.mainProgram.featureTemplate[key]
+            self.buttons['selectFeature_' + key] = CustomButton(parent=self.frames['addFeatureMenu'].node.getCanvas(),
+                                                                position=(0.2, 0, -0.3),
+                                                                scale=0.06,
+                                                                images=None,
+                                                                callbackFunction=self.mainProgram.featureInteractivity.PlaceFeature,
+                                                                commandInput=[key],
+                                                                text=feature.GUILabel)
+            self.frames['addFeatureMenu'].children.append(self.buttons['selectFeature_' + key])
+        self.frames['addFeatureMenu'].PositionChildren()
+
+
+
+        self.buttons['end_turn'] = CustomCheckButton(parent=base.a2dBottomRight,
+                                                            position=(-0.15+0.075, 0, 0.15),
+                                                            scale=0.15,
+                                                            images=['end_turn.png', 'end_turn_pressed.png'],
+                                                            callbackFunction=self.mainProgram.Turn,
+                                                            commandInput=[])
+        self.labels['end_turn'] = CustomLabel(position=(-0.16, 0, 0.33),
+                                              text="TURN : 0",
+                                              scale = .06,
+                                              parent=base.a2dBottomRight)
 
         self.quitButton = DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
                                               GUIDataDirectoryPath + "quit_button.png",
@@ -762,6 +799,45 @@ class CustomFrame():
         self.node["frameSize"] = (newWindowRatio*self.size[0], newWindowRatio*self.size[1], self.size[2], self.size[3])
         self.node.setPos((newWindowRatio*self.position[0], self.position[1], self.position[2]))
 
+class CustomScrolledFrame():
+    def __init__(self, position, size, canvasSize, color = (0, 0, 0, 1), textureImage = 'frame_background.png', childrenGap = 0.2):
+        t = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/GUI/" + textureImage)})
+
+        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+        self.node = DirectScrolledFrame(frameTexture = t.stitchedTexture,
+                                                    canvasSize=canvasSize,
+                                                    frameColor = color,
+                                                    frameSize=size,
+                                                    pos = position)
+        #verticalScroll_thumb_image = (GUIDataDirectoryPath + textureImage,
+        #                              GUIDataDirectoryPath + textureImage,
+        #                              GUIDataDirectoryPath + textureImage,
+        #                              GUIDataDirectoryPath + textureImage),
+        #verticalScroll_thumb_image_scale = (0.05, 0.05, 0.05)
+        self.childrenGap = childrenGap
+        self.children = []
+        self.canvasSize = canvasSize
+        self.position = position
+        self.size = size
+
+    def PositionChildren(self):
+        verticalPosition = -self.childrenGap
+        horizontalMiddlePosition = (self.canvasSize[1]-self.canvasSize[0])/2
+        for child in self.children:
+            verticalPosition -= self.childrenGap
+            child.position = (horizontalMiddlePosition, 0, verticalPosition)
+            child.Update()
+
+    def Update(self, newWindowRatio):
+        '''
+        this function should be called when the ratio of the window changes. It updates the size and positin of the
+        object. Thus enabling it to always be positioned in the correct relative location in the window.
+        :param newWindowRatio:
+        :return:
+        '''
+        self.node["frameSize"] = (newWindowRatio*self.size[0], newWindowRatio*self.size[1], self.size[2], self.size[3])
+        self.node.setPos((newWindowRatio*self.position[0], self.position[1], self.position[2]))
+
 class CustomLabel():
     def __init__(self, text, position, parent, scale = 0.05):
         self.node = DirectLabel(
@@ -785,19 +861,56 @@ class CustomLabel():
         self.node.setPos((newWindowRatio*self.position[0], self.position[1], self.position[2]))
 
 class CustomButton():
-    def __init__(self, images, position, callbackFunction, parent, scale = 0.05):
+    def __init__(self, images, position, callbackFunction, parent, scale = 0.05, text = '', commandInput = []):
         GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+        if images != None:
+            imageList = (GUIDataDirectoryPath + images[0],
+             GUIDataDirectoryPath + images[1],
+             GUIDataDirectoryPath + images[0],
+             GUIDataDirectoryPath + images[0])
+        else:
+            imageList = None
+        self.node = DirectButton(parent = parent,
+                                 image=imageList,
+                                 text = text,
+                                 extraArgs=commandInput,
+                                 scale=scale,
+                                 pos=(position[0], position[1], position[2]),
+                                 relief=None,
+                                 command=callbackFunction)
+        self.node.setTransparency(TransparencyAttrib.MAlpha)
+        self.position = position
+        self.scale = scale
+
+    def Update(self, newWindowRatio=1):
+        '''
+        this function should be called when the ratio of the window changes. It updates the size and positin of the
+        object. Thus enabling it to always be positioned in the correct relative location in the window.
+        :param newWindowRatio:
+        :return:
+        '''
+        self.node.setPos((newWindowRatio*self.position[0], self.position[1], self.position[2]))
+
+class CustomCheckButton():
+    def __init__(self, images, position, callbackFunction, parent, scale = 0.05, text = '', commandInput = []):
+        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+        if images != None:
+            imageList = (GUIDataDirectoryPath + images[0],
+             GUIDataDirectoryPath + images[1],
+             GUIDataDirectoryPath + images[0],
+             GUIDataDirectoryPath + images[0])
+        else:
+            imageList = None
         self.node = DirectCheckButton(parent = parent,
-                                                 boxImage=(GUIDataDirectoryPath + images[0],
-                                                           GUIDataDirectoryPath + images[1],
-                                                           GUIDataDirectoryPath + images[0],
-                                                           GUIDataDirectoryPath + images[0]),
-                                                 scale=scale,
-                                                 pos=(position[0]-scale, position[1], position[2]),
-                                                 relief=None,
-                                                 boxRelief=None,
-                                                 boxPlacement='right',
-                                                 command=callbackFunction)
+                                      boxImage=imageList,
+                                      text = text,
+                                      extraArgs=commandInput,
+                                      scale=scale,
+                                      pos=(position[0]-scale, position[1], position[2]),
+                                      relief=None,
+                                      boxRelief=None,
+                                      boxPlacement='right',
+                                      command=callbackFunction)
         self.node.setTransparency(TransparencyAttrib.MAlpha)
         self.position = position
         self.scale = scale
