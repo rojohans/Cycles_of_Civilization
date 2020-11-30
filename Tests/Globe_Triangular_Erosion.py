@@ -14,7 +14,7 @@ suspendedSedimentMinimumVisualDepth = 0.1
 waterMinimumVisualDepth = 0.1
 waterVisibilityDepth = 1
 
-world = World.SphericalWorld(nDivisions=50)
+world = World.SphericalWorld(nDivisions=100)
 
 print('Number of triangles: ', np.size(world.f, 0))
 
@@ -921,12 +921,12 @@ import Root_Directory
 world.v = 10*terrainVertices
 world.vertexRadius = world.CalculateVertexRadius(world.v)
 world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
-pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_11.pkl', "wb"))
+pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_12.pkl', "wb"))
 
 world.v = 10*waterVertices
 world.vertexRadius = world.CalculateVertexRadius(world.v)
 world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
-pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_11.pkl', "wb"))
+pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_12.pkl', "wb"))
 
 plotter.render()
 plotter.show(auto_close=False)

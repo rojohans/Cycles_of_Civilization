@@ -35,7 +35,7 @@ class Game(ShowBase):
 
         self.settings = Settings.GlobeSettings()
 
-        fileToOpen = '11'
+        fileToOpen = '12'
 
         self.closeTexture = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_2.png"),
                                      'shallow_water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_shallow.png"),
