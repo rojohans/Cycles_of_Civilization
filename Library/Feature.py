@@ -93,7 +93,10 @@ class FeatureInteractivity():
 
     def AddFeature(self, status):
         if status == 1:
+            self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
             self.mainProgram.interface.frames['addFeatureMenu'].node.show()
+            self.mainProgram.interface.frames['featureInformation'].node.hide()
         else:
             self.mainProgram.interface.frames['addFeatureMenu'].node.hide()
 
@@ -135,18 +138,17 @@ class FeatureInteractivity():
                 '''
 
                 if self.mainProgram.buildingList[self.mainProgram.selectedTile] != None:
+                    self.mainProgram.buildingList[self.mainProgram.selectedTile].Delete()
                     self.mainProgram.buildingList[self.mainProgram.selectedTile] = None
                     self.mainProgram.transport.RecalculateInputDictionay()
 
-
-
-
-
-
         self.mainProgram.interface.buttons['addFeature'].node["indicatorValue"] = False
         self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
+        self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
+        self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
         self.mainProgram.interface.buttons['removeFeature'].node["indicatorValue"] = False
         self.mainProgram.interface.buttons['removeFeature'].node.setIndicatorValue()
+        self.mainProgram.interface.frames['featureInformation'].node.hide()
 
     def PlaceFeature(self, featureKey):
         iCluster = self.mainProgram.clusterBelonging[self.mainProgram.selectedTile]
@@ -167,8 +169,7 @@ class FeatureInteractivity():
                                 featureTemplate=self.mainProgram.featureTemplate[featureKey],
                                 iTile = self.mainProgram.selectedTile))
         if self.mainProgram.featureTemplate[featureKey].buildingTemplate != None:
-
-            newBuilding = self.mainProgram.featureTemplate[featureKey].buildingTemplate()
+            newBuilding = self.mainProgram.featureTemplate[featureKey].buildingTemplate(self.mainProgram.selectedTile)
             self.mainProgram.buildingList[self.mainProgram.selectedTile] = newBuilding
             for resource in newBuilding.inputBuffert.type:
                 self.mainProgram.transport.buildingsInput[resource].append(newBuilding)
@@ -184,5 +185,24 @@ class FeatureInteractivity():
         cluster.node.clearModelNodes()
         cluster.node.flattenStrong()
         cluster.node.reparentTo(cluster.LODNodePath)
+
+    def FeatureInformationCallback(self, status):
+
+        self.mainProgram.interface.buttons['addFeature'].node["indicatorValue"] = False
+        self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
+
+        if status == 1:
+
+            featureInformationText = ''
+            featureInformationText += '        ' + self.mainProgram.featureList[self.mainProgram.selectedTile][0].template.GUILabel + '\n'
+            featureInformationText += self.mainProgram.buildingList[self.mainProgram.selectedTile].GetDetailedText()
+            self.mainProgram.interface.labels['featureInformation'].node.setText(featureInformationText)
+
+
+
+            self.mainProgram.interface.frames['featureInformation'].node.show()
+            self.mainProgram.interface.frames['addFeatureMenu'].node.hide()
+        else:
+            self.mainProgram.interface.frames['featureInformation'].node.hide()
 
 

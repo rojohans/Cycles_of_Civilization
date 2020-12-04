@@ -10,9 +10,41 @@ class BuildingFeatureProperties(FeatureTemplateDictionary.GlobeFeatureProperties
 
 
 class Building():
-    def __init__(self, inputBuffert, outputBuffert):
+    def __init__(self, iTile, inputBuffert, outputBuffert):
         self.inputBuffert = inputBuffert
         self.outputBuffert = outputBuffert
+        self.iTile = iTile
+
+        self.inputLinks = {}
+        self.inputLinkAmount = {} # The amount of linked buildings, used as a sort of "satisfaction" value.
+        self.destinationLimit = 3 # The maximum number of destinations per resource.
+        self.destinationAmount = {} # The number of linked destinations per resource.
+        self.destinations = {} # The linked destinations.
+        for inputResource in self.inputBuffert.type:
+            self.inputLinkAmount[inputResource] = 0
+            self.inputLinks[inputResource] = []
+        for outputResource in self.outputBuffert.type:
+            self.destinationAmount[outputResource] = 0
+            self.destinations[outputResource] = []
+
+        self.turnsSinceTransportLinkUpdate = 0
+
+        self.linkNode = None # Used for visualizing the links.
+
+
+    def ResetDestinations(self, resource):
+        # Links should be removed from destinations
+
+        for destination in self.destinations[resource]:
+            destination.inputLinkAmount[resource] -= 1
+
+        self.destinationAmount[resource] = 0
+        self.destinations[resource] = []
+
+    def Delete(self):
+        for inputResource in self.inputBuffert.type:
+            for link in self.inputLinks[inputResource]:
+                link.ResetDestinations(inputResource)
 
     def __call__(self, *args, **kwargs):
         pass
@@ -26,9 +58,19 @@ class Building():
 
         return text
 
+    def GetDetailedText(self):
+        text = ''
+        text += 'INPUT\n'
+        for i, resource in enumerate(self.inputBuffert.type):
+            text += '   ' + resource + ' : ' + "{:.0f}".format(self.inputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.inputBuffert.limit[resource]) + '\n'
+        text += 'OUTPUT\n'
+        for i, resource in enumerate(self.outputBuffert.type):
+            text += '   ' + resource + ' : ' + "{:.0f}".format(self.outputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.outputBuffert.limit[resource]) + '\n'
+        return text
+
 class ProductionBuilding(Building):
-    def __init__(self, inputBuffert, outputBuffert, laborLimit = 50):
-        super().__init__(inputBuffert, outputBuffert)
+    def __init__(self, iTile, inputBuffert, outputBuffert, laborLimit = 50):
+        super().__init__(iTile, inputBuffert, outputBuffert)
         self.laborLimit = laborLimit # The max amount of labor that can be used each day.
 
     def __call__(self, *args, **kwargs):
@@ -36,8 +78,8 @@ class ProductionBuilding(Building):
             amount += 10
 
 class LivingBuilding(Building):
-    def __init__(self, inputBuffert, outputBuffert, population = 10, populationInHouse = 10, maxPopulation = 100):
-        super().__init__(inputBuffert, outputBuffert)
+    def __init__(self, iTile, inputBuffert, outputBuffert, population = 10, populationInHouse = 10, maxPopulation = 100):
+        super().__init__(iTile, inputBuffert, outputBuffert)
         self.population = population
         self.populationInHouse = populationInHouse
         self.maxPopulation = maxPopulation
@@ -52,6 +94,18 @@ class LivingBuilding(Building):
         for i, resource in enumerate(self.outputBuffert.type):
             text += resource + ' : ' + "{:.0f}".format(self.outputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.outputBuffert.limit[resource]) + '\n'
         text += 'Population : ' + "{:.0f}".format(self.population) + '/' + "{:.0f}".format(self.maxPopulation) + '\n'
+        return text
+
+    def GetDetailedText(self):
+        text = ''
+        text += 'INPUT\n'
+        for i, resource in enumerate(self.inputBuffert.type):
+            text += '   ' + resource + ' : ' + "{:.0f}".format(self.inputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.inputBuffert.limit[resource]) + '\n'
+        text += 'OUTPUT\n'
+        for i, resource in enumerate(self.outputBuffert.type):
+            text += '   ' + resource + ' : ' + "{:.0f}".format(self.outputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.outputBuffert.limit[resource]) + '\n'
+        text += 'POPULATION\n'
+        text += '   ' + "{:.0f}".format(self.population) + '/' + "{:.0f}".format(self.maxPopulation) + '\n'
         return text
 
 

@@ -3,11 +3,11 @@ import numpy as np
 import Library.Industry as Industry
 
 class GrainFarm(Industry.ProductionBuilding):
-    def __init__(self):
+    def __init__(self, iTile):
         inputBuffert = Industry.ResourceBuffert(types=['labor'], amounts=[0], limits=[100])
         outputBuffert = Industry.ResourceBuffert(types=['grain', 'spent_labor'], amounts=[0, 0], limits=[500, 100])
         laborLimit = 50
-        super().__init__(inputBuffert, outputBuffert, laborLimit=laborLimit)
+        super().__init__(iTile, inputBuffert, outputBuffert, laborLimit=laborLimit)
 
     def __call__(self, *args, **kwargs):
         laborOutputSpace = self.outputBuffert.limit['spent_labor'] - self.outputBuffert.amount['spent_labor']
@@ -20,11 +20,11 @@ class GrainFarm(Industry.ProductionBuilding):
         self.outputBuffert.amount['grain'] = np.min((self.outputBuffert.amount['grain'], self.outputBuffert.limit['grain']))
 
 class Lumbermill(Industry.ProductionBuilding):
-    def __init__(self):
+    def __init__(self, iTile):
         inputBuffert = Industry.ResourceBuffert(types=['labor'], amounts=[0], limits=[100])
         outputBuffert = Industry.ResourceBuffert(types=['wood', 'spent_labor'], amounts=[0, 0], limits=[500, 100])
         laborLimit = 50
-        super().__init__(inputBuffert, outputBuffert, laborLimit=laborLimit)
+        super().__init__(iTile, inputBuffert, outputBuffert, laborLimit=laborLimit)
 
     def __call__(self, *args, **kwargs):
         laborOutputSpace = self.outputBuffert.limit['spent_labor'] - self.outputBuffert.amount['spent_labor']
@@ -37,23 +37,23 @@ class Lumbermill(Industry.ProductionBuilding):
         self.outputBuffert.amount['wood'] = np.min((self.outputBuffert.amount['wood'], self.outputBuffert.limit['wood']))
 
 class Stockpile(Industry.ProductionBuilding):
-    def __init__(self):
+    def __init__(self, iTile):
         inputBuffert = Industry.ResourceBuffert(types=['wood'], amounts=[0], limits=[500])
         outputBuffert = Industry.ResourceBuffert(types=[], amounts=[], limits=[])
         laborLimit = None
-        super().__init__(inputBuffert, outputBuffert, laborLimit=laborLimit)
+        super().__init__(iTile, inputBuffert, outputBuffert, laborLimit=laborLimit)
 
     def __call__(self, *args, **kwargs):
         pass
 
 class Household(Industry.LivingBuilding):
-    def __init__(self):
+    def __init__(self, iTile):
         inputBuffert = Industry.ResourceBuffert(types=['grain', 'spent_labor'], amounts=[50, 0], limits=[300, 100])
         outputBuffert = Industry.ResourceBuffert(types=['labor'], amounts=[0], limits=[100])
         population = 30
         populationInHouse = 30
         maxPopulation = 100
-        super().__init__(inputBuffert, outputBuffert, population = population, populationInHouse = populationInHouse, maxPopulation = maxPopulation)
+        super().__init__(iTile, inputBuffert, outputBuffert, population = population, populationInHouse = populationInHouse, maxPopulation = maxPopulation)
 
     def __call__(self, *args, **kwargs):
 

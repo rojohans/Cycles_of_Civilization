@@ -230,8 +230,10 @@ class Game(ShowBase):
         toc = time.time()
         print('Initialize forest: ', toc-tic)
 
+        import Library.Graphics as Graphics
         tic = time.time()
-        self.planet = World.VisualWorld(mainProgram = self, vertices = world.v, faces = world.f, faceNormals = world.faceNormals)
+        self.planet = Graphics.WorldMesh(mainProgram = self, vertices = world.v, faces = world.f, faceNormals = world.faceNormals)
+        #self.planet = World.VisualWorld(mainProgram = self, vertices = world.v, faces = world.f, faceNormals = world.faceNormals)
         toc = time.time()
         print('Initialize planet: ', toc - tic)
 
@@ -253,10 +255,13 @@ class Game(ShowBase):
 
     def Turn(self, status):
         if status == 1:
+            tic = time.time()
             self.interface.buttons['end_turn'].node["indicatorValue"] = 1
             self.interface.buttons['end_turn'].node.setIndicatorValue()
             base.graphicsEngine.renderFrame()
             base.graphicsEngine.renderFrame()
+
+
 
 
             # The buildings process their input into output. Households grow/starve.
@@ -268,13 +273,15 @@ class Game(ShowBase):
             self.transport()
 
 
+
+
             self.interface.buttons['end_turn'].node["indicatorValue"] = 0
             self.interface.buttons['end_turn'].node.setIndicatorValue()
 
             self.turn += 1
             self.interface.labels['end_turn'].node.setText('TURN : ' + str(self.turn))
 
-
+            # Update the GUI text.
             if self.selectedTile != None:
                 tileInformationText = ""
                 tileInformationText += 'ID : ' + str(self.selectedTile) + '\n'
@@ -289,10 +296,19 @@ class Game(ShowBase):
                     tileInformationText += feature.template.GUILabel + '\n'
 
                 if self.buildingList[self.selectedTile] != None:
-                    tileInformationText += str(self.buildingList[self.selectedTile])
+                    #tileInformationText += str(self.buildingList[self.selectedTile])
+
+                    featureInformationText = ''
+                    featureInformationText += self.featureList[self.selectedTile][0].template.GUILabel + '\n'
+                    featureInformationText += self.buildingList[
+                        self.selectedTile].GetDetailedText()
+                    self.interface.labels['featureInformation'].node.setText(featureInformationText)
                 self.interface.labels['tileInformation'].node.setText(tileInformationText)
 
             base.graphicsEngine.renderFrame()
+            toc = time.time()
+            print('TURN TIME : ', toc-tic)
+            print(' ')
 
 
     def RotateSun(self, Task):
@@ -328,18 +344,8 @@ class Game(ShowBase):
         self.featureBackupRoot = render.attachNewNode("featureBackupRoot")
         self.featureBackupRoot .hide()
 
-        pineModel = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/pine_1.bam")
-        kapokModel = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/kapok_2.bam")
-        palmModel = loader.loadModel(Root_Directory.Path(style='unix') + "/Data/Models/palm_2.bam")
-
-        #self.forestRootNodes = [self.forestRoot.attachNewNode("forestRootNode") for i in range(self.nForestNodes)]
-
         self.featureNodeClusters = []
         for iNode in range(self.nForestNodes):
-            #nodePos = np.mean(
-            #    self.world.faceCoordinates[int(np.floor(iNode * self.world.nTriangles / self.nForestNodes)):
-            #                               int(np.floor((iNode + 1) * self.world.nTriangles / self.nForestNodes) - 1),
-            #    :], axis=0)
             nodePos = self.nodeWorld.v[iNode, :]
             self.featureNodeClusters.append(Feature.FeatureCluster(parent=self.forestRoot, position=nodePos, renderDistance=farDistance))
 
@@ -351,6 +357,39 @@ class Game(ShowBase):
             self.featureNodeClusters[featureID].childrenTiles.append(iNode)
 
         for iFace in range(self.world.nTriangles):
+
+            # Initializes some basic buildings (towns and farms).
+            '''
+            if np.random.rand() < 0.1:
+                theta = 180 * np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(
+                    self.world.faceCoordinates[iFace, 0] ** 2 + self.world.faceCoordinates[iFace, 1] ** 2)) / np.pi
+                phi = 180 * np.arctan(self.world.faceCoordinates[iFace, 1] / self.world.faceCoordinates[iFace, 0]) / np.pi
+                if self.world.faceCoordinates[iFace, 0] > 0:
+                    phi += 180
+
+                iNode = self.clusterBelonging[iFace]
+
+                if np.random.rand()<0.5:
+                    featureKey = 'farm'
+                else:
+                    featureKey = 'town'
+
+                self.featureList[iFace] \
+                    .append(Feature.TileFeature(parent=self.featureNodeClusters[iNode],
+                                        backupRoot=self.featureBackupRoot,
+                                        positionOffset=-self.featureNodeClusters[iNode].position,
+                                        rotation=[90 + phi, theta, 0],
+                                        triangleCorners=self.world.v[
+                                            self.world.f[iFace, 1:]],
+                                        featureTemplate=self.featureTemplate[featureKey],
+                                        iTile=iFace))
+                if self.featureTemplate[featureKey].buildingTemplate != None:
+                    newBuilding = self.featureTemplate[featureKey].buildingTemplate()
+                    self.buildingList[iFace] = newBuilding
+                    for resource in newBuilding.inputBuffert.type:
+                        self.transport.buildingsInput[resource].append(newBuilding)
+            '''
+
             if isForestList[iFace]:
                 theta = 180*np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(self.world.faceCoordinates[iFace, 0]**2 + self.world.faceCoordinates[iFace, 1]**2))/np.pi
                 phi = 180*np.arctan(self.world.faceCoordinates[iFace, 1]/self.world.faceCoordinates[iFace, 0])/np.pi
@@ -359,12 +398,6 @@ class Game(ShowBase):
 
                 iNode = self.clusterBelonging[iFace]
 
-                #iNode = int(np.floor(iFace * self.nForestNodes / self.world.nTriangles))
-                #self.featureList[iFace].append(Feature.SingleFeature(parentNode=forestNodeClusters[iNode].node,
-                #                                                     model=model,
-                #                                                     position=self.world.faceCoordinates[iFace, :]-forestNodeClusters[iNode].position,
-                #                                                     rotation=[90+phi, theta, 0],
-                #                                                     scale=10))
 
                 temperature = self.world.faceTemperature[iFace, 0]
                 if temperature < 0.8:
@@ -394,6 +427,11 @@ class Game(ShowBase):
             self.featureNodeClusters[iNode].node.flattenStrong()
             self.featureNodeClusters[iNode].node.reparentTo(self.featureNodeClusters[iNode].LODNodePath)
 
+        n = 0
+        for building in self.buildingList:
+            if building != None:
+                n += 1
+        print('#buildings : ', n)
         #render.analyze()
 
 game = Game()

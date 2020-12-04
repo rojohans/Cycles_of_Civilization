@@ -650,7 +650,7 @@ if False:
 
 
 
-
+import Library.GUI_Components as GUI_Components
 
 class Interface():
     def __init__(self, base, mainProgram):
@@ -688,7 +688,7 @@ class Interface():
                                                   scale = 0.07)
         self.buttons['infoFeature'] = CustomCheckButton(parent=self.frames['tileAction'].node,
                                                   images=['info_feature.png', 'info_feature_pressed.png'],
-                                                  callbackFunction=None,
+                                                  callbackFunction=self.mainProgram.featureInteractivity.FeatureInformationCallback,
                                                   position=(0, 0, 0),
                                                   scale = 0.07)
         self.buttons['removeFeature'] = CustomCheckButton(parent=self.frames['tileAction'].node,
@@ -716,6 +716,13 @@ class Interface():
                                                                 text=feature.GUILabel)
             self.frames['addFeatureMenu'].children.append(self.buttons['selectFeature_' + key])
         self.frames['addFeatureMenu'].PositionChildren()
+
+
+
+        featureInformation = GUI_Components.FeatureInformation(mainProgram=self.mainProgram)
+        featureInformation.Initialize(self)
+
+
 
 
 

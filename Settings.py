@@ -140,6 +140,8 @@ class GlobeSettings:
         self.forestPerlinThreshold = 0.1
 
 
+        self.transportLinkUpdateInterval = 10
+
         # =============================================================================================================
         # ==================================================== GUI ====================================================
         # =============================================================================================================
@@ -153,6 +155,12 @@ class GlobeSettings:
 
         self.tileActionFramePosition = (-0.55, 0, -0.85)
         self.tileActionFrameSize = (-0.15, 0.15, -0.15, 0.15)
+
+
+        self.featureInformationFramePosition = (0, 0, 0)
+        self.featureInformationFrameSize = (-1, -0.6, -0.4, 0.7)
+        self.featureInformationMargin = [0.03, 0.1]
+
 
         self.addFeatureFramePosition = (0, 0, 0)
         self.addFeatureFrameSize = (-1, -0.6, -0.4, 0.7)

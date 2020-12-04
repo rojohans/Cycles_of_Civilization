@@ -1,5 +1,6 @@
 from direct.showbase.ShowBase import ShowBase
 import panda3d.core as p3d
+from direct.gui.DirectGui import *
 import Library.TileClass as TileClass
 import numpy as np
 
@@ -457,7 +458,20 @@ class GlobeCamera():
                 tileInformationText += feature.template.GUILabel + '\n'
 
             if self.mainProgram.buildingList[iTile] != None:
-                tileInformationText += str(self.mainProgram.buildingList[iTile])
+                featureInformationText = ''
+                featureInformationText += '        ' + self.mainProgram.featureList[self.mainProgram.selectedTile][0].template.GUILabel + '\n'
+                featureInformationText += self.mainProgram.buildingList[self.mainProgram.selectedTile].GetDetailedText()
+                self.mainProgram.interface.labels['featureInformation'].node.setText(featureInformationText)
+
+                #tileInformationText += str(self.mainProgram.buildingList[iTile])
+                self.mainProgram.interface.buttons['infoFeature'].node['state'] = DGG.NORMAL
+            else:
+                self.mainProgram.interface.buttons['infoFeature'].node['state'] = DGG.DISABLED
+                self.mainProgram.interface.frames['featureInformation'].node.hide()
+                self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
+                self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
+
+
 
             self.mainProgram.interface.labels['tileInformation'].node.setText(tileInformationText)
 
@@ -479,7 +493,11 @@ class GlobeCamera():
             self.mainProgram.interface.frames['tileInformation'].node.hide()
             self.mainProgram.interface.frames['tileAction'].node.hide()
             self.mainProgram.interface.frames['addFeatureMenu'].node.hide()
+            self.mainProgram.interface.frames['featureInformation'].node.hide()
+
 
             self.mainProgram.interface.buttons['addFeature'].node["indicatorValue"] = False
             self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
+            self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
 
