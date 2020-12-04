@@ -80,6 +80,8 @@ class Game(ShowBase):
         self.world.faceCoordinates[:, 1] = self.world.unscaledFaceCoordinates[:, 1]*self.world.faceRadius
         self.world.faceCoordinates[:, 2] = self.world.unscaledFaceCoordinates[:, 2]*self.world.faceRadius
 
+        self.world.faceConnections = self.world.CalculateFaceConnections(self.world.faceCoordinates)
+
         self.terrainAngles = np.zeros((self.world.nTriangles, 1))
 
         print('# faces : ', np.size(world.f, 0))
@@ -96,6 +98,9 @@ class Game(ShowBase):
             #worldWater = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/worldWater.pkl', "rb"))
             worldWater.minRadius = np.min(worldWater.faceRadius)
         self.waterWorld = worldWater
+
+        worldWater.faceNormals = worldWater.CalculateFaceNormals(worldWater.v, worldWater.f)
+        waterHeight = worldWater.faceRadius - world.faceRadius
 
         self.temperature = world.faceTemperature.copy()
         h = self.world.faceRadius - self.waterWorld.minRadius
@@ -116,90 +121,11 @@ class Game(ShowBase):
             self.terrainAngles[iFace] = 180 / np.pi * np.arccos(
             (vertices[0] * normal[0] + vertices[1] * normal[1] + vertices[2] * normal[2]))
 
+
         self.worldProperties = World.WorldProperties(mainProgram=self, temperature=self.temperature, elevation=self.elevation, slope = self.terrainAngles)
+        self.worldProperties.DetermineWater()
 
         #-------------------------------------------------------------
-
-        # v3n3t2 : vertices3, normals3, textureCoordinates2
-        vertex_format = p3d.GeomVertexFormat.get_v3n3c4t2()
-        # vertex_format = p3d.GeomVertexFormat.get_v3t2()
-        self.water_vertex_data = p3d.GeomVertexData("triangle_data", vertex_format, p3d.Geom.UH_static)
-
-        pos_writer = p3d.GeomVertexWriter(self.water_vertex_data, "vertex")
-        normal_writer = p3d.GeomVertexWriter(self.water_vertex_data, "normal")
-        colour_writer = p3d.GeomVertexWriter(self.water_vertex_data, 'color')
-        tex_writer = p3d.GeomVertexWriter(self.water_vertex_data, 'texcoord')
-
-        for iFace in range(np.size(worldWater.f, 0)):
-            vertices = worldWater.v[worldWater.f[iFace, 1:]]
-            pos_writer.add_data3(vertices[0, 0], vertices[0, 1], vertices[0, 2])
-            pos_writer.add_data3(vertices[1, 0], vertices[1, 1], vertices[1, 2])
-            pos_writer.add_data3(vertices[2, 0], vertices[2, 1], vertices[2, 2])
-
-            colour_writer.add_data4(1, 1, 1, 1)
-            colour_writer.add_data4(1, 1, 1, 1)
-            colour_writer.add_data4(1, 1, 1, 1)
-
-            r = np.random.choice(['water', 'grass', 'rock', 'snow'])
-            #r = 'water'
-            waterHeight = worldWater.faceRadius[iFace] - world.faceRadius[iFace]
-
-            temperature = world.faceTemperature[iFace, 0]
-            if temperature < 0.1:
-                r = 'snow'
-            else:
-                if waterHeight < 0.4:
-                    r = 'shallow_water'
-                else:
-                    r = 'water'
-            rIndices = self.closeTexture.textureIndices[r]
-            tex_writer.addData2f(rIndices[0], 0)
-            tex_writer.addData2f(rIndices[1], 0)
-            tex_writer.addData2f((rIndices[0] + rIndices[1])/2, np.sqrt(3)/2)
-
-        tri = p3d.GeomTriangles(p3d.Geom.UH_static)
-
-        # Creates the triangles.
-        n = 0
-        for iFace in range(np.size(worldWater.f, 0)):
-            #tri.add_vertices(world.f[iFace, 0], world.f[iFace, 1], world.f[iFace, 2])
-            tri.add_vertices(n, n+1, n+2)
-            n += 3
-
-        # Assigns a normal to each vertex.
-        for iFace in range(np.size(worldWater.f, 0)):
-            #normal_writer.add_data3(p3d.Vec3(self.normals[y, x, 0], self.normals[y, x, 1], self.normals[y, x, 2]))
-
-            vertices = worldWater.v[worldWater.f[iFace, 1:]]
-            v0 = vertices[1, :] - vertices[0, :]
-            v1 = vertices[2, :] - vertices[0, :]
-            normal = [v0[1]*v1[2] - v1[1]*v0[2], -v0[0]*v1[2] + v1[0]*v0[2], v0[0]*v1[1] - v1[0]*v0[1]]
-
-            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
-            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
-            #normal_writer.add_data3(p3d.Vec3(0, 0, 1))
-            normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
-            normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
-            normal_writer.add_data3(p3d.Vec3(normal[0], normal[1], normal[2]))
-
-        geom = p3d.Geom(self.water_vertex_data)
-        geom.add_primitive(tri)
-
-        node = p3d.GeomNode("Water")
-        node.add_geom(geom)
-        self.water = p3d.NodePath(node)
-
-        # This material adds some shine to the water surface.
-        waterMaterial = p3d.Material()
-        waterMaterial.setShininess(128.0)
-        waterMaterial.setSpecular((0.2, 0.2, 0.2, 1))
-
-        self.water.reparentTo(render)
-        #self.water.setMaterial(waterMaterial)
-        self.water.setTexture(self.closeTexture.stitchedTexture)
-        self.water.setTransparency(p3d.TransparencyAttrib.MAlpha)
-        self.water.setShaderAuto()
-
 
 
 
@@ -224,6 +150,8 @@ class Game(ShowBase):
 
         import Library.Transport as Transport
         self.transport = Transport.Transport(mainProgram=self, resources=['labor', 'spent_labor', 'grain', 'wood'])
+        self.movementGraph = Transport.MovementGraph(mainProgram=self)
+        self.movementGraph.InitializeStandard()
 
         tic = time.time()
         self.InitializeForest(farDistance = self.farDistance)
@@ -232,13 +160,16 @@ class Game(ShowBase):
 
         import Library.Graphics as Graphics
         tic = time.time()
-        self.planet = Graphics.WorldMesh(mainProgram = self, vertices = world.v, faces = world.f, faceNormals = world.faceNormals)
-        #self.planet = World.VisualWorld(mainProgram = self, vertices = world.v, faces = world.f, faceNormals = world.faceNormals)
+        self.planet = Graphics.WorldMesh(mainProgram = self, vertices = world.v, faces = world.f,
+                                         faceNormals = world.faceNormals, type = 'land')
         toc = time.time()
         print('Initialize planet: ', toc - tic)
 
-
-
+        tic = time.time()
+        self.water = Graphics.WorldMesh(mainProgram=self, vertices=worldWater.v, faces=worldWater.f,
+                                        faceNormals=worldWater.faceNormals, type='water', waterHeight=waterHeight)
+        toc = time.time()
+        print('Initialize water: ', toc - tic)
 
 
         self.sunAngle = 0
@@ -304,6 +235,10 @@ class Game(ShowBase):
                         self.selectedTile].GetDetailedText()
                     self.interface.labels['featureInformation'].node.setText(featureInformationText)
                 self.interface.labels['tileInformation'].node.setText(tileInformationText)
+
+
+            self.interface.featureInformation.VisualizeBuildingLinks(self.interface.buttons['buildingLinks'].node["indicatorValue"])
+
 
             base.graphicsEngine.renderFrame()
             toc = time.time()

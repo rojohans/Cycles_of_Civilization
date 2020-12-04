@@ -719,8 +719,8 @@ class Interface():
 
 
 
-        featureInformation = GUI_Components.FeatureInformation(mainProgram=self.mainProgram)
-        featureInformation.Initialize(self)
+        self.featureInformation = GUI_Components.FeatureInformation(mainProgram=self.mainProgram)
+        self.featureInformation.Initialize(self)
 
 
 

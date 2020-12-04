@@ -648,6 +648,20 @@ class WorldProperties():
         self.elevation = elevation
         self.slope = slope
 
+    def DetermineWater(self):
+        '''
+        Determines which tiles are covered with water.
+        :return:
+        '''
+        #self.isWater = np.empty((np.size(self.mainProgram.world.f, 0), 0))
+        self.isWater = np.ones((np.size(self.mainProgram.world.f, 0), 1), dtype=bool)
+        for iFace in range(np.size(self.mainProgram.world.f, 0)):
+            if self.mainProgram.world.faceRadius[iFace] > self.mainProgram.waterWorld.faceRadius[iFace]:
+                self.isWater[iFace] = False
+            else:
+                self.isWater[iFace] = True
+
+
 class VisualWorld():
     def __init__(self, mainProgram, vertices, faces, faceNormals):
         self.mainProgram = mainProgram

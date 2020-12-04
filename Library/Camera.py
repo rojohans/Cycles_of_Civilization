@@ -211,6 +211,7 @@ class CameraClass():
                 #self.mainProgram.tileList[tileToRemove].features[0].node.removeNode()
         return task.cont
 
+import Library.Graphics as Graphics
 class GlobeCamera():
     def __init__(self, mainProgram, zoomRange = [1.1, 2], zoomSpeed = 0.05, minRadius = 1, rotationSpeedRange = [np.pi/50, np.pi/10]):
         self.mainProgram = mainProgram
@@ -389,12 +390,12 @@ class GlobeCamera():
             if np.sqrt(self.cameraPosition['x']**2 + self.cameraPosition['y']**2 + self.cameraPosition['z']**2) < self.mainProgram.farDistance:
                 # CLOSE
                 self.mainProgram.planet.node.setTexture(self.mainProgram.closeTexture.stitchedTexture)
-                self.mainProgram.water.setTexture(self.mainProgram.closeTexture.stitchedTexture)
+                self.mainProgram.water.node.setTexture(self.mainProgram.closeTexture.stitchedTexture)
                 self.mainProgram.featureRoot.show()
             else:
                 # FAR
                 self.mainProgram.planet.node.setTexture(self.mainProgram.farTexture.stitchedTexture)
-                self.mainProgram.water.setTexture(self.mainProgram.farTexture.stitchedTexture)
+                self.mainProgram.water.node.setTexture(self.mainProgram.farTexture.stitchedTexture)
                 self.mainProgram.featureRoot.hide()
 
         self.worldNodeUpdateTimer += dt
@@ -421,21 +422,11 @@ class GlobeCamera():
         '''
 
         iTile = self.mainProgram.tilePicker()
-
-        planetColor = p3d.GeomVertexWriter(self.mainProgram.planet.vertexData, 'color')
-        waterColor = p3d.GeomVertexWriter(self.mainProgram.water_vertex_data, 'color')
-
         if iTile != None:
-            i = 0
-            while not planetColor.isAtEnd():
-                #if i < 3 * 5000:
-                if i >= 3*iTile and i <= 3*iTile+2:
-                    planetColor.setData4(1, 0, 0, 1)
-                    waterColor.setData4(1, 0, 0, 1)
-                else:
-                    planetColor.setData4(1, 1, 1, 1)
-                    waterColor.setData4(1, 1, 1, 1)
-                i += 1
+            Graphics.WorldMesh.Highlight(iTile, self.mainProgram.planet, self.mainProgram.water)
+
+            self.mainProgram.interface.featureInformation.VisualizeBuildingLinks(0)
+
             self.mainProgram.selectedTile = iTile
 
             self.mainProgram.interface.frames['tileInformation'].node.show()
@@ -471,8 +462,6 @@ class GlobeCamera():
                 self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
                 self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
 
-
-
             self.mainProgram.interface.labels['tileInformation'].node.setText(tileInformationText)
 
         print('Tile clicked : ', iTile)
@@ -483,12 +472,8 @@ class GlobeCamera():
         :return:
         '''
         if self.mainProgram.selectedTile != None:
-            planetColor = p3d.GeomVertexWriter(self.mainProgram.planet.vertexData, 'color')
-            waterColor = p3d.GeomVertexWriter(self.mainProgram.water_vertex_data, 'color')
-            while not planetColor.isAtEnd():
-                planetColor.setData4(1, 1, 1, 1)
-                waterColor.setData4(1, 1, 1, 1)
-            self.mainProgram.selectedTile = None
+            Graphics.WorldMesh.Highlight([], self.mainProgram.planet, self.mainProgram.water)
+
 
             self.mainProgram.interface.frames['tileInformation'].node.hide()
             self.mainProgram.interface.frames['tileAction'].node.hide()
@@ -500,4 +485,8 @@ class GlobeCamera():
             self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
             self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
             self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
+
+            self.mainProgram.interface.featureInformation.VisualizeBuildingLinks(0)
+
+            self.mainProgram.selectedTile = None
 

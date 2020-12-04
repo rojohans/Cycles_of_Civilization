@@ -31,6 +31,10 @@ class Building():
 
         self.linkNode = None # Used for visualizing the links.
 
+        # Used for range dependent destination links.
+        self.tilesInRange = None
+        self.came_from = None
+        self.cost_so_far = None
 
     def ResetDestinations(self, resource):
         # Links should be removed from destinations

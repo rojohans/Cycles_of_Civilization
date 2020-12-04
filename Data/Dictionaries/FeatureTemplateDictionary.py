@@ -136,6 +136,7 @@ class GlobeFeatureProperties():
 
         self.buildingTemplate  = buildingTemplate
 
+
         self.numberOfComponents = len(models)
     def NormalizeWeights(self, weights):
         weightsSummed = 0

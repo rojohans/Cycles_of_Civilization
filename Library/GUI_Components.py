@@ -43,17 +43,30 @@ class FeatureInformation():
     def VisualizeBuildingRange(self, status):
         print('building range should be visualized')
 
-    def VisualizeBuildingLinks(self, status):
-        building = self.mainProgram.buildingList[self.mainProgram.selectedTile]
         if status == 1:
+            building = self.mainProgram.buildingList[self.mainProgram.selectedTile]
+            if building.tilesInRange == None:
+                # The tiles within range are calculated.
+                building.tilesInRange, building.came_from, building.cost_so_far = self.mainProgram.movementGraph.AStar(startNode=building.iTile, maximumCost=self.mainProgram.settings.defaultMovementRange)
+            Graphics.WorldMesh.Highlight(building.tilesInRange, self.mainProgram.planet, self.mainProgram.water)
+
+        else:
+            Graphics.WorldMesh.Highlight([], self.mainProgram.planet, self.mainProgram.water)
+
+    def VisualizeBuildingLinks(self, status):
+        '''
+        Will visualize lines between this building and all it's destination buildings.
+        :param status:
+        :return:
+        '''
+        if status == 1:
+            building = self.mainProgram.buildingList[self.mainProgram.selectedTile]
             print('building links should be visualized')
 
             if building.linkNode != None:
                 building.linkNode.show()
             else:
                 # Create line graphics object.
-                #pointIndices = [[[self.mainProgram.selectedTile, destination.iTile] for destination in building.destinations[resource]] for resource in building.outputBuffert.type]
-
                 pointIndices = [self.mainProgram.selectedTile]
                 lines = []
                 i = 0
@@ -64,15 +77,17 @@ class FeatureInformation():
                         lines.append([0, i])
 
                 pointCoordinates = Graphics.LineSegments.IndicesToCoordinates(indices=pointIndices, mainProgram=self.mainProgram)
-                print(pointIndices)
-                print(lines)
-                print(pointCoordinates)
 
                 building.linkNode = Graphics.LineSegments.LineSegments(coordinates=pointCoordinates, lineIndices=lines, coordinateMultiplier=1.01)
                 building.linkNode.show()
         else:
-            if building.linkNode != None:
-                building.linkNode.hide()
+            if self.mainProgram.selectedTile != None:
+                building = self.mainProgram.buildingList[self.mainProgram.selectedTile]
+                if building != None:
+                    if building.linkNode != None:
+                        building.linkNode.hide()
+            self.mainProgram.interface.buttons['buildingLinks'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['buildingLinks'].node.setIndicatorValue()
 
 
 

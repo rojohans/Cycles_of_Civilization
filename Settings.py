@@ -142,6 +142,11 @@ class GlobeSettings:
 
         self.transportLinkUpdateInterval = 10
 
+
+        self.defaultMovementRange = 50 # The movement range of a building by default.
+        self.defaultMovementCost =  10 # The movement cost of normal terrain without features.
+
+
         # =============================================================================================================
         # ==================================================== GUI ====================================================
         # =============================================================================================================
