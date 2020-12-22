@@ -357,7 +357,38 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=5,
     orientationMode = 'random',
         GUILabel = 'JUNGLE',
-    textureKey = 'forest')
+    textureKey = 'forest',
+    movementCost=15)
+    featureTemplateDictionary['sap_pine_forest'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/Sap_pine/sap_pine_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.15, 0.17]],
+        triangleDivisions=2,
+        nObjects=5,
+    orientationMode = 'random',
+        GUILabel = 'SAP PINE FOREST',
+    textureKey = 'forest',
+    movementCost=15)
+    featureTemplateDictionary['astral_acacia_forest'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/astral_acacia_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.05, 0.06]],
+        triangleDivisions=2,
+        nObjects=5,
+    orientationMode = 'random',
+        GUILabel = 'ASTRAL ACACIA FOREST',
+    textureKey = 'forest',
+    movementCost=15)
+    featureTemplateDictionary['acacia_forest'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/Acacia/acacia_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.05, 0.06]],
+        triangleDivisions=2,
+        nObjects=5,
+    orientationMode = 'random',
+        GUILabel = 'ACACIA FOREST',
+    textureKey = 'forest',
+    movementCost=15)
 
     return featureTemplateDictionary
 

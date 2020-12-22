@@ -18,6 +18,12 @@ class MyGame(ShowBase):
         self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'palm_tree_2_8', 'palm_2')
         self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'kapok_tree_4_1', 'kapok_2')
         self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'jungle_undergrowth_1_4', 'fern_1')
+        #self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'sap_pine_1_15', 'sap_pine_1')
+        self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/Sap_pine/', 'sap_pine_1_2', 'sap_pine_1')
+        self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/', 'Astral_Acacia_1_5', 'astral_acacia_1')
+        self.dae2Bam(Root_Directory.Path(style = 'unix') + '/Data/Models/Acacia/', 'Acacia_1', 'acacia_1')
+
+        #self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'sap_pine_1_1', 'sap_pine_1', inputEnding='.bam')
 
         #self.dae2Bam('wheat_2_2', 'wheat_1')
 
@@ -40,14 +46,14 @@ class MyGame(ShowBase):
 
         quit()
 
-    def dae2Bam(self, directoryPath, inputName, outputName = None):
+    def dae2Bam(self, directoryPath, inputName, outputName = None, inputEnding = '.dae'):
         inputName = directoryPath + inputName
         if outputName == None:
             outputName = inputName
         else:
             outputName = directoryPath + outputName
 
-        model = loader.loadModel(modelPath = inputName + '.dae')
+        model = loader.loadModel(modelPath = inputName + inputEnding)
 
         vertex_format = p3d.GeomVertexFormat.getV3n3t2()
 

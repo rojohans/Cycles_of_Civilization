@@ -462,6 +462,8 @@ class GlobeCamera():
                 self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
                 self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
 
+            self.mainProgram.interface.buttons['buildingRange'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['buildingRange'].node.setIndicatorValue()
             self.mainProgram.interface.labels['tileInformation'].node.setText(tileInformationText)
 
         print('Tile clicked : ', iTile)
@@ -485,6 +487,8 @@ class GlobeCamera():
             self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
             self.mainProgram.interface.buttons['infoFeature'].node["indicatorValue"] = False
             self.mainProgram.interface.buttons['infoFeature'].node.setIndicatorValue()
+            self.mainProgram.interface.buttons['buildingRange'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['buildingRange'].node.setIndicatorValue()
 
             self.mainProgram.interface.featureInformation.VisualizeBuildingLinks(0)
 

@@ -1,6 +1,7 @@
 import panda3d.core as p3d
 import numpy as np
 
+import Library.Graphics as Graphics
 import Library.World as World
 
 class SingleFeature():
@@ -54,6 +55,7 @@ class TileFeature():
                 modelNodes[-1].setScale(scale, scale, scale)
                 modelNodes[-1].setTransparency(p3d.TransparencyAttrib.MAlpha)
             self.node.flattenStrong()
+
         self.parentedNode = parent.node.attachNewNode('featureNode')
 
     def AttachToParent(self):
@@ -87,6 +89,7 @@ class FeatureCluster():
 
         self.childrenTiles = []
 
+
 class FeatureInteractivity():
     def __init__(self, mainProgram):
         self.mainProgram = mainProgram
@@ -112,6 +115,11 @@ class FeatureInteractivity():
                 for feature in self.mainProgram.featureList[self.mainProgram.selectedTile]:
                     if feature.template.textureKey != None:
                         self.mainProgram.planet.textureUpdatedStatus = False
+
+                    # The movement graph should be updated.
+                    if feature.template.movementCost != None:
+                        self.mainProgram.movementGraph.upToDate = False
+
                     feature.Delete()
                 self.mainProgram.featureList[self.mainProgram.selectedTile] = []
 
@@ -172,10 +180,14 @@ class FeatureInteractivity():
             newBuilding = self.mainProgram.featureTemplate[featureKey].buildingTemplate(self.mainProgram.selectedTile)
             self.mainProgram.buildingList[self.mainProgram.selectedTile] = newBuilding
             for resource in newBuilding.inputBuffert.type:
-                self.mainProgram.transport.buildingsInput[resource].append(newBuilding)
+                self.mainProgram.transport.buildingsInput[resource][self.mainProgram.selectedTile]=newBuilding
 
         if self.mainProgram.featureTemplate[featureKey].textureKey != None:
             self.mainProgram.planet.textureUpdatedStatus = False
+
+        # The movement graph should be updated.
+        if self.mainProgram.featureTemplate[featureKey].movementCost != None:
+            self.mainProgram.movementGraph.upToDate = False
 
         cluster.node.removeNode()
         cluster.node = cluster.parent.attachNewNode("forestRootNode")
@@ -190,6 +202,13 @@ class FeatureInteractivity():
 
         self.mainProgram.interface.buttons['addFeature'].node["indicatorValue"] = False
         self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
+
+        self.mainProgram.interface.buttons['buildingLinks'].node["indicatorValue"] = False
+        self.mainProgram.interface.buttons['buildingLinks'].node.setIndicatorValue()
+        self.mainProgram.interface.buttons['buildingRange'].node["indicatorValue"] = False
+        self.mainProgram.interface.buttons['buildingRange'].node.setIndicatorValue()
+        self.mainProgram.interface.featureInformation.VisualizeBuildingLinks(0)
+        Graphics.WorldMesh.Highlight([self.mainProgram.selectedTile], self.mainProgram.planet, self.mainProgram.water)
 
         if status == 1:
 

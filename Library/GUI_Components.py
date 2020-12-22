@@ -41,8 +41,6 @@ class FeatureInformation():
                                                           scale=0.07)
 
     def VisualizeBuildingRange(self, status):
-        print('building range should be visualized')
-
         if status == 1:
             building = self.mainProgram.buildingList[self.mainProgram.selectedTile]
             if building.tilesInRange == None:
@@ -52,6 +50,8 @@ class FeatureInformation():
 
         else:
             Graphics.WorldMesh.Highlight([], self.mainProgram.planet, self.mainProgram.water)
+            self.mainProgram.interface.buttons['buildingRange'].node["indicatorValue"] = False
+            self.mainProgram.interface.buttons['buildingRange'].node.setIndicatorValue()
 
     def VisualizeBuildingLinks(self, status):
         '''
@@ -61,7 +61,6 @@ class FeatureInformation():
         '''
         if status == 1:
             building = self.mainProgram.buildingList[self.mainProgram.selectedTile]
-            print('building links should be visualized')
 
             if building.linkNode != None:
                 building.linkNode.show()

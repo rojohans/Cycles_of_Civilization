@@ -1,3 +1,5 @@
+import numpy as np
+
 
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 
@@ -36,6 +38,9 @@ class Building():
         self.came_from = None
         self.cost_so_far = None
 
+        # This building doesn't affect its tiles movement cost.
+        self.movementCost = None
+
     def ResetDestinations(self, resource):
         # Links should be removed from destinations
 
@@ -49,6 +54,14 @@ class Building():
         for inputResource in self.inputBuffert.type:
             for link in self.inputLinks[inputResource]:
                 link.ResetDestinations(inputResource)
+                if link.linkNode != None:
+                    # When the links are recomputed the link node should be removed.
+                    link.linkNode.removeNode()
+                    link.linkNode = None
+        if self.linkNode != None:
+            # When the links are recomputed the link node should be removed.
+            self.linkNode.removeNode()
+            self.linkNode = None
 
     def __call__(self, *args, **kwargs):
         pass
@@ -62,20 +75,25 @@ class Building():
 
         return text
 
-    def GetDetailedText(self):
+    def GetInputOutputText(self):
         text = ''
         text += 'INPUT\n'
         for i, resource in enumerate(self.inputBuffert.type):
-            text += '   ' + resource + ' : ' + "{:.0f}".format(self.inputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.inputBuffert.limit[resource]) + '\n'
+            text += '   ' + resource + ' : ' + "{:.0f}".format(self.inputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.inputBuffert.limit[resource]) + '  ' + "{:.0f}".format(100*self.inputBuffert.smoothedSatisfaction[resource]) + '%' + '\n'
         text += 'OUTPUT\n'
         for i, resource in enumerate(self.outputBuffert.type):
             text += '   ' + resource + ' : ' + "{:.0f}".format(self.outputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.outputBuffert.limit[resource]) + '\n'
         return text
 
+    def GetDetailedText(self):
+        text = self.GetInputOutputText()
+        return text
+
 class ProductionBuilding(Building):
-    def __init__(self, iTile, inputBuffert, outputBuffert, laborLimit = 50):
+    def __init__(self, iTile, inputBuffert, outputBuffert, laborLimit = 50, recipy = None):
         super().__init__(iTile, inputBuffert, outputBuffert)
         self.laborLimit = laborLimit # The max amount of labor that can be used each day.
+        self.recipy = recipy
 
     def __call__(self, *args, **kwargs):
         for amount in self.outputBuffert.amount:
@@ -87,6 +105,7 @@ class LivingBuilding(Building):
         self.population = population
         self.populationInHouse = populationInHouse
         self.maxPopulation = maxPopulation
+        self.unusedLabor = 0
 
     def __call__(self, *args, **kwargs):
         pass
@@ -101,13 +120,7 @@ class LivingBuilding(Building):
         return text
 
     def GetDetailedText(self):
-        text = ''
-        text += 'INPUT\n'
-        for i, resource in enumerate(self.inputBuffert.type):
-            text += '   ' + resource + ' : ' + "{:.0f}".format(self.inputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.inputBuffert.limit[resource]) + '\n'
-        text += 'OUTPUT\n'
-        for i, resource in enumerate(self.outputBuffert.type):
-            text += '   ' + resource + ' : ' + "{:.0f}".format(self.outputBuffert.amount[resource]) + '/' + "{:.0f}".format(self.outputBuffert.limit[resource]) + '\n'
+        text = self.GetInputOutputText()
         text += 'POPULATION\n'
         text += '   ' + "{:.0f}".format(self.population) + '/' + "{:.0f}".format(self.maxPopulation) + '\n'
         return text
@@ -115,13 +128,19 @@ class LivingBuilding(Building):
 
 
 class ResourceBuffert():
-    def __init__(self, types, amounts, limits):
+    def __init__(self, types, amounts, limits, satisfaction = None):
         self.type = types
         self.amount = {}
         self.limit = {}
+        if satisfaction != None:
+            self.satisfaction = {}
+            self.smoothedSatisfaction = {}
         for i, type in enumerate(types):
             self.amount[type] = amounts[i]
             self.limit[type] = limits[i]
+            if satisfaction != None:
+                self.satisfaction[type] = satisfaction[i]
+                self.smoothedSatisfaction[type] = satisfaction[i]
 
     def GetSatisfaction(self):
         '''
@@ -136,5 +155,47 @@ class ResourceBuffert():
         for key in self.limit:
             sumLimit += self.limit[key]
         return (sumAmount, sumLimit)
+
+class Recipy():
+    def __init__(self, building, laborLimit, input, output):
+        '''
+        All recipies are "manned"; they require labor as input. This could be made more general if need be.
+        '''
+        self.building = building
+        self.laborLimit = laborLimit
+        self.input = input
+        self.output = output
+
+    def __call__(self, *args, **kwargs):
+        laborOutputSpace = self.building.outputBuffert.limit['spent_labor'] - self.building.outputBuffert.amount['spent_labor']
+        usedLabor = np.min((self.building.inputBuffert.amount['labor'], self.laborLimit, laborOutputSpace))
+        laborEfficiency = usedLabor / self.laborLimit
+        self.building.inputBuffert.satisfaction['labor'] = laborEfficiency
+        self.building.inputBuffert.smoothedSatisfaction['labor'] = (self.building.inputBuffert.smoothedSatisfaction[
+                                                               'labor'] + laborEfficiency) / 2
+        self.building.inputBuffert.amount['labor'] -= usedLabor
+        self.building.outputBuffert.amount['spent_labor'] += usedLabor
+
+        if usedLabor > 0:
+            resourceEfficiency = []
+            for inputResource in self.input:
+                resourceEfficiency.append(np.min((1, self.building.inputBuffert.amount[inputResource]/self.input[inputResource])))
+                self.building.inputBuffert.satisfaction[inputResource] = resourceEfficiency[-1]
+                self.building.inputBuffert.smoothedSatisfaction[inputResource] = (self.building.inputBuffert.smoothedSatisfaction[
+                                                                       inputResource] + resourceEfficiency[-1]) / 2
+            resourceEfficiency.append(laborEfficiency)
+            totalEfficiency = np.min(resourceEfficiency)
+
+            for inputResource in self.input:
+                self.building.inputBuffert.amount[inputResource] -= self.input[inputResource]*totalEfficiency
+
+            for outputResource in self.output:
+                self.building.outputBuffert.amount[outputResource] += totalEfficiency*self.output[outputResource]
+                self.building.outputBuffert.amount[outputResource] = np.min((self.building.outputBuffert.amount[outputResource], self.building.outputBuffert.limit[outputResource]))
+
+
+
+
+
 
 

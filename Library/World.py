@@ -547,7 +547,7 @@ class SphericalWorld():
         return vertices
 
     @staticmethod
-    def PerlinNoise(vertices, octaves = 10, persistence = 0.5, lacunarity = 2.0, seed = None):
+    def PerlinNoise(vertices, octaves = 10, persistence = 0.5, lacunarity = 2.0, seed = None, scale = 1.0):
         '''
         :param vertices:
         :param octaves: Determines the maximum resolution
@@ -569,6 +569,32 @@ class SphericalWorld():
                                             persistence=persistence,
                                             lacunarity=lacunarity,
                                             base=seed)
+        noiseArray -= np.min(noiseArray)
+        noiseArray /= np.max(noiseArray)
+        return noiseArray
+
+    @staticmethod
+    def WarpedPerlinNoise(vertices, xWarp, yWarp, zWarp, octaves = 10, persistence = 0.5, lacunarity = 2.0, seed = None, scale = 1.0):
+        '''
+        :param vertices:
+        :param octaves: Determines the maximum resolution
+        :param persistence: Determines the amplitude impact of each layer
+        :param lacunarity:
+        :return:
+        '''
+        if seed == None:
+            seed = np.random.randint(0, 100)
+
+        noiseArray = np.empty((np.size(vertices, 0), 1))
+
+        for i, vertex in enumerate(vertices):
+            noiseArray[i, 0] = noise.pnoise3((xWarp[i] + vertex[0]) / scale,
+                                             (yWarp[i] + vertex[1]) / scale,
+                                             (zWarp[i] + vertex[2]) / scale,
+                                             octaves=octaves,
+                                             persistence=persistence,
+                                             lacunarity=lacunarity,
+                                             base=seed)
         noiseArray -= np.min(noiseArray)
         noiseArray /= np.max(noiseArray)
         return noiseArray
