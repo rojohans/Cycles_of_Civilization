@@ -143,7 +143,7 @@ class GlobeSettings:
         self.transportLinkUpdateInterval = 10
 
 
-        self.defaultMovementRange = 50 # The movement range of a building by default.
+        self.defaultMovementRange = 60 # The movement range of a building by default.
         self.defaultMovementCost =  10 # The movement cost of normal terrain without features.
 
 
@@ -169,6 +169,6 @@ class GlobeSettings:
 
         self.addFeatureFramePosition = (0, 0, 0)
         self.addFeatureFrameSize = (-1, -0.6, -0.4, 0.7)
-        self.addFeatureFrameCanvasSize = (0, 0.4, -1.6, 0)
+        self.addFeatureFrameCanvasSize = (0, 0.4, -3.6, 0)
         self.addFeatureFrameChildrenGap = 0.1
 
