@@ -45,7 +45,9 @@ class Game(ShowBase):
                                      'tundra': image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra.png"),
                                      'snow': image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png"),
                                              'farm_field': image.imread(Root_Directory.Path() + "/Data/Tile_Data/farm_field_terrain_2.png"),
-                                             'road': image.imread(Root_Directory.Path() + "/Data/Tile_Data/road_terrain.png")})
+                                             'road': image.imread(Root_Directory.Path() + "/Data/Tile_Data/road_terrain.png"),
+                                             'stone_road': image.imread(Root_Directory.Path() + "/Data/Tile_Data/cobble_stone_road_terrain.png"),
+                                             'tuber_farm_field': image.imread(Root_Directory.Path() + "/Data/Tile_Data/farm_field_terrain_3.png")})
         self.farTexture = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_2.png"),
                                      'shallow_water': image.imread(Root_Directory.Path() + "/Data/Tile_Data/water_shallow.png"),
                                      'grass': image.imread(Root_Directory.Path() + "/Data/Tile_Data/soil_fertility_2.png"),
@@ -54,7 +56,9 @@ class Game(ShowBase):
                                      'tundra': image.imread(Root_Directory.Path() + "/Data/Tile_Data/tundra.png"),
                                      'snow': image.imread(Root_Directory.Path() + "/Data/Tile_Data/snow_terrain.png"),
                                            'farm_field': image.imread(Root_Directory.Path() + "/Data/Tile_Data/farm_field_terrain_2.png"),
-                                           'road': image.imread(Root_Directory.Path() + "/Data/Tile_Data/road_terrain.png")})
+                                           'road': image.imread(Root_Directory.Path() + "/Data/Tile_Data/road_terrain.png"),
+                                           'stone_road': image.imread(Root_Directory.Path() + "/Data/Tile_Data/cobble_stone_road_terrain.png"),
+                                           'tuber_farm_field': image.imread(Root_Directory.Path() + "/Data/Tile_Data/farm_field_terrain_3.png")})
         #self.lightObject = Light.LightClass(shadowsEnabled=False)
         self.sunLight = Light.Sun(shadowsEnabled=False)
         self.cameraLight = Light.CameraLight()
@@ -149,9 +153,9 @@ class Game(ShowBase):
         self.buildingList = [None for i in range(self.world.nTriangles)]
 
         import Library.Transport as Transport
-        self.transport = Transport.Transport(mainProgram=self, resources=['labor', 'spent_labor', 'grain', 'wood'])
+        self.transport = Transport.Transport(mainProgram=self, resources=['labor', 'spent_labor', 'grain', 'wood', 'tuber', 'flour', 'bread', 'stone', 'iron ore', 'coal', 'steel', 'tools'])
         self.movementGraph = Transport.MovementGraph(mainProgram=self)
-        self.movementGraph.InitializeStandard()
+        self.movementGraph.RecalculateGraph()
 
         tic = time.time()
         self.InitializeForest(farDistance = self.farDistance)
@@ -186,23 +190,55 @@ class Game(ShowBase):
 
     def Turn(self, status):
         if status == 1:
-            tic = time.time()
+            ticTurn = time.time()
             self.interface.buttons['end_turn'].node["indicatorValue"] = 1
             self.interface.buttons['end_turn'].node.setIndicatorValue()
             base.graphicsEngine.renderFrame()
             base.graphicsEngine.renderFrame()
 
+            if self.movementGraph.upToDate == False:
+                tic = time.time()
+                self.movementGraph.RecalculateGraph()
+                for building in self.buildingList:
+                    if building != None:
+                        building.tilesInRange = None
+                toc = time.time()
+                print('Movement graph calculation time : ', toc - tic)
 
 
 
+            tic = time.time()
             # The buildings process their input into output. Households grow/starve.
             for building in self.buildingList:
                 if building != None:
                     building()
+            toc = time.time()
+            print('Building operation time : ', toc-tic)
 
+            tic = time.time()
             # Resources are moved.
+
+            profile = False
+            if profile:
+                import cProfile, pstats, io
+                from pstats import SortKey
+                pr = cProfile.Profile()
+                pr.enable()
+
             self.transport()
 
+            if profile:
+                pr.disable()
+                s = io.StringIO()
+                sortby = SortKey.CUMULATIVE
+                ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+                ps.print_stats()
+                print(s.getvalue())
+                #quit()
+
+
+            toc = time.time()
+            print('Transport time : ', toc - tic)
 
 
 
@@ -241,8 +277,8 @@ class Game(ShowBase):
 
 
             base.graphicsEngine.renderFrame()
-            toc = time.time()
-            print('TURN TIME : ', toc-tic)
+            tocTurn = time.time()
+            print('TURN TIME : ', tocTurn-ticTurn)
             print(' ')
 
 
@@ -293,37 +329,58 @@ class Game(ShowBase):
 
         for iFace in range(self.world.nTriangles):
 
-            # Initializes some basic buildings (towns and farms).
-            '''
-            if np.random.rand() < 0.1:
-                theta = 180 * np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(
-                    self.world.faceCoordinates[iFace, 0] ** 2 + self.world.faceCoordinates[iFace, 1] ** 2)) / np.pi
-                phi = 180 * np.arctan(self.world.faceCoordinates[iFace, 1] / self.world.faceCoordinates[iFace, 0]) / np.pi
-                if self.world.faceCoordinates[iFace, 0] > 0:
-                    phi += 180
 
-                iNode = self.clusterBelonging[iFace]
 
-                if np.random.rand()<0.5:
-                    featureKey = 'farm'
-                else:
-                    featureKey = 'town'
 
-                self.featureList[iFace] \
-                    .append(Feature.TileFeature(parent=self.featureNodeClusters[iNode],
-                                        backupRoot=self.featureBackupRoot,
-                                        positionOffset=-self.featureNodeClusters[iNode].position,
-                                        rotation=[90 + phi, theta, 0],
-                                        triangleCorners=self.world.v[
-                                            self.world.f[iFace, 1:]],
-                                        featureTemplate=self.featureTemplate[featureKey],
-                                        iTile=iFace))
-                if self.featureTemplate[featureKey].buildingTemplate != None:
-                    newBuilding = self.featureTemplate[featureKey].buildingTemplate()
-                    self.buildingList[iFace] = newBuilding
-                    for resource in newBuilding.inputBuffert.type:
-                        self.transport.buildingsInput[resource].append(newBuilding)
-            '''
+
+            if False:
+                # Initializes some basic buildings (towns and farms).
+                if np.random.rand() < 0.9 and self.worldProperties.isWater[iFace] == False:
+                    theta = 180 * np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(
+                        self.world.faceCoordinates[iFace, 0] ** 2 + self.world.faceCoordinates[iFace, 1] ** 2)) / np.pi
+                    phi = 180 * np.arctan(self.world.faceCoordinates[iFace, 1] / self.world.faceCoordinates[iFace, 0]) / np.pi
+                    if self.world.faceCoordinates[iFace, 0] > 0:
+                        phi += 180
+
+                    iNode = self.clusterBelonging[iFace]
+
+                    r = np.random.rand()
+                    if r < 0.2:
+                        featureKey = 'town'
+                    elif r < 0.3:
+                        featureKey = 'farm'
+                    elif r < 0.4:
+                        featureKey = 'bakery'
+                    elif r < 0.5:
+                        featureKey = 'windmill'
+                    elif r < 0.6:
+                        featureKey = 'lumbermill'
+                    elif r < 0.7:
+                        featureKey = 'storage_hall'
+                    else:
+                        featureKey = 'stone_road'
+
+
+                    self.featureList[iFace] \
+                        .append(Feature.TileFeature(parent=self.featureNodeClusters[iNode],
+                                            backupRoot=self.featureBackupRoot,
+                                            positionOffset=-self.featureNodeClusters[iNode].position,
+                                            rotation=[90 + phi, theta, 0],
+                                            triangleCorners=self.world.v[
+                                                self.world.f[iFace, 1:]],
+                                            featureTemplate=self.featureTemplate[featureKey],
+                                            iTile=iFace))
+
+                    if self.featureTemplate[featureKey].buildingTemplate != None:
+                        newBuilding = self.featureTemplate[featureKey].buildingTemplate(iFace)
+                        self.buildingList[iFace] = newBuilding
+                        for resource in newBuilding.inputBuffert.type:
+                            self.transport.buildingsInput[resource][iFace] = newBuilding
+                self.movementGraph.upToDate = False
+
+
+
+
 
             if isForestList[iFace]:
                 theta = 180*np.arctan(self.world.faceCoordinates[iFace, 2] / np.sqrt(self.world.faceCoordinates[iFace, 0]**2 + self.world.faceCoordinates[iFace, 1]**2))/np.pi

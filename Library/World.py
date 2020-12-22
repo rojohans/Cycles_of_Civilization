@@ -432,8 +432,8 @@ class SphericalWorld():
 
         #print(np.shape(self.v))
         #print(np.shape(n))
-        n *= 10
-        n += 10
+        n *= 100
+        n += 100
         self.v[:, 0] *= n[:, 0]
         self.v[:, 1] *= n[:, 0]
         self.v[:, 2] *= n[:, 0]

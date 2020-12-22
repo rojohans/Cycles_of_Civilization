@@ -30,6 +30,11 @@ class MyGame(ShowBase):
         self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'lumbermill_1_1', 'lumbermill_1')
         self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'windmill_1_3', 'windmill_1')
         self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'bakery_1_1', 'bakery_1')
+        self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'quarry_1_1', 'quarry_1')
+        self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'mine_1_1', 'mine_1')
+        self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'foundry_1_1', 'foundry_1')
+        self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'blacksmith_1_1', 'blacksmith_1')
+        self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'granary_1_1', 'granary_1')
 
         self.dae2Bam(Root_Directory.Path(style='unix') + '/Data/Models/', 'boar_1_2', 'boar_1')
 

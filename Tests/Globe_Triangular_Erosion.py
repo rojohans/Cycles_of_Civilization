@@ -2,151 +2,11 @@ import pyvista as pv
 import numpy as np
 import pyopencl as cl
 import time
+import pickle
+from scipy.spatial import cKDTree
 
 import Library.World as World
-
-
-animate = False
-animateTopography = True
-animationUpdateInterval = 1
-
-suspendedSedimentMinimumVisualDepth = 0.1
-waterMinimumVisualDepth = 0.1
-waterVisibilityDepth = 1
-
-world = World.SphericalWorld(nDivisions=100)
-
-print('Number of triangles: ', np.size(world.f, 0))
-
-if animateTopography == False:
-    world.v[:, 0] /= world.vertexRadius
-    world.v[:, 1] /= world.vertexRadius
-    world.v[:, 2] /= world.vertexRadius
-
-# Used for parallell assignment
-faceConnectionsIndices = np.empty_like(world.faceConnections)
-for iFace in range(np.size(world.faceConnections, 0)):
-    for iConnection in range(3):
-
-        connection = world.faceConnections[iFace, iConnection]
-        for i in range(3):
-            if iFace == world.faceConnections[connection, i]:
-                faceConnectionsIndices[iFace, iConnection] = i
-                break
-
-nIterations = 1500
-stopRainIteration = 1000#1000
-maxRainAmount = 0.03#0.03
-evaporationRate = 0.05#0.04
-
-#deltaT = np.array(0.05)
-deltaT = np.array(0.03)
-deltaT = deltaT.astype(np.float32)
-flowParameter = np.array(100)
-flowParameter = flowParameter.astype(np.float32)
-frictionParameter = np.array(0.98)
-frictionParameter = frictionParameter.astype(np.float32)
-
-sedimentFrictionParameter = np.array(0.98)
-sedimentFrictionParameter = sedimentFrictionParameter.astype(np.float32)
-
-minRadius = np.array(np.min(world.faceRadius))
-minRadius = minRadius.astype(np.float32)
-
-triangleLength = np.array(4*np.sqrt(np.pi)/np.sqrt(3*np.sqrt(3)*np.size(world.f, 0)))
-triangleLength = triangleLength.astype(np.float32)
-
-sqrt3_2 = np.array(np.sqrt(3) / 2)
-sqrt3_2 = sqrt3_2.astype(np.float32)
-
-carryCapacityParameter = np.array( 0.1 )
-carryCapacityParameter = carryCapacityParameter.astype(np.float32)
-
-erosionRate = np.array( 0.05 )
-erosionRate = erosionRate.astype(np.float32)
-depositionRate = np.array( 0.1 )
-depositionRate = depositionRate.astype(np.float32)
-
-sedimentFlowParameter = np.array(100)
-sedimentFlowParameter = sedimentFlowParameter.astype(np.float32)
-
-slippageParameter = np.array(100.0)#np.array(10.0)
-slippageParameter = slippageParameter.astype(np.float32)
-talusAngle = np.array(30*np.pi/180)
-talusAngle = talusAngle.astype(np.float32)
-
-jTarget = faceConnectionsIndices[:, 0].astype(np.int)
-kTarget = faceConnectionsIndices[:, 1].astype(np.int)
-lTarget = faceConnectionsIndices[:, 2].astype(np.int)
-
-j = world.faceConnections[:, 0]
-k = world.faceConnections[:, 1]
-l = world.faceConnections[:, 2]
-j = j.astype(np.int)
-k = k.astype(np.int)
-l = l.astype(np.int)
-
-flowj = np.zeros_like(world.faceRadius, dtype=np.float32)
-flowk = np.zeros_like(world.faceRadius, dtype=np.float32)
-flowl = np.zeros_like(world.faceRadius, dtype=np.float32)
-flowUpdatedj = np.zeros_like(world.faceRadius, dtype=np.float32)
-flowUpdatedk = np.zeros_like(world.faceRadius, dtype=np.float32)
-flowUpdatedl = np.zeros_like(world.faceRadius, dtype=np.float32)
-
-sedimentFlowj = np.zeros_like(world.faceRadius, dtype=np.float32)
-sedimentFlowk = np.zeros_like(world.faceRadius, dtype=np.float32)
-sedimentFlowl = np.zeros_like(world.faceRadius, dtype=np.float32)
-
-faceCoordinatesNormalized = world.faceCoordinates.copy()
-faceCoordinatesNormalized[:, 0] /= world.faceRadius
-faceCoordinatesNormalized[:, 1] /= world.faceRadius
-faceCoordinatesNormalized[:, 2] /= world.faceRadius
-
-# Terrain initialization.
-cutOffHeight = 0.5
-seed = np.random.randint(0, 100)
-#terrainHeight = world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
-#terrainHeight = world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
-
-#terrainHeight[terrainHeight < cutOffHeight] = 0
-
-
-#terrainHeight -= cutOffHeight
-#terrainHeight[terrainHeight < 0] = 0
-#terrainHeight[terrainHeight > 0] = 1
-#terrainHeight /= 1-cutOffHeight
-
-#terrainHeight = np.sqrt(terrainHeight)
-
-#terrainHeight *= 5
-#   terrainHeight = 0+10*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.5, seed=seed)
-#terrainHeight = 0+5*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3, seed=seed)**1
-
-terrainHeight = 2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.2, seed=seed)**2+\
-                1*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=1.1)+\
-                1*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4)-0.5))**2
-terrainHeight -= 1.5
-terrainHeight[terrainHeight < 0] = -0.2
-#terrainHeight = -terrainHeight
-#terrainHeight += 1.5
-#terrainHeight[terrainHeight<0] = 0
-
-#terrainHeight = 2*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.6)**2+\
-#                1*world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=1.2)**2
-
-
-
-#terrainHeight = 3.5*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.4, seed=seed)-0.5))**2 +\
-#                1*(1-2*np.abs(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.8, seed=seed)-0.5))
-#terrainHeight *= np.sqrt(world.PerlinNoise(faceCoordinatesNormalized, octaves=10, persistence=0.3))
-#terrainHeight -= cutOffHeight
-#terrainHeight[terrainHeight < 0] = 0
-
-#terrainHeight[terrainHeight > 0] = 1
-#terrainHeight /= 1-cutOffHeight
-
-
-terrainHeight = terrainHeight.astype(np.float32)
+import Root_Directory
 
 #waterHeight = world.faceRadius - np.min(world.faceRadius)
 #waterHeight = waterHeight.astype(np.float32)
@@ -518,9 +378,9 @@ prg = cl.Program(ctx, """
     {
         int i = get_global_id(0);
 
-        if (suspendedSediment[i] < carryCapacity[i]){
-            //Erode
-            float erosionAmount = erosionRate * (carryCapacity[i]-suspendedSediment[i]);
+                if (suspendedSediment[i] < carryCapacity[i]){
+                    //Erode
+                    float erosionAmount = erosionRate * (carryCapacity[i]-suspendedSediment[i]);
 
             float Hj = terrainPrevious[j[i]];
             float Hk = terrainPrevious[k[i]];
@@ -600,17 +460,18 @@ terrainVertices = world.unscaledVertices.copy()
 suspendedSedimentVertices = world.unscaledVertices.copy()
 waterVertices = world.unscaledVertices.copy()
 
-rTerrain = terrainHeight[queryResult]
-r = 10 + np.sum(rTerrain[:, :, 0], axis=1) / 6
-terrainVertices[:, 0] = r * world.unscaledVertices[:, 0]
-terrainVertices[:, 1] = r * world.unscaledVertices[:, 1]
-terrainVertices[:, 2] = r * world.unscaledVertices[:, 2]
 
-rSuspendedSediment = suspendedSediment[queryResult]
-r = 10 + np.sum(rTerrain[:, :, 0], axis=1) / 6 + np.sum(rSuspendedSediment, axis=1) / 6 - suspendedSedimentMinimumVisualDepth
-suspendedSedimentVertices[:, 0] = r * world.unscaledVertices[:, 0]
-suspendedSedimentVertices[:, 1] = r * world.unscaledVertices[:, 1]
-suspendedSedimentVertices[:, 2] = r * world.unscaledVertices[:, 2]
+        rRock = rockHeight[queryResult]
+        r = self.world.minRadius + np.sum(rRock[:, :, 0], axis=1) / 6
+        self.rockVertices[:, 0] = r * self.world.unscaledVertices[:, 0]
+        self.rockVertices[:, 1] = r * self.world.unscaledVertices[:, 1]
+        self.rockVertices[:, 2] = r * self.world.unscaledVertices[:, 2]
+
+        rSediment = sedimentHeight[queryResult]
+        r = self.world.minRadius + np.sum(rRock[:, :, 0], axis=1) / 6 + np.sum(rSediment[:, :, 0], axis=1) / 6 - self.sedimentOffset
+        self.sedimentVertices[:, 0] = r * self.world.unscaledVertices[:, 0]
+        self.sedimentVertices[:, 1] = r * self.world.unscaledVertices[:, 1]
+        self.sedimentVertices[:, 2] = r * self.world.unscaledVertices[:, 2]
 
 rWater = waterHeight[queryResult]
 r = 10 + np.sum(rTerrain[:, :, 0] + rWater, axis=1)/6 + np.sum(rSuspendedSediment, axis=1) / 6 - waterMinimumVisualDepth
@@ -618,23 +479,23 @@ waterVertices[:, 0] = r * world.unscaledVertices[:, 0]
 waterVertices[:, 1] = r * world.unscaledVertices[:, 1]
 waterVertices[:, 2] = r * world.unscaledVertices[:, 2]
 
-terrainMesh = pv.PolyData(terrainVertices, np.hstack(world.f))
-suspendedSedimentMesh = pv.PolyData(suspendedSedimentVertices, np.hstack(world.f))
-waterMesh = pv.PolyData(waterVertices, np.hstack(world.f))
+        self.rockHeight = rock
+        self.sedimentHeight = sediment
+        self.waterHeight = water
 
-plotter = pv.Plotter()
-plotter.add_mesh(terrainMesh, smooth_shading=True, color=(0.3, 0.2, 0.2, 1))
-plotter.add_mesh(suspendedSedimentMesh, smooth_shading=True, color=(0.1, 0.1, 0.2, 1))
+        self.deltaT = np.array(deltaT).astype(np.float32)
+        self.flowParameter = np.array(waterFlowSpeed).astype(np.float32)
+        self.frictionParameter = np.array(waterFlowFriction).astype(np.float32)
 
-#plotter.add_mesh(terrainMesh, scalars=slope, smooth_shading=True, clim = [0, np.pi/2])
-#plotter.add_mesh(waterMesh, smooth_shading=True, color=(0.1, 0.6, 0.9, 1))
-#plotter.add_mesh(waterMesh, scalars = w, smooth_shading=True, colormap=my_colormap)
-plotter.add_mesh(waterMesh, scalars=waterHeight, smooth_shading=True, clim=[0, 10])
+        sedimentFrictionParameter = np.array(0.98)
+        sedimentFrictionParameter = sedimentFrictionParameter.astype(np.float32)
 
-plotter.enable_eye_dome_lighting()
-plotter.show(auto_close=False)
+        self.thermalErosionRate = np.array(thermalErosionRate).astype(np.float32)
+        self.thermalErosionSedimentLimit = np.array(sedimentErosionLimit).astype(np.float32)
+        self.rockToSedimentExpansionFactor = np.array(rockToSedimentExpansion).astype(np.float32)
 
-ticTotalSimulation = time.time()
+        minRadius = np.array(np.min(world.faceRadius))
+        self.minRadius = minRadius.astype(np.float32)
 
 waterHeight *= 0
 
@@ -743,32 +604,52 @@ for i in range(nIterations):
     toc = time.time()
     print('pyopencl velocity calculation time : ', toc-tic)
 
-    tic = time.time()
-    prg.CalculateSlope(queue, heightUpdated.shape, None, triangleLength, minRadius, j_buf, k_buf, l_buf, terrainHeight_buf, suspendedSediment_buf, slope_buf)
-    toc = time.time()
-    print('pyopencl slope calculation time : ', toc-tic)
+            self.kernel.kernels.CalculateWaterFlow(self.kernel.queue, self.heightUpdated.shape, None, self.flowParameter, self.deltaT, self.frictionParameter,
+                                               self.jTarget_buf, self.kTarget_buf, self.lTarget_buf, self.j_buf, self.k_buf, self.l_buf,
+                                               self.waterFlowj_buf, self.waterFlowk_buf, self.waterFlowl_buf, self.waterFlowUpdatedj_buf,
+                                               self.waterFlowUpdatedk_buf, self.waterFlowUpdatedl_buf,
+                                               self.waterFlowInj_buf, self.waterFlowInk_buf, self.waterFlowInl_buf, self.waterFlowOut_buf,
+                                               self.terrainHeight_buf, self.sedimentHeight_buf,
+                                               self.waterHeight_buf)
+
+            self.kernel.kernels.UpdateWaterHeight(self.kernel.queue, self.heightUpdated.shape, None, self.deltaT, self.waterFlowInj_buf, self.waterFlowInk_buf,
+                                              self.waterFlowInl_buf, self.waterFlowOut_buf,
+                                              self.waterHeight_buf, self.heightUpdated_buf)
+
+            self.kernel.kernels.CalculateSlope(self.kernel.queue, self.heightUpdated.shape, None, self.faceVertices_buf, self.landVertices_buf, self.slope_buf)
+
+            self.kernel.kernels.CalculateVelocity(self.kernel.queue, self.heightUpdated.shape, None, self.sqrt3_2, self.waterFlowInj_buf, self.waterFlowInk_buf,
+                                              self.waterFlowInl_buf, self.waterFlowUpdatedj_buf, self.waterFlowUpdatedk_buf,
+                                              self.waterFlowUpdatedl_buf, self.velocity_buf, self.waterHeight_buf, self.heightUpdated_buf)
+
+            self.kernel.kernels.CalculateStreamPower(self.kernel.queue, self.heightUpdated.shape, None, self.streamPowerParameter, self.waterHeight_buf,
+                                                 self.slope_buf, self.velocity_buf, self.streamPower_buf)
+
+            self.kernel.kernels.SedimentFlow(self.kernel.queue, self.heightUpdated.shape, None, self.deltaT, self.sedimentFlowParameter,
+                                         self.sedimentResistivity, self.jTarget_buf, self.kTarget_buf, self.lTarget_buf, self.j_buf, self.k_buf, self.l_buf,
+                                         self.waterFlowUpdatedj_buf, self.waterFlowUpdatedk_buf, self.waterFlowUpdatedl_buf,
+                                         self.sedimentFlowInj_buf, self.sedimentFlowInk_buf, self.sedimentFlowInl_buf, self.sedimentFlowOut_buf,
+                                         self.terrainHeight_buf, self.sedimentHeight_buf, self.slope_buf, self.streamPower_buf)
+            self.kernel.kernels.SedimentSlippageUpdate(self.kernel.queue, self.heightUpdated.shape, None, self.deltaT,
+                                                   self.sedimentFlowInj_buf, self.sedimentFlowInk_buf, self.sedimentFlowInl_buf,
+                                                   self.sedimentFlowOut_buf,
+                                                   self.sedimentHeight_buf)
+
+            self.kernel.kernels.HydrolicErosion(self.kernel.queue, self.heightUpdated.shape, None, self.deltaT, self.thermalErosionSedimentLimit,
+                                            self.rockToSedimentExpansionFactor, self.minErosionRate, self.erosionRate, self.rockResistivity,
+                                            self.j_buf, self.k_buf, self.l_buf,
+                                            self.slope_buf, self.velocity_buf, self.streamPower_buf, self.terrainHeight_buf, self.sedimentHeight_buf,
+                                            self.waterHeight_buf)
 
 
-
-
-    tic = time.time()
-    prg.TerrainSlippageCalculation(queue, heightUpdated.shape, None, deltaT, slippageParameter, talusAngle, triangleLength, minRadius,
-                                   jTarget_buf, kTarget_buf, lTarget_buf, j_buf, k_buf, l_buf,
-                                   sedimentFlowInj_buf, sedimentFlowInk_buf, sedimentFlowInl_buf, sedimentFlowOut_buf, terrainHeight_buf)
-    prg.UpdateSuspendedSedimentHeight(queue, heightUpdated.shape, None, deltaT, sedimentFlowInj_buf, sedimentFlowInk_buf, sedimentFlowInl_buf, sedimentFlowOut_buf,
-                            terrainHeight_buf, heightUpdated_buf)
-    #prg.TerrainSlippageUpdate(queue, heightUpdated.shape, None, deltaT, sedimentFlowInj_buf, sedimentFlowInk_buf, sedimentFlowInl_buf, sedimentFlowOut_buf,
-    #                          terrainHeight_buf)
-    toc = time.time()
-    print('pyopencl terrain slippage time : ', toc - tic)
-
-
-
-
-    tic = time.time()
-    prg.CalculateCarryCapacity(queue, heightUpdated.shape, None, carryCapacityParameter, waterHeight_buf, slope_buf, velocity_buf, carryCapacity_buf)
-    toc = time.time()
-    print('pyopencl carry capacity calculation time : ', toc-tic)
+            self.kernel.kernels.SedimentSlippageCalculation(self.kernel.queue, self.heightUpdated.shape, None, self.deltaT, self.slippageParameter,
+                                                        self.talusAngle, self.triangleLength, self.minRadius,
+                                                        self.jTarget_buf, self.kTarget_buf, self.lTarget_buf, self.j_buf, self.k_buf, self.l_buf,
+                                                        self.sedimentFlowInj_buf, self.sedimentFlowInk_buf, self.sedimentFlowInl_buf, self.sedimentFlowOut_buf,
+                                                        self.terrainHeight_buf, self.sedimentHeight_buf, self.slope_buf)
+            self.kernel.kernels.SedimentSlippageUpdate(self.kernel.queue, self.heightUpdated.shape, None, self.deltaT, self.sedimentFlowInj_buf,
+                                                   self.sedimentFlowInk_buf, self.sedimentFlowInl_buf, self.sedimentFlowOut_buf,
+                                                   self.sedimentHeight_buf)
 
     cl.enqueue_copy(queue, terrainHeight, terrainHeight_buf)
     terrainHeightPrevious = terrainHeight.copy()
@@ -786,17 +667,16 @@ for i in range(nIterations):
     cl.enqueue_copy(queue, velocity, velocity_buf)
     cl.enqueue_copy(queue, slope, slope_buf)
 
-    cl.enqueue_copy(queue, terrainHeight, terrainHeight_buf)
-    cl.enqueue_copy(queue, suspendedSediment, suspendedSediment_buf)
-    cl.enqueue_copy(queue, waterHeight, heightUpdated_buf)
-    cl.enqueue_copy(queue, flowj, flowUpdatedj_buf)
-    cl.enqueue_copy(queue, flowk, flowUpdatedk_buf)
-    cl.enqueue_copy(queue, flowl, flowUpdatedl_buf)
+            cl.enqueue_copy(self.kernel.queue, self.rockHeight, self.terrainHeight_buf)
+            cl.enqueue_copy(self.kernel.queue, self.sedimentHeight, self.sedimentHeight_buf)
+            cl.enqueue_copy(self.kernel.queue, self.waterHeight, self.heightUpdated_buf)
+            cl.enqueue_copy(self.kernel.queue, self.waterFlowj, self.waterFlowUpdatedj_buf)
+            cl.enqueue_copy(self.kernel.queue, self.waterFlowk, self.waterFlowUpdatedk_buf)
+            cl.enqueue_copy(self.kernel.queue, self.waterFlowl, self.waterFlowUpdatedl_buf)
 
-    cl.enqueue_copy(queue, sedimentFlowj, sedimentFlowUpdatedj_buf)
-    cl.enqueue_copy(queue, sedimentFlowk, sedimentFlowUpdatedk_buf)
-    cl.enqueue_copy(queue, sedimentFlowl, sedimentFlowUpdatedl_buf)
+            cl.enqueue_copy(self.kernel.queue, self.streamPower, self.streamPower_buf)
 
+            cl.enqueue_copy(self.kernel.queue, self.sedimentVertices, self.landVertices_buf)
 
     #cl.enqueue_copy(queue, flowInj, flowInj_buf)
     #cl.enqueue_copy(queue, flowInk, flowInk_buf)
@@ -902,33 +782,61 @@ if animateTopography:
     waterVertices[:, 1] = r * world.unscaledVertices[:, 1]
     waterVertices[:, 2] = r * world.unscaledVertices[:, 2]
 
-    # plotter.update_scalars(slope, mesh=terrainMesh, render=False)
-    plotter.update_scalars(velocity, mesh=waterMesh, render=False)
-    plotter.update_coordinates(points=terrainVertices, mesh=terrainMesh)
-    plotter.update_coordinates(points=suspendedSedimentVertices, mesh=suspendedSedimentMesh)
-    plotter.update_coordinates(points=waterVertices, mesh=waterMesh)
+    print('Rock Amount =     ', np.sum(erosion.rockHeight))
+    print('Sediment Amount = ', np.sum(erosion.sedimentHeight))
+    print('Water Amount =    ', np.sum(erosion.waterHeight))
 
-    terrainMesh.compute_normals(point_normals=True, inplace=True)
-    suspendedSedimentMesh.compute_normals(point_normals=True, inplace=True)
-    waterMesh.compute_normals(point_normals=True, inplace=True)
+    # Save topography to file.
 
-
-
-
-import pickle
-import Root_Directory
-# Save topography to file.
-world.v = 10*terrainVertices
-world.vertexRadius = world.CalculateVertexRadius(world.v)
-world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
-pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_12.pkl', "wb"))
+    world.v = visualizer.rockVertices
+    world.vertexRadius = world.CalculateVertexRadius(world.v)
+    world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
+    pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldRock_15.pkl', "wb"))
 
 world.v = 10*waterVertices
 world.vertexRadius = world.CalculateVertexRadius(world.v)
 world.faceRadius = world.CalculateFaceRadius(world.v, world.f)
 pickle.dump(world, open(Root_Directory.Path() + '/Data/tmp_Data/worldWater_12.pkl', "wb"))
 
-plotter.render()
-plotter.show(auto_close=False)
+    visualizer.plotter.render()
+    visualizer.plotter.show(auto_close=False)
+
+# ================================================================================================================
+# ================================================================================================================
+# ================================================================================================================
+
+if False:
+    import matplotlib.pyplot as plt
+    x = [52020, 204020, 1812020 , 5020020]
+    y = [10, 35, 241, 627]
+
+    plt.plot(x, y)
+    plt.scatter(x, y)
+    plt.show()
+    quit()
+    #   divisions    #triangles    time(s)    iterations
+    #       50           52020       10          1000
+    #      100          204020       35          1000
+    #      300         1812020      241          1000
+    #      500         5020020      627          1000
+    #
+
+def VisualizeLoadedWorld(fileToOpen):
+    erodedWorld = pickle.load(open(Root_Directory.Path() + '/Data/tmp_Data/erodedWorld_' + fileToOpen + '.pkl', "rb"))
+
+    print('#Triangles : ', np.size(erodedWorld.world.f, 0))
+
+    rockMesh = pv.PolyData(erodedWorld.rock, np.hstack(erodedWorld.world.f))
+    sedimentMesh = pv.PolyData(erodedWorld.sediment, np.hstack(erodedWorld.world.f))
+    waterMesh = pv.PolyData(erodedWorld.water, np.hstack(erodedWorld.world.f))
+
+    plotter = pv.Plotter()
+    plotter.add_mesh(rockMesh, smooth_shading=False, color=(0.2, 0.15, 0.15, 1))
+    plotter.add_mesh(sedimentMesh, smooth_shading=False, color=(0.35, 0.3, 0.25, 1))
+    #plotter.add_mesh(waterMesh, smooth_shading=True, color=(0.05, 0.2, 0.35, 1))
+    plotter.add_mesh(waterMesh, smooth_shading=False, color=(0.05, 0.15, 0.25, 1))
+
+    #plotter.enable_eye_dome_lighting()
+    plotter.show(auto_close=False)
 
 

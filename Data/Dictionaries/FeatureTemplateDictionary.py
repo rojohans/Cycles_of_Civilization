@@ -113,7 +113,7 @@ def GetFeatureTemplateDictionary():
     return featureTemplateDictionary
 
 class GlobeFeatureProperties():
-    def __init__(self, models, weights, scaleRange, triangleDivisions, nObjects, orientationMode, GUILabel, textureKey, buildingTemplate = None):
+    def __init__(self, models, weights, scaleRange, triangleDivisions, nObjects, orientationMode, GUILabel, textureKey, buildingTemplate = None, movementCost = None):
         '''
         N : Number of models
         :param models: nodes containing 3d models. [N long list of nodes]
@@ -135,6 +135,7 @@ class GlobeFeatureProperties():
         self.textureKey = textureKey
 
         self.buildingTemplate  = buildingTemplate
+        self.movementCost = movementCost
 
 
         self.numberOfComponents = len(models)
@@ -177,6 +178,16 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         GUILabel = 'FARM',
         textureKey = 'farm_field',
         buildingTemplate = Building_Templates.GrainFarm)
+    featureTemplateDictionary['tuber_farm'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/farm_1.bam")],
+        weights  = [1],
+        scaleRange = [[1.6, 1.6]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'TUBER FARM',
+        textureKey = 'tuber_farm_field',
+        buildingTemplate = Building_Templates.TuberFarm)
     featureTemplateDictionary['road'] = GlobeFeatureProperties(
         models = [],
         weights  = [1],
@@ -185,7 +196,18 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=1,
     orientationMode = 'random',
         GUILabel = 'ROAD',
-    textureKey = 'road')
+    textureKey = 'road',
+    movementCost=4)
+    featureTemplateDictionary['stone_road'] = GlobeFeatureProperties(
+        models = [],
+        weights  = [1],
+        scaleRange = [[1.6, 1.6]],
+        triangleDivisions=0,
+        nObjects=1,
+    orientationMode = 'random',
+        GUILabel = 'STONE ROAD',
+    textureKey = 'stone_road',
+    movementCost=2)
     featureTemplateDictionary['field'] = GlobeFeatureProperties(
         models = [],
         weights  = [1],
@@ -223,7 +245,8 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=3,
     orientationMode = 'uniform',
         GUILabel = 'WIND MILL',
-    textureKey = None)
+    textureKey = None,
+    buildingTemplate = Building_Templates.Windmill)
     featureTemplateDictionary['bakery'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/bakery_1.bam")],
         weights  = [1],
@@ -232,9 +255,68 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=3,
     orientationMode = 'uniform',
         GUILabel = 'BAKERY',
-    textureKey = None)
-
-
+    textureKey = None,
+    buildingTemplate = Building_Templates.Bakery)
+    featureTemplateDictionary['quarry'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/quarry_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.14, 0.14]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'QUARRY',
+    textureKey = None,
+    buildingTemplate = Building_Templates.Quarry)
+    featureTemplateDictionary['iron mine'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/mine_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.13, 0.13]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'IRON MINE',
+    textureKey = None,
+    buildingTemplate = Building_Templates.IronMine)
+    featureTemplateDictionary['coal mine'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/mine_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.13, 0.13]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'COAL MINE',
+    textureKey = None,
+    buildingTemplate = Building_Templates.CoalMine)
+    featureTemplateDictionary['foundry'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/foundry_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.13, 0.13]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'FOUNDRY',
+    textureKey = None,
+    buildingTemplate = Building_Templates.Foundry)
+    featureTemplateDictionary['blacksmith'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/blacksmith_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.13, 0.13]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'BLACKSMITH',
+    textureKey = None,
+    buildingTemplate = Building_Templates.Blacksmith)
+    featureTemplateDictionary['granary'] = GlobeFeatureProperties(
+        models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/granary_1.bam")],
+        weights  = [1],
+        scaleRange = [[0.21, 0.21]],
+        triangleDivisions=0,
+        nObjects=1,
+        orientationMode = 'random',
+        GUILabel = 'GRANARY',
+    textureKey = None,
+    buildingTemplate = Building_Templates.Granary)
 
     featureTemplateDictionary['pine_forest'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam")],
@@ -244,7 +326,8 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=5,
     orientationMode = 'random',
         GUILabel = 'PINE FOREST',
-    textureKey = 'forest')
+    textureKey = 'forest',
+    movementCost=15)
     featureTemplateDictionary['conifer_forest'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/pine_1.bam"),
          loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/spruce_1.bam")],
@@ -254,7 +337,8 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=5,
     orientationMode = 'random',
         GUILabel = 'CONIFER FOREST',
-    textureKey = 'forest')
+    textureKey = 'forest',
+    movementCost=15)
     featureTemplateDictionary['temperate_forest'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/kapok_2.bam")],
         weights  = [1],
@@ -263,7 +347,8 @@ def GetFeatureTemplateDictionaryGlobe(mainProgram):
         nObjects=5,
     orientationMode = 'random',
         GUILabel = 'TEMPERATE FOREST',
-    textureKey = 'forest')
+    textureKey = 'forest',
+    movementCost=15)
     featureTemplateDictionary['jungle'] = GlobeFeatureProperties(
         models = [loader.loadModel(Root_Directory.Path(style = 'unix') + "/Data/Models/palm_2.bam")],
         weights  = [1],
