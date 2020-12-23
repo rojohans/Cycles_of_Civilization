@@ -1,5 +1,6 @@
 import Library.GUI as GUI
 import Library.Graphics as Graphics
+import Library.Transport as Transport
 
 class FeatureInformation():
     def __init__(self, mainProgram):
@@ -65,6 +66,7 @@ class FeatureInformation():
             if building.linkNode != None:
                 building.linkNode.show()
             else:
+                '''
                 # Create line graphics object.
                 pointIndices = [self.mainProgram.selectedTile]
                 lines = []
@@ -74,10 +76,26 @@ class FeatureInformation():
                         i += 1
                         pointIndices.append(destination.iTile)
                         lines.append([0, i])
-
                 pointCoordinates = Graphics.LineSegments.IndicesToCoordinates(indices=pointIndices, mainProgram=self.mainProgram)
 
                 building.linkNode = Graphics.LineSegments.LineSegments(coordinates=pointCoordinates, lineIndices=lines, coordinateMultiplier=1.01)
+                building.linkNode.show()
+                '''
+
+                pointIndices = [self.mainProgram.selectedTile]
+                lines = []
+                paths = []
+                i = 0
+                for resource in building.outputBuffert.type:
+                    for destination in building.destinations[resource]:
+                        i += 1
+                        pointIndices.append(destination.iTile)
+                        path = Transport.MovementGraph.RetracePath(building.came_from, destination.iTile)
+                        paths.append(path)
+                        #lines.append([0, i])
+                pointCoordinates = Graphics.LineSegments.IndicesToCoordinates(indices=paths, mainProgram=self.mainProgram)
+
+                building.linkNode = Graphics.LineSegments.LineStrips(coordinates=pointCoordinates, coordinateMultiplier=1.01)
                 building.linkNode.show()
         else:
             if self.mainProgram.selectedTile != None:

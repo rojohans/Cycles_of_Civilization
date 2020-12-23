@@ -72,8 +72,6 @@ class Transport():
                                 distanceWeight = 1/(1 + building.cost_so_far[possibleDestination.iTile])
 
                                 destinationWeights[i, 0] = 0.5*inputLinksWeight + distanceWeight + satisfactionweight
-                                #destinationWeights[i, 0] = distanceWeight + satisfactionweight
-                                #destinationWeights[i, 0] = distanceWeight + 10*satisfactionweight
 
                             destinationIndicesSorted = np.argsort(destinationWeights, axis = 0)
                             destinationIndicesSorted = np.flip(destinationIndicesSorted)
@@ -274,3 +272,12 @@ class MovementGraph():
 
             return path
         '''
+
+    @classmethod
+    def RetracePath(cls, graph, startNode):
+        path = [startNode]
+        nextNode = graph[startNode]
+        while nextNode != None:
+            path.append(nextNode)
+            nextNode = graph[nextNode]
+        return path

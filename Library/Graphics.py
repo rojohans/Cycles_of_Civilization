@@ -146,6 +146,9 @@ class LineSegments():
 
     @staticmethod
     def LineSegments(coordinates, lineIndices, coordinateMultiplier = 1.0):
+        '''
+        Draws single lines between points.
+        '''
         vertex_format = p3d.GeomVertexFormat.getV3c4()
         vertexData = p3d.GeomVertexData("line_data", vertex_format, p3d.Geom.UH_static)
         pos_writer = p3d.GeomVertexWriter(vertexData, "vertex")
@@ -165,6 +168,44 @@ class LineSegments():
 
         geom = p3d.Geom(vertexData)
         geom.add_primitive(ln)
+
+        tmpNode = p3d.GeomNode("link")
+        tmpNode.add_geom(geom)
+        node = p3d.NodePath(tmpNode)
+
+        node.setRenderModeThickness(10)
+        node.reparentTo(render)
+        return node
+
+    @staticmethod
+    def LineStrips(coordinates, coordinateMultiplier = 1.0):
+        '''
+        Draws chain of lines to create strips.
+        '''
+        vertex_format = p3d.GeomVertexFormat.getV3c4()
+        vertexData = p3d.GeomVertexData("line_data", vertex_format, p3d.Geom.UH_static)
+        pos_writer = p3d.GeomVertexWriter(vertexData, "vertex")
+        colour_writer = p3d.GeomVertexWriter(vertexData, 'color')
+
+        lines = [[] for iLine in range(np.size(coordinates, 0))]
+
+        iVertex = 0
+        for iLine in range(np.size(coordinates, 0)):
+            for coordinate in coordinates[iLine]:
+                pos_writer.add_data3(coordinateMultiplier*coordinate[0],
+                                     coordinateMultiplier*coordinate[1],
+                                     coordinateMultiplier*coordinate[2])
+                colour_writer.add_data4(1, 0, 0, 1)
+
+                lines[iLine].append(iVertex)
+                iVertex += 1
+
+        geom = p3d.Geom(vertexData)
+        lineStrips = [p3d.GeomLinestrips(p3d.Geom.UH_static) for iLine in range(np.size(coordinates, 0))]
+        for iLine in range(np.size(coordinates, 0)):
+            lineStrips[iLine].add_consecutive_vertices(lines[iLine][0], len(lines[iLine]))
+            lineStrips[iLine].close_primitive()
+            geom.add_primitive(lineStrips[iLine])
 
         tmpNode = p3d.GeomNode("link")
         tmpNode.add_geom(geom)
