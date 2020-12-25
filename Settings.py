@@ -150,9 +150,9 @@ class GlobeSettings:
         # =============================================================================================================
         # ==================================================== GUI ====================================================
         # =============================================================================================================
-        self.buttonSize = 0.1
+        self.buttonSize = 0.05
 
-        self.quitButtonPosition = (0.9, 0, 0.9)
+        self.quitButtonPosition = (0.95, 0, 0.95)
 
         self.tileInformationFramePosition = (-0.85, 0, -0.7)
         self.tileInformationFrameSize = (-0.15, 0.15, -0.3, 0.3)
@@ -171,4 +171,8 @@ class GlobeSettings:
         self.addFeatureFrameSize = (-1, -0.6, -0.4, 0.7)
         self.addFeatureFrameCanvasSize = (0, 0.4, -3.6, 0)
         self.addFeatureFrameChildrenGap = 0.1
+
+        self.statisticsGraphPosition = (-0.2, 0.0, 0.0)
+        self.statisticsGraphSize = (-0.7, 0.7, -0.6, 0.6)
+
 

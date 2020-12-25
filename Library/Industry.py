@@ -89,6 +89,10 @@ class Building():
         text = self.GetInputOutputText()
         return text
 
+    @classmethod
+    def Initialize(cls, mainProgram):
+        cls.mainProgram = mainProgram
+
 class ProductionBuilding(Building):
     def __init__(self, iTile, inputBuffert, outputBuffert, laborLimit = 50, recipy = None):
         super().__init__(iTile, inputBuffert, outputBuffert)

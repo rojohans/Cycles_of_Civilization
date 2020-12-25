@@ -158,6 +158,10 @@ class Household(Industry.LivingBuilding):
                 self.populationInHouse = np.min((self.populationInHouse + populationIncrease, self.maxPopulation))
             else:
                 #starve
+                self.mainProgram.resources.demand['tuber'] += 0.1
+                self.mainProgram.resources.demand['grain'] += 0.1
+                self.mainProgram.resources.demand['flour'] += 0.1
+                self.mainProgram.resources.demand['bread'] += 0.1
                 self.population = np.max((self.population + 0.1*targetChange-0.1, 0))
                 self.populationInHouse = self.populationInHouse + 0.1 * targetChange - 0.1
 

@@ -722,8 +722,8 @@ class Interface():
         self.featureInformation = GUI_Components.FeatureInformation(mainProgram=self.mainProgram)
         self.featureInformation.Initialize(self)
 
-
-
+        self.toolMenu = GUI_Components.ToolMenu(mainProgram=self.mainProgram)
+        self.toolMenu.Initialize(self)
 
 
         self.buttons['end_turn'] = CustomCheckButton(parent=base.a2dBottomRight,
@@ -736,7 +736,7 @@ class Interface():
                                               text="TURN : 0",
                                               scale = .06,
                                               parent=base.a2dBottomRight)
-
+        '''
         self.quitButton = DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
                                               GUIDataDirectoryPath + "quit_button.png",
                                               GUIDataDirectoryPath + "quit_button.png",
@@ -747,7 +747,7 @@ class Interface():
                                             self.mainProgram.settings.quitButtonPosition[2]),
                                        relief=None,
                                        command = sys.exit)
-        self.quitButton.setTransparency(TransparencyAttrib.MAlpha)
+        '''
 
         self.mainProgram.add_task(self.window_task, 'window_update')
 
@@ -768,9 +768,9 @@ class Interface():
     def Update(self):
         self.windowRatio = self.windowSize[0] / self.windowSize[1]
 
-        self.quitButton.setPos(self.windowRatio * self.mainProgram.settings.quitButtonPosition[0],
-                               self.mainProgram.settings.quitButtonPosition[1],
-                               self.mainProgram.settings.quitButtonPosition[2])
+        #self.quitButton.setPos(self.windowRatio * self.mainProgram.settings.quitButtonPosition[0],
+        #                       self.mainProgram.settings.quitButtonPosition[1],
+        #                       self.mainProgram.settings.quitButtonPosition[2])
 
         for frameKey in self.frames:
             self.frames[frameKey].Update(self.windowRatio)
@@ -781,18 +781,23 @@ class Interface():
         for buttonKey in self.buttons:
             self.buttons[buttonKey].Update(self.windowRatio)
 
-
+        self.toolMenu.UpdateStatisticsGraph()
 
 
 
 
 class CustomFrame():
     def __init__(self, position, size, color = (0, 0, 0, 1), textureImage = 'frame_background.png'):
-        t = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/GUI/" + textureImage)})
-        self.node = DirectFrame(frameTexture = t.stitchedTexture,
-                                 frameColor=color,
-                                 frameSize=size,
-                                 pos=position)
+        if textureImage == None:
+            self.node = DirectFrame(frameColor=color,
+                                    frameSize=size,
+                                    pos=position)
+        else:
+            t = Texture.Texture({'water': image.imread(Root_Directory.Path() + "/Data/GUI/" + textureImage)})
+            self.node = DirectFrame(frameTexture = t.stitchedTexture,
+                                    frameColor=color,
+                                    frameSize=size,
+                                    pos=position)
         self.position = position
         self.size = size
 

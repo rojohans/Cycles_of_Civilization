@@ -144,13 +144,19 @@ class Game(ShowBase):
         self.selectedTile = None
 
         import Library.Industry as Industry
+        Industry.Building.Initialize(mainProgram=self)
         self.featureTemplate = FeatureTemplateDictionary.GetFeatureTemplateDictionaryGlobe(mainProgram=self)
+
+        import Library.Resources as Resources
+        self.resources = Resources.Resources(mainProgram=self,
+                                             resources=['labor', 'spent_labor', 'grain', 'wood', 'tuber', 'flour', 'bread', 'stone', 'iron ore', 'coal', 'steel', 'tools'])
 
         import Library.GUI as GUI
         self.interface = GUI.Interface(base=base, mainProgram=self)
 
         self.featureList = [[] for i in range(self.world.nTriangles)]
         self.buildingList = [None for i in range(self.world.nTriangles)]
+
 
         import Library.Transport as Transport
         self.transport = Transport.Transport(mainProgram=self, resources=['labor', 'spent_labor', 'grain', 'wood', 'tuber', 'flour', 'bread', 'stone', 'iron ore', 'coal', 'steel', 'tools'])
@@ -205,8 +211,6 @@ class Game(ShowBase):
                 toc = time.time()
                 print('Movement graph calculation time : ', toc - tic)
 
-
-
             tic = time.time()
             # The buildings process their input into output. Households grow/starve.
             for building in self.buildingList:
@@ -217,7 +221,6 @@ class Game(ShowBase):
 
             tic = time.time()
             # Resources are moved.
-
             profile = False
             if profile:
                 import cProfile, pstats, io
@@ -235,12 +238,13 @@ class Game(ShowBase):
                 ps.print_stats()
                 print(s.getvalue())
                 #quit()
-
-
             toc = time.time()
             print('Transport time : ', toc - tic)
 
-
+            tic = time.time()
+            self.resources()
+            toc = time.time()
+            print('Resource operation time : ', toc-tic)
 
             self.interface.buttons['end_turn'].node["indicatorValue"] = 0
             self.interface.buttons['end_turn'].node.setIndicatorValue()
