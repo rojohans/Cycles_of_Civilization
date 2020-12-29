@@ -149,6 +149,9 @@ class FeatureInteractivity():
                     self.mainProgram.buildingList[self.mainProgram.selectedTile].Delete()
                     self.mainProgram.buildingList[self.mainProgram.selectedTile] = None
                     self.mainProgram.transport.RecalculateInputDictionay()
+                if self.mainProgram.householdList[self.mainProgram.selectedTile] != None:
+                    self.mainProgram.householdList[self.mainProgram.selectedTile].Delete()
+                    self.mainProgram.householdList[self.mainProgram.selectedTile] = None
 
         self.mainProgram.interface.buttons['addFeature'].node["indicatorValue"] = False
         self.mainProgram.interface.buttons['addFeature'].node.setIndicatorValue()
@@ -181,6 +184,9 @@ class FeatureInteractivity():
             self.mainProgram.buildingList[self.mainProgram.selectedTile] = newBuilding
             for resource in newBuilding.inputBuffert.type:
                 self.mainProgram.transport.buildingsInput[resource][self.mainProgram.selectedTile]=newBuilding
+
+            if self.mainProgram.featureTemplate[featureKey].buildingTemplate in self.mainProgram.householdTemplates:
+                self.mainProgram.householdList[self.mainProgram.selectedTile] = newBuilding
 
         if self.mainProgram.featureTemplate[featureKey].textureKey != None:
             self.mainProgram.planet.textureUpdatedStatus = False

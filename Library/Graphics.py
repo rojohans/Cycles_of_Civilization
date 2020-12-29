@@ -216,7 +216,7 @@ class LineSegments():
         return node
 
     @staticmethod
-    def Plot(coordinates, plotWindow):
+    def Plot(coordinates, plotWindow, lineThickness = 1, colour = None):
         '''
         Draws chain of lines to create strips.
         '''
@@ -230,10 +230,11 @@ class LineSegments():
         iVertex = 0
         for iLine in range(np.size(coordinates, 0)):
             for coordinate in coordinates[iLine]:
-                pos_writer.add_data3(coordinate[0],
-                                     0,
-                                     coordinate[1])
-                colour_writer.add_data4(1, 0, 0, 1)
+                pos_writer.add_data3(coordinate[0], 0, coordinate[1])
+                if colour is not None:
+                    colour_writer.add_data4(colour[iLine, 0], colour[iLine, 1], colour[iLine, 2], colour[iLine, 3])
+                else:
+                    colour_writer.add_data4(1, 0, 0, 1)
 
                 lines[iLine].append(iVertex)
                 iVertex += 1
@@ -249,7 +250,7 @@ class LineSegments():
         tmpNode.add_geom(geom)
         node = p3d.NodePath(tmpNode)
 
-        node.setRenderModeThickness(10)
+        node.setRenderModeThickness(lineThickness)
         node.reparentTo(plotWindow)
         return node
 

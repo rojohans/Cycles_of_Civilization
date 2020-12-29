@@ -126,6 +126,80 @@ class ToolMenu():
             color=(1, 1, 1, 1))
         interface.frames['statisticsGraphBackground'].node.reparentTo(interface.frames['statisticsGraphWindow'].node)
         self.plot = None # The node used to visualize graph lines.
+        self.plotMode = ['demand']
+
+        interface.buttons['statisticsGraphPriority'] = \
+            GUI.CustomRadioButton(parent=interface.frames['statisticsGraphBackground'].node,
+                                  images=['toggle_off.png', 'toggle_on.png'],
+                                  callbackFunction=self.UpdateStatisticsGraph,
+                                  position=(0.2 + self.mainProgram.settings.statisticsGraphSize[0], 0,
+                                            0.05 + self.mainProgram.settings.statisticsGraphSize[3]),
+                                  scale=0.05,
+                                  text='PRIORITY',
+                                  variable=self.plotMode,
+                                  value='priority')
+        interface.buttons['statisticsGraphDemand'] = \
+            GUI.CustomRadioButton(parent=interface.frames['statisticsGraphBackground'].node,
+                                  images=['toggle_off.png', 'toggle_on.png'],
+                                  callbackFunction=self.UpdateStatisticsGraph,
+                                  position=(0.2+self.mainProgram.settings.statisticsGraphSize[0], 0, 0.15+self.mainProgram.settings.statisticsGraphSize[3]),
+                                  scale=0.05,
+                                  text='DEMAND',
+                                  variable = self.plotMode,
+                                  value = 'demand')
+        interface.buttons['statisticsGraphProduction'] = \
+            GUI.CustomRadioButton(parent=interface.frames['statisticsGraphBackground'].node,
+                                  images=['toggle_off.png', 'toggle_on.png'],
+                                  callbackFunction=self.UpdateStatisticsGraph,
+                                  position=(0.2+self.mainProgram.settings.statisticsGraphSize[0], 0, 0.25+self.mainProgram.settings.statisticsGraphSize[3]),
+                                  scale=0.05,
+                                  text='PRODUCTION',
+                                  variable = self.plotMode,
+                                  value = 'production')
+        interface.buttons['statisticsGraphConsumption'] = \
+            GUI.CustomRadioButton(parent=interface.frames['statisticsGraphBackground'].node,
+                                  images=['toggle_off.png', 'toggle_on.png'],
+                                  callbackFunction=self.UpdateStatisticsGraph,
+                                  position=(0.2+self.mainProgram.settings.statisticsGraphSize[0], 0, 0.35+self.mainProgram.settings.statisticsGraphSize[3]),
+                                  scale=0.05,
+                                  text='CONSUMPTION',
+                                  variable = self.plotMode,
+                                  value = 'consumption')
+        interface.buttons['statisticsGraphPopulation'] = \
+            GUI.CustomRadioButton(parent=interface.frames['statisticsGraphBackground'].node,
+                                  images=['toggle_off.png', 'toggle_on.png'],
+                                  callbackFunction=self.UpdateStatisticsGraph,
+                                  position=(0.2+self.mainProgram.settings.statisticsGraphSize[0], 0, 0.45+self.mainProgram.settings.statisticsGraphSize[3]),
+                                  scale=0.05,
+                                  text='POPULATION',
+                                  variable = self.plotMode,
+                                  value = 'population')
+        radioButtons = [interface.buttons['statisticsGraphPriority'].node, interface.buttons['statisticsGraphDemand'].node, interface.buttons['statisticsGraphProduction'].node, interface.buttons['statisticsGraphConsumption'].node, interface.buttons['statisticsGraphPopulation'].node]
+        for button in radioButtons:
+            button.setOthers(radioButtons)
+        #interface.buttons['statisticsGraphDemand'].node.setOthers(radioButtons)
+        #interface.buttons['statisticsGraphProduction'].node.setOthers(radioButtons)
+        #interface.buttons['statisticsGraphPopulation'].node.setOthers(radioButtons)
+
+        self.plotResourceList = {}
+        nResources = len(self.mainProgram.resources.resources)
+        for iResource, resource in enumerate(self.mainProgram.resources.resources):
+            self.plotResourceList[resource] = True
+            interface.labels['statisticsGraphResource_' + resource] = GUI.CustomLabel(position=(0.8, 0, 0.7*(1 - 2*iResource/(nResources-1))),
+                                                         text='{:>20}'.format(resource),
+                                                         parent=interface.frames['statisticsGraphWindow'].node,
+                                                                                      frameColour=self.mainProgram.resources.colour[resource],
+                                                                                      textAlign=p3d.TextNode.ARight)
+            interface.buttons['statisticsGraphResource_' + resource] = \
+                GUI.CustomCheckButton(parent=interface.frames['statisticsGraphWindow'].node,
+                                      images=['toggle_off.png',
+                                              'toggle_on.png'],
+                                      callbackFunction=self.UpdateStatisticsGraphResourceToggle,
+                                      position=(0.9, 0, 0.7*(1 - 2*iResource/(nResources-1))),
+                                      scale=0.05,
+                                      commandInput=[resource])
+            interface.buttons['statisticsGraphResource_' + resource].node["indicatorValue"] = 1
+            interface.buttons['statisticsGraphResource_' + resource].node.setIndicatorValue()
 
         interface.buttons['quitButton'] = GUI.CustomButton(parent = interface.frames['toolMenu'].node,
                                                            images = ["quit_button.png", "quit_button.png"],
@@ -141,27 +215,98 @@ class ToolMenu():
             self.mainProgram.interface.frames['statisticsGraphWindow'].node.hide()
 
     def UpdateStatisticsGraph(self):
-
         nTimeSteps = len(self.mainProgram.resources.demandHistory['labor'])
         if nTimeSteps > 1:
             if self.plot != None:
                 self.plot.remove_node()
-            coordinates = [np.zeros((nTimeSteps, 2)) for resource in self.mainProgram.resources.resources]
 
-            #x = self.mainProgram.settings.statisticsGraphPosition[0] + self.mainProgram.settings.statisticsGraphSize[0] + \
-            #    (self.mainProgram.settings.statisticsGraphSize[1]-self.mainProgram.settings.statisticsGraphSize[0]) * np.linspace(0, 1, nTimeSteps)
-            #x = 2 * np.linspace(0, 1, nTimeSteps) - 1.0
-            xSpan = self.mainProgram.settings.statisticsGraphSize[1]-self.mainProgram.settings.statisticsGraphSize[0]
-            ySpan = self.mainProgram.settings.statisticsGraphSize[3]-self.mainProgram.settings.statisticsGraphSize[2]
-            x = xSpan * np.linspace(0, 1, nTimeSteps) - xSpan/2
+            xWindowSpan = self.mainProgram.settings.statisticsGraphSize[1]-self.mainProgram.settings.statisticsGraphSize[0]
+            x = xWindowSpan * np.linspace(0, 1, nTimeSteps) - xWindowSpan/2
             x *= self.mainProgram.interface.windowRatio
-            for iResource, resource in enumerate(self.mainProgram.resources.resources):
+            yWindowSpan = self.mainProgram.settings.statisticsGraphSize[3] - \
+                          self.mainProgram.settings.statisticsGraphSize[2]
 
-                coordinates[iResource][:, 0] = x
-                coordinates[iResource][:, -1] = np.array(self.mainProgram.resources.demandHistory[resource])-1
-            print(coordinates)
-            self.plot = Graphics.LineSegments.Plot(coordinates=coordinates, plotWindow=self.mainProgram.interface.frames['statisticsGraphBackground'].node)
+            if self.plotMode[0] == 'priority':
+                resourcesToPlot = []
+                for resource in self.plotResourceList:
+                    if self.plotResourceList[resource]:
+                        resourcesToPlot.append(resource)
+                coordinates = [np.zeros((nTimeSteps, 2)) for resource in resourcesToPlot]
+                colours = np.empty((len(resourcesToPlot), 4))
+                yBoundaries = [self.mainProgram.resources.minPriority-0.1, self.mainProgram.resources.maxPriority+0.1]
+                ySpan = yBoundaries[1] - yBoundaries[0]
+
+                for iResource, resource in enumerate(resourcesToPlot):
+                    coordinates[iResource][:, 0] = x
+                    coordinates[iResource][:, -1] = self.mainProgram.settings.statisticsGraphSize[2]+yWindowSpan*(np.array(self.mainProgram.resources.priorityHistory[resource])-yBoundaries[0])/ySpan
+                    colours[iResource, :] = self.mainProgram.resources.colour[resource][:]
+                self.plot = Graphics.LineSegments.Plot(coordinates=coordinates, plotWindow=self.mainProgram.interface.frames['statisticsGraphBackground'].node, colour=colours, lineThickness=2)
+            elif self.plotMode[0] == 'demand':
+                resourcesToPlot = []
+                for resource in self.plotResourceList:
+                    if self.plotResourceList[resource]:
+                        resourcesToPlot.append(resource)
+                coordinates = [np.zeros((nTimeSteps, 2)) for resource in resourcesToPlot]
+                colours = np.empty((len(resourcesToPlot), 4))
+                yBoundaries = [self.mainProgram.resources.minDemand-0.1, self.mainProgram.resources.maxDemand+0.1]
+                ySpan = yBoundaries[1] - yBoundaries[0]
+
+                for iResource, resource in enumerate(resourcesToPlot):
+                    coordinates[iResource][:, 0] = x
+                    coordinates[iResource][:, -1] = self.mainProgram.settings.statisticsGraphSize[2]+yWindowSpan*(np.array(self.mainProgram.resources.demandHistory[resource])-yBoundaries[0])/ySpan
+                    colours[iResource, :] = self.mainProgram.resources.colour[resource][:]
+                self.plot = Graphics.LineSegments.Plot(coordinates=coordinates, plotWindow=self.mainProgram.interface.frames['statisticsGraphBackground'].node, colour=colours, lineThickness=2)
+            elif self.plotMode[0] == 'production':
+                resourcesToPlot = []
+                for resource in self.plotResourceList:
+                    if self.plotResourceList[resource]:
+                        resourcesToPlot.append(resource)
+                coordinates = [np.zeros((nTimeSteps, 2)) for resource in resourcesToPlot]
+                colours = np.empty((len(resourcesToPlot), 4))
+                yBoundaries = [self.mainProgram.resources.minProduction-0.1, self.mainProgram.resources.maxProduction+0.1]
+                ySpan = yBoundaries[1] - yBoundaries[0]
+
+                for iResource, resource in enumerate(resourcesToPlot):
+                    coordinates[iResource][:, 0] = x
+                    coordinates[iResource][:, -1] = self.mainProgram.settings.statisticsGraphSize[2]+yWindowSpan*(np.array(self.mainProgram.resources.productionHistory[resource])-yBoundaries[0])/ySpan
+                    colours[iResource, :] = self.mainProgram.resources.colour[resource][:]
+                self.plot = Graphics.LineSegments.Plot(coordinates=coordinates, plotWindow=self.mainProgram.interface.frames['statisticsGraphBackground'].node, colour=colours, lineThickness=2)
+            elif self.plotMode[0] == 'consumption':
+                resourcesToPlot = []
+                for resource in self.plotResourceList:
+                    if self.plotResourceList[resource]:
+                        resourcesToPlot.append(resource)
+                coordinates = [np.zeros((nTimeSteps, 2)) for resource in resourcesToPlot]
+                colours = np.empty((len(resourcesToPlot), 4))
+                yBoundaries = [self.mainProgram.resources.minConsumption-0.1, self.mainProgram.resources.maxConsumption+0.1]
+                ySpan = yBoundaries[1] - yBoundaries[0]
+
+                for iResource, resource in enumerate(resourcesToPlot):
+                    coordinates[iResource][:, 0] = x
+                    coordinates[iResource][:, -1] = self.mainProgram.settings.statisticsGraphSize[2]+yWindowSpan*(np.array(self.mainProgram.resources.consumptionHistory[resource])-yBoundaries[0])/ySpan
+                    colours[iResource, :] = self.mainProgram.resources.colour[resource][:]
+                self.plot = Graphics.LineSegments.Plot(coordinates=coordinates, plotWindow=self.mainProgram.interface.frames['statisticsGraphBackground'].node, colour=colours, lineThickness=2)
+            elif self.plotMode[0] == 'population':
+                coordinates = [np.zeros((nTimeSteps, 2))]
+                yBoundaries = [self.mainProgram.populationStatistics.historicalMin - 0.1, self.mainProgram.populationStatistics.historicalMax + 0.1]
+                ySpan = yBoundaries[1] - yBoundaries[0]
+
+                coordinates[0][:, 0] = x
+                coordinates[0][:, -1] = self.mainProgram.settings.statisticsGraphSize[2] + yWindowSpan * (
+                            np.array(self.mainProgram.populationStatistics.history) - yBoundaries[0]) / ySpan
+                self.plot = Graphics.LineSegments.Plot(coordinates=coordinates,
+                                                       plotWindow=self.mainProgram.interface.frames[
+                                                           'statisticsGraphBackground'].node,
+                                                       lineThickness=2)
             print('Statistics graph updating')
+
+    def UpdateStatisticsGraphResourceToggle(self, status, resource):
+        if status == 1:
+            self.plotResourceList[resource] = True
+        elif status == 0:
+            self.plotResourceList[resource] = False
+        self.UpdateStatisticsGraph()
+
 
 class MapFilterMenu():
     def __init__(self, mainProgram):

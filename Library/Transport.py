@@ -58,39 +58,51 @@ class Transport():
                         #    startNode=building.iTile, maximumCost=self.mainProgram.settings.defaultMovementRange)
 
                         possibleDestinations = []
-                        for tileInRange in building.tilesInRange:
-                            if self.buildingsInput[resource][tileInRange] != None:
-                                possibleDestinations.append(self.mainProgram.buildingList[tileInRange])
+                        if building.tilesInRange != None:
+                            for tileInRange in building.tilesInRange:
+                                if self.buildingsInput[resource][tileInRange] != None:
+                                    possibleDestinations.append(self.mainProgram.buildingList[tileInRange])
 
-                        if len(possibleDestinations) > 0:
-                            destinationWeights = np.empty((len(possibleDestinations), 1))
+                            if len(possibleDestinations) > 0:
+                                destinationWeights = np.empty((len(possibleDestinations), 1))
 
 
-                            for i, possibleDestination in enumerate(possibleDestinations):
-                                satisfactionweight = 1/(1+possibleDestination.inputBuffert.smoothedSatisfaction[resource])
-                                inputLinksWeight = 1/(1+possibleDestination.inputLinkAmount[resource])
-                                distanceWeight = 1/(1 + building.cost_so_far[possibleDestination.iTile])
+                                for i, possibleDestination in enumerate(possibleDestinations):
+                                    satisfactionweight = 1/(1+possibleDestination.inputBuffert.smoothedSatisfaction[resource])
+                                    inputLinksWeight = 1/(1+possibleDestination.inputLinkAmount[resource])
+                                    distanceWeight = 1/(1 + building.cost_so_far[possibleDestination.iTile])
 
-                                destinationWeights[i, 0] = 0.5*inputLinksWeight + distanceWeight + satisfactionweight
+                                    # Buildings which produce resources in high demand should have a high weight value.
+                                    #demandWeight = 0
+                                    #for destinationOutputResource in possibleDestination.outputBuffert.type:
+                                    #    demandWeight += self.mainProgram.resources.demand[destinationOutputResource]
+                                    #demandWeight /= len(possibleDestination.outputBuffert.type)
+                                    demandWeight = 0.01 + possibleDestination.__class__.demand
 
-                            destinationIndicesSorted = np.argsort(destinationWeights, axis = 0)
-                            destinationIndicesSorted = np.flip(destinationIndicesSorted)
+                                    #destinationWeights[i, 0] = 0.5*inputLinksWeight + distanceWeight + satisfactionweight + demandWeight
+                                    destinationWeights[i, 0] = distanceWeight + satisfactionweight + 2*demandWeight
+                                    #destinationWeights[i, 0] = distanceWeight + 2 * demandWeight
 
-                            for i, iDestination in enumerate(destinationIndicesSorted[:, 0]):
-                                iLinkedBuilding = possibleDestinations[iDestination].iTile
-                                self.buildingsInput[resource][iLinkedBuilding].inputLinks[resource].append(building)
+                                destinationIndicesSorted = np.argsort(destinationWeights, axis = 0)
+                                destinationIndicesSorted = np.flip(destinationIndicesSorted)
 
-                                building.destinations[resource].append(self.buildingsInput[resource][iLinkedBuilding])
-                                building.destinationAmount[resource] += 1
-                                self.buildingsInput[resource][iLinkedBuilding].inputLinkAmount[resource] += 1
-                                if i >= building.destinationLimit-1:
-                                    break
+                                for i, iDestination in enumerate(destinationIndicesSorted[:, 0]):
+                                    iLinkedBuilding = possibleDestinations[iDestination].iTile
+                                    self.buildingsInput[resource][iLinkedBuilding].inputLinks[resource].append(building)
 
-                        if building.linkNode != None:
-                            # When the links are recomputed the link node should be removed.
-                            building.linkNode.removeNode()
-                            building.linkNode = None
-                        #print('Transport link updated')
+                                    building.destinations[resource].append(self.buildingsInput[resource][iLinkedBuilding])
+                                    building.destinationWeights[resource].append(destinationWeights[iDestination, 0])
+
+                                    building.destinationAmount[resource] += 1
+                                    self.buildingsInput[resource][iLinkedBuilding].inputLinkAmount[resource] += 1
+                                    if i >= building.destinationLimit-1:
+                                        break
+
+                            if building.linkNode != None:
+                                # When the links are recomputed the link node should be removed.
+                                building.linkNode.removeNode()
+                                building.linkNode = None
+                            #print('Transport link updated')
 
 
                     # Resources are transported to destination buildings.
@@ -101,7 +113,8 @@ class Transport():
 
                         satisfactionWeights = np.empty((nRecievingBuildings, 1))
                         for i, recievingBuilding in enumerate(building.destinations[resource]):
-                            satisfactionWeights[i] = 0.01 + 1-recievingBuilding.inputBuffert.smoothedSatisfaction[resource]
+                            #satisfactionWeights[i] = 0.01 + 1-recievingBuilding.inputBuffert.smoothedSatisfaction[resource]
+                            satisfactionWeights[i] = 0.01 + recievingBuilding.__class__.demand
                         satisfactionWeights /= np.sum(satisfactionWeights, axis=0)
 
                         amountToMove = satisfactionWeights * amountToMoveTotal

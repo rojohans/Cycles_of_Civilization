@@ -727,15 +727,22 @@ class Interface():
 
 
         self.buttons['end_turn'] = CustomCheckButton(parent=base.a2dBottomRight,
-                                                            position=(-0.15+0.075, 0, 0.15),
+                                                            position=(-0.1, 0, 0.15),
                                                             scale=0.15,
                                                             images=['end_turn.png', 'end_turn_pressed.png'],
                                                             callbackFunction=self.mainProgram.Turn,
                                                             commandInput=[])
-        self.labels['end_turn'] = CustomLabel(position=(-0.16, 0, 0.33),
+        self.labels['end_turn'] = CustomLabel(position=(-0.2, 0, 0.33),
                                               text="TURN : 0",
                                               scale = .06,
                                               parent=base.a2dBottomRight)
+
+        self.buttons['end_turn_100'] = CustomCheckButton(parent=base.a2dBottomRight,
+                                                            position=(-0.2, 0, 0.05),
+                                                            scale=0.05,
+                                                            images=['end_turn_100.png', 'end_turn_100_pressed.png'],
+                                                            callbackFunction=self.mainProgram.Turn,
+                                                            commandInput=[100])
         '''
         self.quitButton = DirectButton(image=(GUIDataDirectoryPath + "quit_button.png",
                                               GUIDataDirectoryPath + "quit_button.png",
@@ -851,12 +858,12 @@ class CustomScrolledFrame():
         self.node.setPos((newWindowRatio*self.position[0], self.position[1], self.position[2]))
 
 class CustomLabel():
-    def __init__(self, text, position, parent, scale = 0.05):
+    def __init__(self, text, position, parent, scale = 0.05, frameColour = (0, 0, 0, 0), textAlign = TextNode.ALeft):
         self.node = DirectLabel(
                                 scale=scale,
                                 pos=position,
-                                frameColor=(0, 0, 0, 0),
-                                text_align=TextNode.ALeft,
+                                frameColor=frameColour,
+                                text_align=textAlign,
                                 text=text,
                                 text_fg=(0, 0, 0, 1),
                                 )
@@ -923,6 +930,41 @@ class CustomCheckButton():
                                       boxRelief=None,
                                       boxPlacement='right',
                                       command=callbackFunction)
+        self.node.setTransparency(TransparencyAttrib.MAlpha)
+        self.position = position
+        self.scale = scale
+
+    def Update(self, newWindowRatio):
+        '''
+        this function should be called when the ratio of the window changes. It updates the size and positin of the
+        object. Thus enabling it to always be positioned in the correct relative location in the window.
+        :param newWindowRatio:
+        :return:
+        '''
+        self.node.setPos((newWindowRatio*self.position[0]-self.scale, self.position[1], self.position[2]))
+
+class CustomRadioButton():
+    def __init__(self, images, position, callbackFunction, parent, variable, value, scale = 0.05, text = '', commandInput = []):
+        GUIDataDirectoryPath = Root_Directory.Path(style='unix') + '/Data/GUI/'
+        if images != None:
+            imageList = (GUIDataDirectoryPath + images[0],
+             GUIDataDirectoryPath + images[1],
+             GUIDataDirectoryPath + images[0],
+             GUIDataDirectoryPath + images[0])
+        else:
+            imageList = None
+        self.node = DirectRadioButton(parent = parent,
+                                      boxImage=imageList,
+                                      text = text,
+                                      scale=scale,
+                                      pos=(position[0]-scale, position[1], position[2]),
+                                      relief=None,
+                                      boxRelief=None,
+                                      boxPlacement='right',
+                                      command=callbackFunction,
+                                      variable = variable,
+                                      value = [value])
+        self.node.indicator['text'] = ('', '')
         self.node.setTransparency(TransparencyAttrib.MAlpha)
         self.position = position
         self.scale = scale

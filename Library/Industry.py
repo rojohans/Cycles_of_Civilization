@@ -12,16 +12,18 @@ class BuildingFeatureProperties(FeatureTemplateDictionary.GlobeFeatureProperties
 
 
 class Building():
-    def __init__(self, iTile, inputBuffert, outputBuffert):
+    def __init__(self, iTile, inputBuffert, outputBuffert, destinationLimit = 3):
         self.inputBuffert = inputBuffert
         self.outputBuffert = outputBuffert
         self.iTile = iTile
 
         self.inputLinks = {}
         self.inputLinkAmount = {} # The amount of linked buildings, used as a sort of "satisfaction" value.
-        self.destinationLimit = 3 # The maximum number of destinations per resource.
+        self.destinationLimit = destinationLimit # The maximum number of destinations per resource.
         self.destinationAmount = {} # The number of linked destinations per resource.
         self.destinations = {} # The linked destinations.
+        self.destinationWeights = {}
+
         for inputResource in self.inputBuffert.type:
             self.inputLinkAmount[inputResource] = 0
             self.inputLinks[inputResource] = []
@@ -49,6 +51,7 @@ class Building():
 
         self.destinationAmount[resource] = 0
         self.destinations[resource] = []
+        self.destinationWeights[resource] = []
 
     def Delete(self):
         for inputResource in self.inputBuffert.type:
@@ -90,12 +93,21 @@ class Building():
         return text
 
     @classmethod
+    def UpdateBuildingDemand(cls):
+        cls.demand = 0
+        for outputResource in cls.output:
+            cls.demand += cls.mainProgram.resources.demand[outputResource]
+        if len(cls.output) > 0:
+            cls.demand /= len(cls.output)
+
+    @classmethod
     def Initialize(cls, mainProgram):
         cls.mainProgram = mainProgram
+        cls.demand = 0
 
 class ProductionBuilding(Building):
-    def __init__(self, iTile, inputBuffert, outputBuffert, laborLimit = 50, recipy = None):
-        super().__init__(iTile, inputBuffert, outputBuffert)
+    def __init__(self, iTile, inputBuffert, outputBuffert, laborLimit = 50, recipy = None, destinationLimit = 3):
+        super().__init__(iTile, inputBuffert, outputBuffert, destinationLimit)
         self.laborLimit = laborLimit # The max amount of labor that can be used each day.
         self.recipy = recipy
 
@@ -104,12 +116,17 @@ class ProductionBuilding(Building):
             amount += 10
 
 class LivingBuilding(Building):
-    def __init__(self, iTile, inputBuffert, outputBuffert, population = 10, populationInHouse = 10, maxPopulation = 100):
-        super().__init__(iTile, inputBuffert, outputBuffert)
+    def __init__(self, iTile, inputBuffert, outputBuffert, population = 10, populationInHouse = 10, maxPopulation = 100, growthRate = 1.05, starvationRate = 1.05, populationChangeBuffert = 2, destinationLimit = 3):
+        super().__init__(iTile, inputBuffert, outputBuffert, destinationLimit)
         self.population = population
         self.populationInHouse = populationInHouse
         self.maxPopulation = maxPopulation
         self.unusedLabor = 0
+        self.growthRate = growthRate
+        self.starvationRate = starvationRate
+
+        self.populationChangeBuffert = populationChangeBuffert
+        self.populationChangeTrend = 0 # +/- depending on the number of continuous turns of growth/starvation.
 
     def __call__(self, *args, **kwargs):
         pass
@@ -171,14 +188,16 @@ class Recipy():
         self.output = output
 
     def __call__(self, *args, **kwargs):
-        laborOutputSpace = self.building.outputBuffert.limit['spent_labor'] - self.building.outputBuffert.amount['spent_labor']
-        usedLabor = np.min((self.building.inputBuffert.amount['labor'], self.laborLimit, laborOutputSpace))
+        #laborOutputSpace = self.building.outputBuffert.limit['spent_labor'] - self.building.outputBuffert.amount['spent_labor']
+        #usedLabor = np.min((self.building.inputBuffert.amount['labor'], self.laborLimit, laborOutputSpace))
+        usedLabor = np.min((self.building.inputBuffert.amount['labor'], self.laborLimit))
         laborEfficiency = usedLabor / self.laborLimit
         self.building.inputBuffert.satisfaction['labor'] = laborEfficiency
         self.building.inputBuffert.smoothedSatisfaction['labor'] = (self.building.inputBuffert.smoothedSatisfaction[
                                                                'labor'] + laborEfficiency) / 2
-        self.building.inputBuffert.amount['labor'] -= usedLabor
-        self.building.outputBuffert.amount['spent_labor'] += usedLabor
+        #self.building.inputBuffert.amount['labor'] -= usedLabor
+        self.building.inputBuffert.amount['labor'] = 0.0
+        #self.building.outputBuffert.amount['spent_labor'] += usedLabor
 
         if usedLabor > 0:
             resourceEfficiency = []
@@ -187,18 +206,53 @@ class Recipy():
                 self.building.inputBuffert.satisfaction[inputResource] = resourceEfficiency[-1]
                 self.building.inputBuffert.smoothedSatisfaction[inputResource] = (self.building.inputBuffert.smoothedSatisfaction[
                                                                        inputResource] + resourceEfficiency[-1]) / 2
+                #self.building.mainProgram.resources.demand[inputResource] += \
+                #    0.05*(1-self.building.inputBuffert.smoothedSatisfaction[inputResource])*(1+self.building.demand**1.2)
+
+                #self.building.mainProgram.resources.demand[inputResource] += \
+                #    0.05 * (1 - self.building.inputBuffert.smoothedSatisfaction[inputResource]) * self.building.demand ** 1.2
+
+                #self.building.mainProgram.resources.demand[inputResource] += \
+                #    0.05 * (1 - self.building.inputBuffert.satisfaction[inputResource]) * (
+                #                1 + (self.building.demand - 1) ** 1.2)
+
             resourceEfficiency.append(laborEfficiency)
             totalEfficiency = np.min(resourceEfficiency)
 
             for inputResource in self.input:
                 self.building.inputBuffert.amount[inputResource] -= self.input[inputResource]*totalEfficiency
+                self.building.mainProgram.resources.consumption[inputResource] += self.input[inputResource]*totalEfficiency
+                self.building.mainProgram.resources.demand[inputResource] += self.input[inputResource]*totalEfficiency#----
 
             for outputResource in self.output:
-                self.building.outputBuffert.amount[outputResource] += totalEfficiency*self.output[outputResource]
-                self.building.outputBuffert.amount[outputResource] = np.min((self.building.outputBuffert.amount[outputResource], self.building.outputBuffert.limit[outputResource]))
+                resourceIncrease = np.min((totalEfficiency*self.output[outputResource], self.building.outputBuffert.limit[outputResource] - self.building.outputBuffert.amount[outputResource]))
+                #self.building.outputBuffert.amount[outputResource] += totalEfficiency*self.output[outputResource]
+                self.building.outputBuffert.amount[outputResource] += resourceIncrease
 
+                self.building.mainProgram.resources.production[outputResource] += resourceIncrease
+                self.building.mainProgram.resources.demand[outputResource] -= resourceIncrease  # ----
 
+                #self.building.mainProgram.resources.demand[outputResource] -= totalEfficiency*self.output[outputResource]#----
+                #self.building.outputBuffert.amount[outputResource] = np.min((self.building.outputBuffert.amount[outputResource], self.building.outputBuffert.limit[outputResource]))
 
+class PopulationStatistics():
+    def __init__(self, mainProgram):
+        self.mainProgram = mainProgram
+
+        self.history = []
+        self.historicalMin = 9999
+        self.historicalMax = -9999
+
+    def Update(self):
+        totalPopulation = 0
+        for household in self.mainProgram.householdList:
+            if household != None:
+                totalPopulation += household.population
+        if totalPopulation > self.historicalMax:
+            self.historicalMax = totalPopulation
+        if totalPopulation < self.historicalMin:
+            self.historicalMin = totalPopulation
+        self.history.append(totalPopulation)
 
 
 

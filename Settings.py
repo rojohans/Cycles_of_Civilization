@@ -172,7 +172,7 @@ class GlobeSettings:
         self.addFeatureFrameCanvasSize = (0, 0.4, -3.6, 0)
         self.addFeatureFrameChildrenGap = 0.1
 
-        self.statisticsGraphPosition = (-0.2, 0.0, 0.0)
+        self.statisticsGraphPosition = (-0.2, 0.0, -0.2)
         self.statisticsGraphSize = (-0.7, 0.7, -0.6, 0.6)
 
 

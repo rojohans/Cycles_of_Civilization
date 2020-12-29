@@ -17,6 +17,7 @@ import Library.Ecosystem as Ecosystem
 import Library.Texture as Texture
 import Library.Feature as Feature
 
+import Data.Templates.Building_Templates as BuildingTemplates
 import Data.Dictionaries.FeatureTemplateDictionary as FeatureTemplateDictionary
 import Data.Templates.Vegetation_Templates as Vegetation_Templates
 import Data.Templates.Animal_Templates as Animal_Templates
@@ -27,6 +28,31 @@ import Root_Directory
 
 class Game(ShowBase):
     def __init__(self):
+        '''
+        #
+        # Tile area comparison.
+        #
+        #nTiles = np.size(self.mainProgram.world.f, 0)
+        nTiles = 1000000
+        # Earth radius : 6371 km
+        #  Mars radius : 2289 km
+        #planetArea = 4 * np.pi * 6371 ** 2
+        planetArea = 4 * np.pi * 2289 ** 2
+        tileArea = planetArea / nTiles
+        print('Number of tiles : ', nTiles)
+        print('Planet area     : ', planetArea)
+        print('Tile area       : ', tileArea)
+        print('Tile dimension  : ', np.sqrt(tileArea))
+
+        #        Europe area : 1 000 000 km2
+        # Great britain area :   200 000 km2
+        #         Orust area :       300 km2
+        print('Europe tiles        : ', 1000000 / tileArea)
+        print('Great britain tiles : ', 200000 / tileArea)
+        print('Orust tiles         : ', 300 / tileArea)
+        '''
+
+
         ShowBase.__init__(self)
 
         #p3d.PStatClient.connect()
@@ -144,19 +170,39 @@ class Game(ShowBase):
         self.selectedTile = None
 
         import Library.Industry as Industry
-        Industry.Building.Initialize(mainProgram=self)
+        #Industry.Building.Initialize(mainProgram=self)
+        self.buildingClasses = [BuildingTemplates.GrainFarm,
+            BuildingTemplates.Windmill,
+            BuildingTemplates.Bakery,
+            BuildingTemplates.TuberFarm,
+            BuildingTemplates.Lumbermill,
+            BuildingTemplates.Quarry,
+            BuildingTemplates.IronMine,
+            BuildingTemplates.CoalMine,
+            BuildingTemplates.Foundry,
+            BuildingTemplates.Blacksmith,
+            BuildingTemplates.Stockpile,
+            BuildingTemplates.Granary,
+            BuildingTemplates.Household]
+        for buildingClass in self.buildingClasses:
+            buildingClass.Initialize(mainProgram=self)
         self.featureTemplate = FeatureTemplateDictionary.GetFeatureTemplateDictionaryGlobe(mainProgram=self)
 
         import Library.Resources as Resources
         self.resources = Resources.Resources(mainProgram=self,
-                                             resources=['labor', 'spent_labor', 'grain', 'wood', 'tuber', 'flour', 'bread', 'stone', 'iron ore', 'coal', 'steel', 'tools'])
+                                             resources=['labor', 'spent_labor', 'grain', 'wood', 'tuber', 'flour', 'bread', 'stone', 'iron ore', 'coal', 'steel', 'tools'],
+                                             demandStabilizationRate=0.1)
+
 
         import Library.GUI as GUI
         self.interface = GUI.Interface(base=base, mainProgram=self)
 
         self.featureList = [[] for i in range(self.world.nTriangles)]
         self.buildingList = [None for i in range(self.world.nTriangles)]
-
+        self.householdList = [None for i in range(self.world.nTriangles)]
+        self.householdTemplates = [BuildingTemplates.Household]
+        self.populationStatistics = Industry.PopulationStatistics(mainProgram=self)
+        self.populationStatistics.Update()
 
         import Library.Transport as Transport
         self.transport = Transport.Transport(mainProgram=self, resources=['labor', 'spent_labor', 'grain', 'wood', 'tuber', 'flour', 'bread', 'stone', 'iron ore', 'coal', 'steel', 'tools'])
@@ -194,96 +240,107 @@ class Game(ShowBase):
 
         self.turn = 0
 
-    def Turn(self, status):
-        if status == 1:
-            ticTurn = time.time()
-            self.interface.buttons['end_turn'].node["indicatorValue"] = 1
-            self.interface.buttons['end_turn'].node.setIndicatorValue()
-            base.graphicsEngine.renderFrame()
-            base.graphicsEngine.renderFrame()
+        '''
+        profile = False
+        if profile:
+            import cProfile, pstats, io
+            from pstats import SortKey
+            pr = cProfile.Profile()
+            pr.enable()
+        if profile:
+            pr.disable()
+            s = io.StringIO()
+            sortby = SortKey.CUMULATIVE
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
+            # quit()
+        '''
 
-            if self.movementGraph.upToDate == False:
+    def Turn(self, status, iteration = 1):
+        if status == 1:
+            for iTurnContontinuous in range(iteration):
+                ticTurn = time.time()
+                self.interface.buttons['end_turn'].node["indicatorValue"] = 1
+                self.interface.buttons['end_turn'].node.setIndicatorValue()
+                base.graphicsEngine.renderFrame()
+                base.graphicsEngine.renderFrame()
+
+                if self.movementGraph.upToDate == False:
+                    tic = time.time()
+                    self.movementGraph.RecalculateGraph()
+                    for building in self.buildingList:
+                        if building != None:
+                            building.tilesInRange = None
+                    toc = time.time()
+                    print('Movement graph calculation time : ', toc - tic)
+
+                # The buildings process their input into output. Households grow/starve.
                 tic = time.time()
-                self.movementGraph.RecalculateGraph()
                 for building in self.buildingList:
                     if building != None:
-                        building.tilesInRange = None
+                        building()
                 toc = time.time()
-                print('Movement graph calculation time : ', toc - tic)
+                print('Building operation time : ', toc-tic)
 
-            tic = time.time()
-            # The buildings process their input into output. Households grow/starve.
-            for building in self.buildingList:
-                if building != None:
-                    building()
-            toc = time.time()
-            print('Building operation time : ', toc-tic)
-
-            tic = time.time()
-            # Resources are moved.
-            profile = False
-            if profile:
-                import cProfile, pstats, io
-                from pstats import SortKey
-                pr = cProfile.Profile()
-                pr.enable()
-
-            self.transport()
-
-            if profile:
-                pr.disable()
-                s = io.StringIO()
-                sortby = SortKey.CUMULATIVE
-                ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-                ps.print_stats()
-                print(s.getvalue())
-                #quit()
-            toc = time.time()
-            print('Transport time : ', toc - tic)
-
-            tic = time.time()
-            self.resources()
-            toc = time.time()
-            print('Resource operation time : ', toc-tic)
-
-            self.interface.buttons['end_turn'].node["indicatorValue"] = 0
-            self.interface.buttons['end_turn'].node.setIndicatorValue()
-
-            self.turn += 1
-            self.interface.labels['end_turn'].node.setText('TURN : ' + str(self.turn))
-
-            # Update the GUI text.
-            if self.selectedTile != None:
-                tileInformationText = ""
-                tileInformationText += 'ID : ' + str(self.selectedTile) + '\n'
-                tileInformationText += 'Elevation : ' + "{:.3f}".format(self.elevation[self.selectedTile]) + '\n'
-                tileInformationText += 'Temperature : ' + "{:.3f}".format(self.temperature[self.selectedTile, 0]) + '\n'
-                tileInformationText += 'Slope : ' + "{:.3f}".format(self.worldProperties.slope[self.selectedTile, 0]) + '\n'
-                for i, feature in enumerate(self.featureList[self.selectedTile]):
-                    if i == 0:
-                        tileInformationText += 'Features : '
-                    else:
-                        tileInformationText += '         : '
-                    tileInformationText += feature.template.GUILabel + '\n'
-
-                if self.buildingList[self.selectedTile] != None:
-                    #tileInformationText += str(self.buildingList[self.selectedTile])
-
-                    featureInformationText = ''
-                    featureInformationText += self.featureList[self.selectedTile][0].template.GUILabel + '\n'
-                    featureInformationText += self.buildingList[
-                        self.selectedTile].GetDetailedText()
-                    self.interface.labels['featureInformation'].node.setText(featureInformationText)
-                self.interface.labels['tileInformation'].node.setText(tileInformationText)
+                # Resources are moved.
+                tic = time.time()
+                self.transport()
+                toc = time.time()
+                print('Transport time : ', toc - tic)
 
 
-            self.interface.featureInformation.VisualizeBuildingLinks(self.interface.buttons['buildingLinks'].node["indicatorValue"])
+                tic = time.time()
+                self.resources()
+                toc = time.time()
+                print('Resource operation time : ', toc-tic)
+
+                # Updates demand values for the building classes.
+                for buildingClass in self.buildingClasses:
+                    buildingClass.UpdateBuildingDemand()
+                    print('% 2s, Portal : % 5.5f' %(buildingClass, buildingClass.demand))
+                print(self.resources.demand)
+
+                self.populationStatistics.Update()
+
+                self.interface.buttons['end_turn'].node["indicatorValue"] = 0
+                self.interface.buttons['end_turn'].node.setIndicatorValue()
+
+                self.turn += 1
+                self.interface.labels['end_turn'].node.setText('TURN : ' + str(self.turn))
+
+                # Update the GUI text.
+                if self.selectedTile != None:
+                    tileInformationText = ""
+                    tileInformationText += 'ID : ' + str(self.selectedTile) + '\n'
+                    tileInformationText += 'Elevation : ' + "{:.3f}".format(self.elevation[self.selectedTile]) + '\n'
+                    tileInformationText += 'Temperature : ' + "{:.3f}".format(self.temperature[self.selectedTile, 0]) + '\n'
+                    tileInformationText += 'Slope : ' + "{:.3f}".format(self.worldProperties.slope[self.selectedTile, 0]) + '\n'
+                    for i, feature in enumerate(self.featureList[self.selectedTile]):
+                        if i == 0:
+                            tileInformationText += 'Features : '
+                        else:
+                            tileInformationText += '         : '
+                        tileInformationText += feature.template.GUILabel + '\n'
+
+                    if self.buildingList[self.selectedTile] != None:
+                        #tileInformationText += str(self.buildingList[self.selectedTile])
+
+                        featureInformationText = ''
+                        featureInformationText += self.featureList[self.selectedTile][0].template.GUILabel + '\n'
+                        featureInformationText += self.buildingList[
+                            self.selectedTile].GetDetailedText()
+                        self.interface.labels['featureInformation'].node.setText(featureInformationText)
+                    self.interface.labels['tileInformation'].node.setText(tileInformationText)
 
 
-            base.graphicsEngine.renderFrame()
-            tocTurn = time.time()
-            print('TURN TIME : ', tocTurn-ticTurn)
-            print(' ')
+                self.interface.featureInformation.VisualizeBuildingLinks(self.interface.buttons['buildingLinks'].node["indicatorValue"])
+
+
+                base.graphicsEngine.renderFrame()
+                tocTurn = time.time()
+                print('TURN TIME : ', tocTurn-ticTurn)
+                print(' ')
 
 
     def RotateSun(self, Task):
