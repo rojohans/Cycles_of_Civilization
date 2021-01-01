@@ -111,22 +111,30 @@ class Transport():
                         amountToMoveTotal = building.outputBuffert.amount[resource]
                         nRecievingBuildings = building.destinationAmount[resource]
 
+                        '''
                         satisfactionWeights = np.empty((nRecievingBuildings, 1))
                         for i, recievingBuilding in enumerate(building.destinations[resource]):
                             #satisfactionWeights[i] = 0.01 + 1-recievingBuilding.inputBuffert.smoothedSatisfaction[resource]
                             satisfactionWeights[i] = 0.01 + recievingBuilding.__class__.demand
                         satisfactionWeights /= np.sum(satisfactionWeights, axis=0)
-
                         amountToMove = satisfactionWeights * amountToMoveTotal
+                        '''
+
+                        amountToMove = np.array(building.destinationWeights[resource]) * amountToMoveTotal / np.sum(np.array(building.destinationWeights[resource]))
+                        print(amountToMove)
                         for i, recievingBuilding in enumerate(building.destinations[resource]):
                             #amountToMove = satisfactionWeights[i, 0] * amountToMoveTotal
                             recievingSpace = recievingBuilding.inputBuffert.limit[resource] - recievingBuilding.inputBuffert.amount[resource]
-                            amountToMove[i, 0] = np.min((recievingSpace, amountToMove[i, 0]))
+                            #amountToMove[i, 0] = np.min((recievingSpace, amountToMove[i, 0]))
+                            amountToMove[i] = np.min((recievingSpace, amountToMove[i]))
 
-                            building.outputBuffert.amount[resource] -= amountToMove[i, 0]
-                            recievingBuilding.inputBuffert.amount[resource] += amountToMove[i, 0]
+                            #building.outputBuffert.amount[resource] -= amountToMove[i, 0]
+                            #recievingBuilding.inputBuffert.amount[resource] += amountToMove[i, 0]
+                            building.outputBuffert.amount[resource] -= amountToMove[i]
+                            recievingBuilding.inputBuffert.amount[resource] += amountToMove[i]
 
-                        amountToMoveTotal -= np.sum(amountToMove, axis=0)[0]
+                        #amountToMoveTotal -= np.sum(amountToMove, axis=0)[0]
+                        amountToMoveTotal -= np.sum(amountToMove)
                         for i, recievingBuilding in enumerate(building.destinations[resource]):
                             if amountToMoveTotal > 0:
                                 amountToMove = amountToMoveTotal
